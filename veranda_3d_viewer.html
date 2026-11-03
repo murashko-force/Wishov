@@ -567,8 +567,10 @@
         bathGroup.position.set(bathCenterX, 0, bathCenterZ);
         bathGroup.rotation.y = -bathRotAngle;
 
-        // Материалы бани (строго по фото: янтарно-коричневый брус, белые наличники и дверь)
-        const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide });
+        // Материалы бани (стены и фронтоны под имитацию бруса, белые наличники и дверь)
+        const timberSidingMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide }); // Имитация бруса
+        const woodLogMat = timberSidingMat;
+        const grooveMat = new THREE.MeshStandardMaterial({ color: 0x5a2d10, roughness: 0.90 }); // Теневой горизонтальный паз вагонки
         const whiteTrimMatBath = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
         const bathStylobateMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 }); // Единый тёмно-графитовый стилобат RAL 7016
         const bathRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
@@ -589,23 +591,51 @@
         const softPvcZipperMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.90 }); // Силовая тракторная молния двери
         const softPvcStrapMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.80 }); // Тканевые ремешки фиксации рулонов
 
-        // А. ЕДИНЫЙ ГРАФИТОВЫЙ СТИЛОБАТ (RAL 7016) И СТЕНЫ БАНИ (2,40 × 5,00 м)
+        // А. ЕДИНЫЙ ГРАФИТОВЫЙ СТИЛОБАТ (RAL 7016) И СТЕНЫ БАНИ ПОД ИМИТАЦИЮ БРУСА (2,40 × 5,00 м)
         const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.20, 5.00), bathStylobateMat);
         bathSocle.position.set(0, 0.10, 0);
         bathSocle.castShadow = true;
         bathSocle.receiveShadow = true;
         bathGroup.add(bathSocle);
 
-        const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.40, 2.30, 5.00), woodLogMat);
+        // Основной объём стен бани из имитации бруса
+        const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.40, 2.30, 5.00), timberSidingMat);
         bathWalls.position.set(0, 0.20 + 1.15, 0);
         bathWalls.castShadow = true;
+        bathWalls.receiveShadow = true;
         bathGroup.add(bathWalls);
+
+        // Горизонтальные теневые русты имитации бруса на стенах бани (шаг 14 см по всему контуру)
+        const numBathBoards = Math.floor(2.30 / 0.14);
+        for (let i = 1; i <= numBathBoards; i++) {
+            const by = 0.20 + i * 0.14;
+            // Длинный фасад со двора (X = +1.20)
+            const gFX = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 4.96), grooveMat);
+            gFX.position.set(1.202, by, 0);
+            bathGroup.add(gFX);
+
+            // Длинный задний фасад к забору (X = -1.20)
+            const gBX = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 4.96), grooveMat);
+            gBX.position.set(-1.202, by, 0);
+            bathGroup.add(gBX);
+
+            // Передний торец к дому (Z = +2.50)
+            const gFZ = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.012, 0.012), grooveMat);
+            gFZ.position.set(0, by, 2.502);
+            bathGroup.add(gFZ);
+
+            // Задний торец к саду (Z = -2.50)
+            const gBZ = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.012, 0.012), grooveMat);
+            gBZ.position.set(0, by, -2.502);
+            bathGroup.add(gBZ);
+        }
 
         // Угловые вертикальные нащельники
         for (let cx of [-1.20, 1.20]) {
             for (let cz of [-2.50, 2.50]) {
-                const cornerBoard = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.35, 0.06), woodLogMat);
-                cornerBoard.position.set(cx, 0.22 + 1.17, cz);
+                const cornerBoard = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.35, 0.06), timberSidingMat);
+                cornerBoard.position.set(cx, 0.20 + 1.17, cz);
+                cornerBoard.castShadow = true;
                 bathGroup.add(cornerBoard);
             }
         }
@@ -619,17 +649,20 @@
         bathRoof.castShadow = true;
         bathGroup.add(bathRoof);
 
-        // Торцевые треугольные зашивки первого ската
+        // Торцевые треугольные зашивки первого ската бани (имитация бруса)
         for (let bz of [2.50, -2.50]) {
             const tgGeo = new THREE.BufferGeometry();
             const verts = new Float32Array([
                 -1.20, 2.52, bz,
                  1.20, 2.52, bz,
-                 1.20, 2.52 + 0.35, bz
+                 1.20, 2.52 + 0.35, bz,
+                -1.20, 2.52, bz,
+                 1.20, 2.52 + 0.35, bz,
+                 1.20, 2.52, bz
             ]);
             tgGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
             tgGeo.computeVertexNormals();
-            const tgMesh = new THREE.Mesh(tgGeo, woodLogMat);
+            const tgMesh = new THREE.Mesh(tgGeo, timberSidingMat);
             bathGroup.add(tgMesh);
         }
 
@@ -686,8 +719,6 @@
 
         // ВАРИАНТ 3: СПЛОШНАЯ ЗАШИВКА ИМИТАЦИЕЙ БРУСА (1,20 м ОТ ПОЛА), ОДИНАКОВЫЕ МЯГКИЕ ОКНА И ДВЕРЬ ПВХ
         const postMatBath = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.65 });
-        const timberSidingMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide }); // Имитация бруса в цвет стен бани
-        const grooveMat = new THREE.MeshStandardMaterial({ color: 0x5a2d10, roughness: 0.90 }); // Теневой горизонтальный паз вагонки
         const handrailMat = new THREE.MeshStandardMaterial({ color: 0x6e3514, roughness: 0.60 });
 
         // Вспомогательная функция создания панели имитации бруса со швами
@@ -1781,45 +1812,112 @@
             return new THREE.Mesh(geo, mat);
         }
 
-        const frontGable = createTriangleMesh([0, H_WALL, -0.3], [HW, H_WALL, -0.3], [HW/2, H_RIDGE, -0.3], blockMat);
-        frontGable.castShadow = true;
-        houseGroup.add(frontGable);
-
-        // Realistic recessed attic window on gable (утоплено в кладку блоков на 10 см, строго по Google Street View фото)
-        function createRecessedAtticWindow(zGable, isFront) {
+        // Архитектурные фронтоны дома со сквозными проёмами и утопленными окнами ПВХ (без закладывания блоками!)
+        function createGableWithRecessedWindow(zGable, isFront) {
             const grp = new THREE.Group();
-            const w = 0.55, h = 0.85, depth = 0.12;
+            const winW = 0.65;
+            const winH = 0.95;
+            const winCX = HW / 2;
+            const winCY = H_WALL + 1.15;
             const zDir = isFront ? 1 : -1;
-            
-            // Тонкая рама ПВХ, заглубленная внутрь фронтона
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.04), whiteTrimMat);
-            frame.position.set(HW/2, H_WALL + 1.1, zGable - zDir * 0.04);
+            const depth = 0.16; // глубина блочных откосов
+
+            // А. Треугольный фронтон со сквозным вырезом под окно
+            const shape = new THREE.Shape();
+            shape.moveTo(0, H_WALL);
+            shape.lineTo(HW, H_WALL);
+            shape.lineTo(HW / 2, H_RIDGE);
+            shape.closePath();
+
+            // Сквозной вырез оконного проёма в форме
+            const hole = new THREE.Path();
+            hole.moveTo(winCX - winW / 2, winCY - winH / 2);
+            hole.lineTo(winCX + winW / 2, winCY - winH / 2);
+            hole.lineTo(winCX + winW / 2, winCY + winH / 2);
+            hole.lineTo(winCX - winW / 2, winCY + winH / 2);
+            hole.closePath();
+            shape.holes.push(hole);
+
+            const gableGeo = new THREE.ShapeGeometry(shape);
+            // Точные текстурные координаты под шаг блоков
+            const pos = gableGeo.attributes.position;
+            const uvs = new Float32Array(pos.count * 2);
+            for (let i = 0; i < pos.count; i++) {
+                uvs[i * 2] = pos.getX(i) * 0.5;
+                uvs[i * 2 + 1] = pos.getY(i) * 0.5;
+            }
+            gableGeo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            gableGeo.computeVertexNormals();
+
+            const wallMesh = new THREE.Mesh(gableGeo, blockMat);
+            if (isFront) {
+                wallMesh.position.set(0, 0, zGable);
+            } else {
+                // Для заднего фронтона ориентируем нормаль наружу в сад (-Z)
+                wallMesh.rotation.y = Math.PI;
+                wallMesh.position.set(HW, 0, zGable);
+            }
+            wallMesh.castShadow = true;
+            wallMesh.receiveShadow = true;
+            grp.add(wallMesh);
+
+            // Б. Наружные блочные откосы проёма глубиной 16 см
+            const revealCenterZ = zGable - zDir * (depth / 2);
+
+            // Верхний откос
+            const topRev = new THREE.Mesh(new THREE.BoxGeometry(winW, 0.04, depth), blockMat);
+            topRev.position.set(winCX, winCY + winH / 2 - 0.02, revealCenterZ);
+            grp.add(topRev);
+
+            // Левый откос
+            const leftRev = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH, depth), blockMat);
+            leftRev.position.set(winCX - winW / 2 + 0.02, winCY, revealCenterZ);
+            grp.add(leftRev);
+
+            // Правый откос
+            const rightRev = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH, depth), blockMat);
+            rightRev.position.set(winCX + winW / 2 - 0.02, winCY, revealCenterZ);
+            grp.add(rightRev);
+
+            // В. Металлический отлив подоконника с капельником (RAL 7016 в цвет кровли)
+            const sillMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.5, metalness: 0.7 });
+            const sillMesh = new THREE.Mesh(new THREE.BoxGeometry(winW + 0.10, 0.02, depth + 0.06), sillMat);
+            sillMesh.position.set(winCX, winCY - winH / 2 + 0.01, zGable - zDir * (depth / 2 - 0.03));
+            sillMesh.rotation.x = zDir * 0.08;
+            sillMesh.castShadow = true;
+            grp.add(sillMesh);
+
+            // Г. Железобетонная перемычка над окном на фасаде
+            const lintelMesh = new THREE.Mesh(new THREE.BoxGeometry(winW + 0.25, 0.12, 0.05), new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7 }));
+            lintelMesh.position.set(winCX, winCY + winH / 2 + 0.06, zGable + zDir * 0.02);
+            lintelMesh.castShadow = true;
+            grp.add(lintelMesh);
+
+            // Д. Утопленное окно ПВХ (заглублено внутрь откосов на 12 см)
+            const winZ = zGable - zDir * 0.12;
+
+            // Белая рама ПВХ
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.06, winH - 0.06, 0.05), whiteTrimMat);
+            frame.position.set(winCX, winCY, winZ);
+            frame.castShadow = true;
             grp.add(frame);
 
-            // Стекло
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, h - 0.08, 0.02), glassMat);
-            glass.position.set(HW/2, H_WALL + 1.1, zGable - zDir * 0.03);
+            // Центральный вертикальный импост (2 створки)
+            const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.05, winH - 0.06, 0.06), whiteTrimMat);
+            mullion.position.set(winCX, winCY, winZ);
+            grp.add(mullion);
+
+            // Чистое прозрачное стекло (БЕЗ структуры блоков!)
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.16, winH - 0.16, 0.015), glassMat);
+            glass.position.set(winCX, winCY, winZ);
             grp.add(glass);
-
-            // Блочные откосы проёма глубиной 12 см (создают честную глубокую тень)
-            const topReveal = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.04, depth), blockMat);
-            topReveal.position.set(HW/2, H_WALL + 1.1 + h/2 + 0.02, zGable + zDir * (depth/2 - 0.06));
-            grp.add(topReveal);
-
-            const sillReveal = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.025, depth + 0.02), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-            sillReveal.position.set(HW/2, H_WALL + 1.1 - h/2 - 0.012, zGable + zDir * (depth/2 - 0.05));
-            grp.add(sillReveal);
 
             return grp;
         }
 
-        houseGroup.add(createRecessedAtticWindow(-0.3, true));
-
-        // Rear Triangular Gable (Z = -HL)
-        const rearGable = createTriangleMesh([0, H_WALL, -HL + 0.3], [HW/2, H_RIDGE, -HL + 0.3], [HW, H_WALL, -HL + 0.3], blockMat);
-        houseGroup.add(rearGable);
-
-        houseGroup.add(createRecessedAtticWindow(-HL + 0.3, false));
+        // Передний фронтон (улица) и задний фронтон (сад) с честными сквозными проёмами и утопленными окнами
+        houseGroup.add(createGableWithRecessedWindow(0.0, true));
+        houseGroup.add(createGableWithRecessedWindow(-HL, false));
 
         // MAIN ROOF
         const roofOverhang = 0.45;
