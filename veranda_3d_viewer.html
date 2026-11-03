@@ -176,29 +176,31 @@
         // ==========================================
         // MASTER PLAN: 25 ARES (2500 m²) SITE MODEL
         // Кадастр: 720480501101000392, аг. Вишов, ул. Калинина, 26
+        // Посадка: дом смещён к левой меже (5,5м), широкий двор справа (18,5м)
+        // Придорожная зона: переменная зелёная полоса (4м слева, 2м справа) с ЛЭП
         // ==========================================
         const siteGroup = new THREE.Group();
         const infraGroup = new THREE.Group();
         scene.add(siteGroup);
         scene.add(infraGroup);
 
-        // 1. Cadastral Survey Boundary Points (Точные метрические координаты из дела)
-        // Точки 1-2: 35,26 м (ул. Калинина), 2-3: 59,55 м, 3-4: 13,25 м, 4-5: 33,72 м, 5-1: 72,64 м
+        // 1. Cadastral Survey Boundary Points (Точные метрические координаты из дела со смещением к левой меже)
+        // Межа 1-2: 35,26 м (ул. Калинина), 2-3: 59,55 м, 3-4: 13,25 м, 4-5: 33,72 м, 5-1: 72,64 м
         const CAD_POINTS = [
-            { id: 1, x: -18.00, z:  7.00, name: 'Т1 (ул. Калинина / ЛЭП)' },
-            { id: 2, x:  17.26, z:  7.00, name: 'Т2 (ул. Калинина / С-В межа)' },
-            { id: 3, x:  20.00, z: -52.55, name: 'Т3 (Восточный уступ)' },
-            { id: 4, x:  21.00, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
-            { id: 5, x: -12.72, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
+            { id: 1, x: -5.50, z:  7.00, name: 'Т1 (ул. Калинина / С-З угол)' },
+            { id: 2, x: 29.76, z:  7.00, name: 'Т2 (ул. Калинина / С-В угол)' },
+            { id: 3, x: 32.50, z: -52.55, name: 'Т3 (Восточный уступ)' },
+            { id: 4, x: 33.50, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
+            { id: 5, x: -0.22, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
         ];
 
         // 2. Surrounding Regional Terrain (Внешний ландшафт)
-        const outerGroundGeo = new THREE.PlaneGeometry(220, 220);
+        const outerGroundGeo = new THREE.PlaneGeometry(240, 240);
         const outerGroundMat = new THREE.MeshLambertMaterial({ color: 0x526842 });
         const groundMat = outerGroundMat;
         const outerGround = new THREE.Mesh(outerGroundGeo, outerGroundMat);
         outerGround.rotation.x = -Math.PI / 2;
-        outerGround.position.set(2, -0.015, -28);
+        outerGround.position.set(14, -0.015, -28);
         outerGround.receiveShadow = true;
         siteGroup.add(outerGround);
 
@@ -222,7 +224,7 @@
         parcelMesh.receiveShadow = true;
         siteGroup.add(parcelMesh);
 
-        // 4. Cadastral Boundary Line & Geodetic Boundary Stones (Межевая линия и реперы)
+        // 4. Cadastral Boundary Line & Geodetic Boundary Stones (Межевая линия и реперы Т1-Т5)
         const borderPoints = [];
         CAD_POINTS.forEach(p => borderPoints.push(new THREE.Vector3(p.x, 0.035, p.z)));
         borderPoints.push(new THREE.Vector3(CAD_POINTS[0].x, 0.035, CAD_POINTS[0].z));
@@ -232,7 +234,6 @@
         const borderLine = new THREE.Line(borderGeo, borderMat);
         siteGroup.add(borderLine);
 
-        // 5 Geodetic Boundary Monuments (Кадастровые межевые знаки Т1-Т5)
         const stoneGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.45, 8);
         const stoneMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
         const stoneCapMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
@@ -246,42 +247,63 @@
             siteGroup.add(stone);
         });
 
-        // 5. Street: ул. Калинина (Roadway, curbs, markings, apron)
-        const ROAD_EDGE_Z = 7.0; // 7.0m setback from house wall
-        const ROAD_CENTER_Z = 10.7;
+        // 5. Street: ул. Калинина (Асфальт под реальным углом: 4м слева, 2м справа до забора)
+        const ROAD_EDGE_Z = 7.0; // линия забора
+        // Угол наклона проезжей части относительно забора
+        const roadAngle = Math.atan2(9.0 - 11.0, 29.76 - (-5.50)); // -0.05666 rad (~ -3.25°)
 
         const roadGeo = new THREE.PlaneGeometry(160, 7.0);
         const roadMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
-        road.position.set(4, 0.02, ROAD_CENTER_Z);
+        road.rotation.z = roadAngle;
+        road.position.set(12.0, 0.02, 13.5);
         road.receiveShadow = true;
         siteGroup.add(road);
 
-        // Road center dashed line
+        // Road markings (осевой пунктир под углом дороги)
+        const markGroup = new THREE.Group();
         for (let x = -70; x <= 80; x += 4.5) {
             const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.15), new THREE.MeshBasicMaterial({ color: 0xf8fafc }));
             stripe.rotation.x = -Math.PI / 2;
-            stripe.position.set(x, 0.025, ROAD_CENTER_Z);
-            siteGroup.add(stripe);
+            stripe.position.set(x, 0.025, 0);
+            markGroup.add(stripe);
         }
+        markGroup.rotation.y = roadAngle;
+        markGroup.position.set(12.0, 0, 13.5);
+        siteGroup.add(markGroup);
 
         // Road curbs (бордюры)
         const curbMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
         const curbNear = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
-        curbNear.position.set(4, 0.08, 7.2);
+        curbNear.rotation.y = roadAngle;
+        curbNear.position.set(12.0, 0.08, 10.0);
         siteGroup.add(curbNear);
 
         const curbFar = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
-        curbFar.position.set(4, 0.08, 14.2);
+        curbFar.rotation.y = roadAngle;
+        curbFar.position.set(12.0, 0.08, 17.0);
         siteGroup.add(curbFar);
 
-        // Asphalt driveway apron (съезд с ул. Калинина к воротам)
-        const rampGeo = new THREE.PlaneGeometry(6.2, 3.4);
+        // Зелёная полоса (газонная обочина переменной ширины 4м -> 2м между забором и асфальтом)
+        const greenVergeShape = new THREE.Shape();
+        greenVergeShape.moveTo(-25.0, -7.0);
+        greenVergeShape.lineTo(55.0, -7.0);
+        greenVergeShape.lineTo(55.0, -(10.0 + Math.tan(roadAngle) * (55.0 - 12.0)));
+        greenVergeShape.lineTo(-25.0, -(10.0 + Math.tan(roadAngle) * (-25.0 - 12.0)));
+        greenVergeShape.closePath();
+        const greenVergeMesh = new THREE.Mesh(new THREE.ShapeGeometry(greenVergeShape), parcelMat);
+        greenVergeMesh.rotation.x = -Math.PI / 2;
+        greenVergeMesh.position.y = 0.008;
+        greenVergeMesh.receiveShadow = true;
+        siteGroup.add(greenVergeMesh);
+
+        // Мощёный въездной пандус от асфальта через зелёную зону к воротам
+        const rampGeo = new THREE.PlaneGeometry(5.8, 4.0);
         const rampMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
         const ramp = new THREE.Mesh(rampGeo, rampMat);
         ramp.rotation.x = -Math.PI / 2;
-        ramp.position.set(3.4, 0.022, 8.8);
+        ramp.position.set(3.3, 0.022, 8.8);
         siteGroup.add(ramp);
 
         // 6. Architectural Front Fence along ул. Калинина (RAL 7016 Anthracite)
@@ -325,9 +347,9 @@
             }
         }
 
-        // Left street fence section: X = -18.0 to 0.8
-        createFencePlinth(-18.0, 0.8, 7.0);
-        createSlatSection(-18.0, 0.8, 7.0);
+        // Left street fence section: X = -5.50 to 0.8 (от левой межи до ворот)
+        createFencePlinth(-5.50, 0.8, 7.0);
+        createSlatSection(-5.50, 0.8, 7.0);
 
         // Automated Sliding Gate (Откатные ворота 5,0 м: X = 0.8 to 5.8)
         const gateGroup = new THREE.Group();
@@ -356,7 +378,7 @@
         wicketGroup.position.set(6.55, 0.95, 7.0);
         siteGroup.add(wicketGroup);
 
-        // Intercom & Mail pillar
+        // Intercom pillar
         const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.9, 0.18), fencePostMat);
         intercom.position.set(7.18, 0.95, 7.0);
         intercom.castShadow = true;
@@ -377,9 +399,9 @@
         signMesh.position.set(7.6, 1.35, 7.07);
         siteGroup.add(signMesh);
 
-        // Right street fence section: X = 7.3 to 17.26
-        createFencePlinth(7.3, 17.26, 7.0);
-        createSlatSection(7.3, 17.26, 7.0);
+        // Right street fence section: X = 7.3 to 29.76 (длинная фасадная часть широкого двора)
+        createFencePlinth(7.3, 29.76, 7.0);
+        createSlatSection(7.3, 29.76, 7.0);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
@@ -449,7 +471,7 @@
         gardenPath.receiveShadow = true;
         siteGroup.add(gardenPath);
 
-        // Septic inspection covers in front lawn (matching real site photo)
+        // Septic inspection covers in front lawn (согласно Google Street View фото)
         const coverMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
         const cover1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
         cover1.position.set(2.5, 0.04, 3.8);
@@ -459,31 +481,31 @@
         cover2.position.set(2.5, 0.04, 5.2);
         siteGroup.add(cover2);
 
-        // 9. Relaxation Patio / BBQ Lounge Deck with Pergola (X = 11 to 17, Z = -20 to -25)
+        // 9. Relaxation Patio / BBQ Lounge Deck with Pergola (В просторном восточном дворе X = 15 to 21, Z = -16 to -22)
         const deckMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
-        const deck = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.14, 5.0), deckMat);
-        deck.position.set(13.8, 0.07, -22.5);
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.14, 5.5), deckMat);
+        deck.position.set(18.0, 0.07, -19.0);
         deck.receiveShadow = true;
         deck.castShadow = true;
         siteGroup.add(deck);
 
         const pergolaMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
-        for (let px of [11.3, 16.3]) {
-            for (let pz of [-20.2, -24.8]) {
+        for (let px of [15.3, 20.7]) {
+            for (let pz of [-16.5, -21.5]) {
                 const column = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.6, 0.14), pergolaMat);
                 column.position.set(px, 1.3, pz);
                 column.castShadow = true;
                 siteGroup.add(column);
             }
         }
-        for (let bz = -24.8; bz <= -20.2; bz += 0.8) {
-            const beam = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.10, 0.08), pergolaMat);
-            beam.position.set(13.8, 2.65, bz);
+        for (let bz = -21.5; bz <= -16.5; bz += 0.8) {
+            const beam = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.10, 0.08), pergolaMat);
+            beam.position.set(18.0, 2.65, bz);
             beam.castShadow = true;
             siteGroup.add(beam);
         }
 
-        // 10. Fruit Orchard (Плодовый сад: яблони, груши за домом, Z = -13 to -36)
+        // 10. Fruit Orchard (Плодовый сад в восточной и центральной зоне за домом, Z = -16 to -38)
         function createFruitTree(x, z, scale = 1.0) {
             const treeGroup = new THREE.Group();
             const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.85 });
@@ -509,39 +531,39 @@
         }
 
         const treeCoords = [
-            [-6.0, -15.0], [-1.0, -16.5], [5.0, -15.5],
-            [-8.0, -23.0], [-3.0, -24.0], [3.0, -23.5],
-            [-9.0, -31.0], [-4.0, -32.0], [2.0, -31.5], [8.0, -32.5],
-            [14.0, -31.0], [17.0, -22.0]
+            [7.0, -16.0], [12.0, -16.5], [24.0, -16.0],
+            [5.0, -24.0], [11.0, -24.5], [17.0, -25.0], [23.0, -24.0],
+            [6.0, -32.0], [12.0, -32.5], [18.0, -32.0], [24.0, -33.0],
+            [15.0, -38.0], [21.0, -38.5]
         ];
         treeCoords.forEach(([tx, tz], idx) => {
             const sc = 0.85 + (idx % 4) * 0.1;
             createFruitTree(tx, tz, sc);
         });
 
-        // 11. Vegetable Garden & Greenhouse (Огород в южной части участка, Z = -40 to -63)
+        // 11. Vegetable Garden & Greenhouse (Огород в южной части участка, Z = -42 to -63)
         const gardenBedSoilMat = new THREE.MeshStandardMaterial({ color: 0x271e16, roughness: 0.95 });
         const gardenBedGreenMat = new THREE.MeshStandardMaterial({ color: 0x2e6b27, roughness: 0.85 });
         const gardenZoneMesh = new THREE.Mesh(new THREE.PlaneGeometry(28.0, 22.0), gardenBedSoilMat);
         gardenZoneMesh.rotation.x = -Math.PI / 2;
-        gardenZoneMesh.position.set(4.0, 0.012, -51.5);
+        gardenZoneMesh.position.set(16.0, 0.012, -52.5);
         gardenZoneMesh.receiveShadow = true;
         siteGroup.add(gardenZoneMesh);
 
         for (let gy = 0; gy < 7; gy++) {
-            const zPos = -42.0 - gy * 2.8;
+            const zPos = -43.0 - gy * 2.8;
             const bedL = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
-            bedL.position.set(-3.5, 0.09, zPos);
+            bedL.position.set(8.5, 0.09, zPos);
             bedL.castShadow = true;
             siteGroup.add(bedL);
             
             const bedR = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
-            bedR.position.set(9.5, 0.09, zPos);
+            bedR.position.set(21.5, 0.09, zPos);
             bedR.castShadow = true;
             siteGroup.add(bedR);
         }
 
-        // Polycarbonate Arched Greenhouse (Теплица 6,0 × 3,0 м)
+        // Polycarbonate Arched Greenhouse (Теплица 6,0 × 3,0 м в огороде)
         const ghGroup = new THREE.Group();
         const ghMat = new THREE.MeshStandardMaterial({
             color: 0x93c5fd,
@@ -555,47 +577,57 @@
         const ghArch = new THREE.Mesh(ghGeo, ghMat);
         ghArch.rotation.z = Math.PI / 2;
         ghArch.rotation.y = Math.PI / 2;
-        ghArch.position.set(15.5, 1.0, -49.0);
+        ghArch.position.set(26.5, 1.0, -49.0);
         ghArch.castShadow = true;
         ghGroup.add(ghArch);
 
         const ghBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.35, 6.0), ghFrameMat);
-        ghBase.position.set(15.5, 0.17, -49.0);
+        ghBase.position.set(26.5, 0.17, -49.0);
         ghGroup.add(ghBase);
         siteGroup.add(ghGroup);
 
-        // 12. Engineering Utilities Layer (Инженерные сети и охранные зоны)
+        // 12. Engineering Utilities Layer (Инженерные сети строго по зелёной зоне перед забором)
         // A. Охранная зона ЛЭП (код 5.2, 35 м² в С-З углу у Точки 1)
         const lezGeo = new THREE.CylinderGeometry(4.8, 4.8, 0.08, 16, 1, false, 0, Math.PI / 2);
         const lezMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.35 });
         const lezMesh = new THREE.Mesh(lezGeo, lezMat);
-        lezMesh.position.set(-17.5, 0.04, 6.5);
+        lezMesh.position.set(-5.5, 0.04, 7.5);
         lezMesh.rotation.y = -Math.PI / 2;
         infraGroup.add(lezMesh);
 
-        // Опора ЛЭП 0,4 кВ (Power utility pole)
+        // Опоры ЛЭП 0,4 кВ строго на зелёной полосе перед забором (как на Google Street View фото)
         const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 8.5, 8), poleMat);
-        pole.position.set(-17.8, 4.25, 7.8);
-        pole.castShadow = true;
-        infraGroup.add(pole);
+        const poleCoords = [
+            [-5.5, 9.0], // Опора 1: у западного угла на 4-метровой зелёной полосе
+            [4.5, 8.5],  // Опора 2: перед домом на зелёной полосе (как на фото панорамы!)
+            [28.0, 7.9]  // Опора 3: у восточного угла на 2-метровой полосе
+        ];
+        poleCoords.forEach(([px, pz]) => {
+            const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 8.5, 8), poleMat);
+            pole.position.set(px, 4.25, pz);
+            pole.castShadow = true;
+            infraGroup.add(pole);
 
-        const crossarm = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-        crossarm.position.set(-17.8, 8.1, 7.8);
-        infraGroup.add(crossarm);
+            const crossarm = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            crossarm.position.set(px, 8.1, pz);
+            crossarm.rotation.y = roadAngle;
+            infraGroup.add(crossarm);
+        });
 
+        // Воздушные кабели ЛЭП по зелёной зоне вдоль ул. Калинина
         const wireMat = new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 });
         for (let wy of [7.9, 8.1, 8.3]) {
-            const wireGeo = new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(-45, wy, 7.8),
-                new THREE.Vector3(45, wy, 7.8)
-            ]);
+            const wirePoints = poleCoords.map(([px, pz]) => new THREE.Vector3(px, wy, pz));
+            // Продлеваем провода влево и вправо по улице
+            wirePoints.unshift(new THREE.Vector3(-30, wy, 10.4));
+            wirePoints.push(new THREE.Vector3(50, wy, 6.7));
+            const wireGeo = new THREE.BufferGeometry().setFromPoints(wirePoints);
             infraGroup.add(new THREE.Line(wireGeo, wireMat));
         }
 
         // B. Подземный ввод водопровода В-25пэ (от уличной магистрали в коридор/санузел)
         const waterLinePoints = [
-            new THREE.Vector3(8.5, 0.05, 10.7),
+            new THREE.Vector3(8.5, 0.05, 10.2),
             new THREE.Vector3(8.5, 0.05, 7.0),
             new THREE.Vector3(8.5, 0.05, 0.5)
         ];
@@ -606,13 +638,13 @@
         infraGroup.add(waterLine);
 
         const waterManhole = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
-        waterManhole.position.set(8.5, 0.05, 10.7);
+        waterManhole.position.set(8.5, 0.05, 10.2);
         infraGroup.add(waterManhole);
 
-        // C. Распределительный газопровод среднего давления Г-32пэ с.д.
+        // C. Распределительный газопровод среднего давления Г-32пэ с.д. вдоль ул. Калинина
         const gasPoints = [
-            new THREE.Vector3(-45, 0.05, 8.2),
-            new THREE.Vector3(45, 0.05, 8.2)
+            new THREE.Vector3(-30, 0.05, 9.8),
+            new THREE.Vector3(50, 0.05, 6.1)
         ];
         const gasGeo = new THREE.BufferGeometry().setFromPoints(gasPoints);
         const gasMat = new THREE.LineDashedMaterial({ color: 0xeab308, dashSize: 0.8, gapSize: 0.4, linewidth: 3 });
@@ -621,7 +653,7 @@
         infraGroup.add(gasLine);
 
         const gasPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
-        gasPost.position.set(-10.0, 0.7, 7.5);
+        gasPost.position.set(0.0, 0.7, 7.5);
         infraGroup.add(gasPost);
 
 // (Dimensions moved to top of script)
@@ -919,67 +951,91 @@
         frontWall.receiveShadow = true;
         houseGroup.add(frontWall);
 
-        // Helper to construct realistic windows for the main house with clinker decorative trim
+        // Helper to construct realistic windows for the main house with proper architectural quarter (четверть) and recessed reveals
         function createHouseWindow(cx, cy, cz, w, h, facing) {
             const grp = new THREE.Group();
+            const frameThick = 0.07;
+            const sillColor = 0x334155; // Тёмный металлоотлив с капельником
+
             if (facing === 'X') {
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, h + 0.04, w + 0.04), whiteTrimMat);
-                frame.position.set(cx, cy, cz);
+                // Левая наружная стена: внешняя грань X = 0.0, внутренняя грань X = 0.40.
+                // Рама заглублена в четверть на 14 см внутрь проёма (центр рамы: X = 0.14 + frameThick/2 = 0.175)
+                const frameX = 0.14 + frameThick / 2;
+
+                // 1. Оконная рама ПВХ
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, h - 0.02, w - 0.02), whiteTrimMat);
+                frame.position.set(frameX, cy, cz);
                 frame.castShadow = true;
                 grp.add(frame);
 
-                const sill = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, w + 0.10), whiteTrimMat);
-                sill.position.set(cx - 0.06, cy - h/2 - 0.02, cz);
-                sill.castShadow = true;
-                grp.add(sill);
-
-                // Декоративный клинкерный подоконный фартук и надоконная перемычка
-                const clinkerApron = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, w + 0.14), clinkerMat);
-                clinkerApron.position.set(cx - 0.03, cy - h/2 - 0.10, cz);
-                clinkerApron.castShadow = true;
-                grp.add(clinkerApron);
-
-                const clinkerLintel = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, w + 0.14), clinkerMat);
-                clinkerLintel.position.set(cx - 0.03, cy + h/2 + 0.08, cz);
-                clinkerLintel.castShadow = true;
-                grp.add(clinkerLintel);
-
-                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.09, h - 0.04, 0.06), whiteTrimMat);
-                mullion.position.set(cx, cy, cz);
+                // 2. Центральный вертикальный импост (2 створки)
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameThick + 0.01, h - 0.08, 0.06), whiteTrimMat);
+                mullion.position.set(frameX, cy, cz);
                 grp.add(mullion);
 
-                const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, h - 0.08, w - 0.08), glassMat);
-                glass.position.set(cx, cy, cz);
+                // 3. Стеклопакет
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, h - 0.10, w - 0.10), glassMat);
+                glass.position.set(frameX, cy, cz);
                 grp.add(glass);
+
+                // 4. Наружные блочные откосы (глубина 14 см: от X = 0.0 до X = 0.14)
+                const topReveal = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, w), blockMat);
+                topReveal.position.set(0.07, cy + h / 2 - 0.02, cz);
+                grp.add(topReveal);
+
+                const leftReveal = new THREE.Mesh(new THREE.BoxGeometry(0.14, h, 0.04), blockMat);
+                leftReveal.position.set(0.07, cy, cz - w / 2 + 0.02);
+                grp.add(leftReveal);
+
+                const rightReveal = new THREE.Mesh(new THREE.BoxGeometry(0.14, h, 0.04), blockMat);
+                rightReveal.position.set(0.07, cy, cz + w / 2 - 0.02);
+                grp.add(rightReveal);
+
+                // 5. Тонкий металлический отлив с уклоном (от рамы X = 0.14 наружу до X = -0.025, капельник 2,5 см)
+                const sillMat = new THREE.MeshStandardMaterial({ color: sillColor, roughness: 0.5, metalness: 0.6 });
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.015, w + 0.04), sillMat);
+                sill.position.set(0.065, cy - h / 2 + 0.01, cz);
+                sill.rotation.z = -0.08;
+                sill.castShadow = true;
+                grp.add(sill);
             } else {
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, h + 0.04, 0.08), whiteTrimMat);
-                frame.position.set(cx, cy, cz);
+                // Задняя стена в сад: внешняя грань Z = -HL = -9.50, внутренняя грань Z = -9.10.
+                // Рама заглублена на 14 см внутрь проёма к саду (центр рамы: Z = -9.50 + 0.14 + frameThick/2 = -9.325)
+                const frameZ = -HL + 0.14 + frameThick / 2;
+
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, h - 0.02, frameThick), whiteTrimMat);
+                frame.position.set(cx, cy, frameZ);
                 frame.castShadow = true;
                 grp.add(frame);
 
-                const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.10, 0.05, 0.18), whiteTrimMat);
-                sill.position.set(cx, cy - h/2 - 0.02, cz - 0.06);
-                sill.castShadow = true;
-                grp.add(sill);
-
-                // Декоративный клинкерный подоконный фартук и надоконная перемычка
-                const clinkerApron = new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, 0.12, 0.03), clinkerMat);
-                clinkerApron.position.set(cx, cy - h/2 - 0.10, cz - 0.03);
-                clinkerApron.castShadow = true;
-                grp.add(clinkerApron);
-
-                const clinkerLintel = new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, 0.12, 0.03), clinkerMat);
-                clinkerLintel.position.set(cx, cy + h/2 + 0.08, cz - 0.03);
-                clinkerLintel.castShadow = true;
-                grp.add(clinkerLintel);
-
-                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.06, h - 0.04, 0.09), whiteTrimMat);
-                mullion.position.set(cx, cy, cz);
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.06, h - 0.08, frameThick + 0.01), whiteTrimMat);
+                mullion.position.set(cx, cy, frameZ);
                 grp.add(mullion);
 
-                const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, h - 0.08, 0.04), glassMat);
-                glass.position.set(cx, cy, cz);
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.10, h - 0.10, 0.02), glassMat);
+                glass.position.set(cx, cy, frameZ);
                 grp.add(glass);
+
+                // Наружные блочные откосы (глубина 14 см: от Z = -9.50 до Z = -9.36)
+                const topReveal = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, 0.14), blockMat);
+                topReveal.position.set(cx, cy + h / 2 - 0.02, -HL + 0.07);
+                grp.add(topReveal);
+
+                const leftReveal = new THREE.Mesh(new THREE.BoxGeometry(0.04, h, 0.14), blockMat);
+                leftReveal.position.set(cx - w / 2 + 0.02, cy, -HL + 0.07);
+                grp.add(leftReveal);
+
+                const rightReveal = new THREE.Mesh(new THREE.BoxGeometry(0.04, h, 0.14), blockMat);
+                rightReveal.position.set(cx + w / 2 - 0.02, cy, -HL + 0.07);
+                grp.add(rightReveal);
+
+                // Тонкий металлический отлив с уклоном в сад
+                const sillMat = new THREE.MeshStandardMaterial({ color: sillColor, roughness: 0.5, metalness: 0.6 });
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.015, 0.18), sillMat);
+                sill.position.set(cx, cy - h / 2 + 0.01, -HL + 0.065);
+                sill.rotation.x = -0.08;
+                sill.castShadow = true;
+                grp.add(sill);
             }
             return grp;
         }
@@ -1128,19 +1184,41 @@
         frontGable.castShadow = true;
         houseGroup.add(frontGable);
 
-        // Small attic window on front gable
-        const atticWin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.42), whiteTrimMat);
-        atticWin.position.set(HW/2, H_WALL + 1.1, -0.2);
-        houseGroup.add(atticWin);
+        // Realistic recessed attic window on gable (утоплено в кладку блоков на 10 см, строго по Google Street View фото)
+        function createRecessedAtticWindow(zGable, isFront) {
+            const grp = new THREE.Group();
+            const w = 0.55, h = 0.85, depth = 0.12;
+            const zDir = isFront ? 1 : -1;
+            
+            // Тонкая рама ПВХ, заглубленная внутрь фронтона
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.04), whiteTrimMat);
+            frame.position.set(HW/2, H_WALL + 1.1, zGable - zDir * 0.04);
+            grp.add(frame);
+
+            // Стекло
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, h - 0.08, 0.02), glassMat);
+            glass.position.set(HW/2, H_WALL + 1.1, zGable - zDir * 0.03);
+            grp.add(glass);
+
+            // Блочные откосы проёма глубиной 12 см (создают честную глубокую тень)
+            const topReveal = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.04, depth), blockMat);
+            topReveal.position.set(HW/2, H_WALL + 1.1 + h/2 + 0.02, zGable + zDir * (depth/2 - 0.06));
+            grp.add(topReveal);
+
+            const sillReveal = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.025, depth + 0.02), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            sillReveal.position.set(HW/2, H_WALL + 1.1 - h/2 - 0.012, zGable + zDir * (depth/2 - 0.05));
+            grp.add(sillReveal);
+
+            return grp;
+        }
+
+        houseGroup.add(createRecessedAtticWindow(-0.3, true));
 
         // Rear Triangular Gable (Z = -HL)
         const rearGable = createTriangleMesh([0, H_WALL, -HL + 0.3], [HW/2, H_RIDGE, -HL + 0.3], [HW, H_WALL, -HL + 0.3], blockMat);
         houseGroup.add(rearGable);
 
-        // Small attic window on rear gable
-        const rearAtticWin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.42), whiteTrimMat);
-        rearAtticWin.position.set(HW/2, H_WALL + 1.1, -HL + 0.2);
-        houseGroup.add(rearAtticWin);
+        houseGroup.add(createRecessedAtticWindow(-HL + 0.3, false));
 
         // MAIN ROOF
         const roofOverhang = 0.45;
@@ -2192,39 +2270,41 @@
         yardGable.castShadow = true;
         roofGroup.add(yardGable);
 
-        // Окошко во фронтоне со двора (Скандинавское слуховое окно с переплётом)
+        // Окошко во фронтоне со двора (заглубленное внутрь стены фронтона на 6 см)
         function createGableWindow(peakYR) {
             const gwGrp = new THREE.Group();
             const W_GW = 0.75;
             const H_GW = 0.85;
             const Y_CENTER = YE + (peakYR - YE) * 0.42;
 
-            // Наличники и рама (синхронизированы с whiteTrimMat)
-            const casing = new THREE.Mesh(new THREE.BoxGeometry(0.06, H_GW + 0.10, W_GW + 0.10), whiteTrimMat);
-            casing.position.set(V_X1 + 0.02, Y_CENTER, ZR);
-            gwGrp.add(casing);
-
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, H_GW, W_GW), whiteTrimMat);
-            frame.position.set(V_X1 + 0.03, Y_CENTER, ZR);
+            // Рама ПВХ, заглубленная внутрь стены фронтона (на X = V_X1 - 0.04)
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.06, H_GW, W_GW), whiteTrimMat);
+            frame.position.set(V_X1 - 0.04, Y_CENTER, ZR);
             gwGrp.add(frame);
 
             // Остекление
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_GW - 0.12, W_GW - 0.12), glassMat);
-            glass.position.set(V_X1 + 0.045, Y_CENTER, ZR);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_GW - 0.10, W_GW - 0.10), glassMat);
+            glass.position.set(V_X1 - 0.035, Y_CENTER, ZR);
             gwGrp.add(glass);
 
-            // Скандинавские шпросы (крестообразный переплёт на 4 стекла)
-            const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.035, H_GW - 0.12, 0.04), whiteTrimMat);
-            vBar.position.set(V_X1 + 0.05, Y_CENTER, ZR);
+            // Тонкие шпросы
+            const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_GW - 0.10, 0.03), whiteTrimMat);
+            vBar.position.set(V_X1 - 0.03, Y_CENTER, ZR);
             gwGrp.add(vBar);
 
-            const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, W_GW - 0.12), whiteTrimMat);
-            hBar.position.set(V_X1 + 0.05, Y_CENTER, ZR);
+            const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, W_GW - 0.10), whiteTrimMat);
+            hBar.position.set(V_X1 - 0.03, Y_CENTER, ZR);
             gwGrp.add(hBar);
 
-            // Подоконный отлив
-            const sill = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, W_GW + 0.16), whiteTrimMat);
-            sill.position.set(V_X1 + 0.05, Y_CENTER - H_GW/2 - 0.01, ZR);
+            // Откос ниши проёма (глубина 6 см от V_X1 до V_X1 - 0.06)
+            const topReveal = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, W_GW + 0.04), blockMat);
+            topReveal.position.set(V_X1 - 0.03, Y_CENTER + H_GW / 2 + 0.015, ZR);
+            gwGrp.add(topReveal);
+
+            // Тонкий металлический отлив с капельником (выступ наружу всего на 2 см)
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.02, W_GW + 0.06), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            sill.position.set(V_X1 - 0.015, Y_CENTER - H_GW / 2 - 0.01, ZR);
+            sill.rotation.z = -0.08;
             gwGrp.add(sill);
 
             gwGrp.traverse(child => { if (child.isMesh) child.castShadow = true; });
@@ -2617,17 +2697,17 @@
         function setCamera(view) {
             let targetPos, targetLook;
             if (view === 'siteTop') {
-                targetPos = { x: 3.5, y: 78.0, z: 28.0 };
-                targetLook = { x: 3.5, y: 0.0, z: -28.0 };
+                targetPos = { x: 14.0, y: 78.0, z: 28.0 };
+                targetLook = { x: 14.0, y: 0.0, z: -28.0 };
             } else if (view === 'siteStreet') {
-                targetPos = { x: 4.8, y: 3.6, z: 18.5 };
-                targetLook = { x: 4.8, y: 2.2, z: 1.0 };
+                targetPos = { x: 5.0, y: 3.6, z: 22.0 };
+                targetLook = { x: 5.0, y: 2.2, z: 1.0 };
             } else if (view === 'siteGarden') {
-                targetPos = { x: 12.0, y: 6.5, z: -25.0 };
-                targetLook = { x: 6.0, y: 2.2, z: -9.5 };
+                targetPos = { x: 16.0, y: 6.5, z: -25.0 };
+                targetLook = { x: 8.0, y: 2.2, z: -9.5 };
             } else if (view === 'siteFarRear') {
-                targetPos = { x: 4.0, y: 12.0, z: -76.0 };
-                targetLook = { x: 4.0, y: 3.5, z: -20.0 };
+                targetPos = { x: 15.0, y: 12.0, z: -76.0 };
+                targetLook = { x: 10.0, y: 3.5, z: -20.0 };
             } else if (view === 'road') {
                 targetPos = { x: 10.5, y: 7.5, z: 25.0 };
                 targetLook = { x: (HW + VW)/2, y: 2.5, z: -2.0 };
@@ -2676,24 +2756,43 @@
             if (btn) btn.textContent = infraVisible ? 'Сети / ЛЭП: Вкл ⇄' : 'Сети / ЛЭП: Выкл ⇄';
         }
 
-        function animateCamera(pos, look) {
-            const startPos = { ...camera.position };
-            const startLook = { ...controls.target };
-            let t = 0;
-            const duration = 35;
-            function step() {
-                t++;
-                const ease = t / duration;
-                camera.position.x = startPos.x + (pos.x - startPos.x) * ease;
-                camera.position.y = startPos.y + (pos.y - startPos.y) * ease;
-                camera.position.z = startPos.z + (pos.z - startPos.z) * ease;
-                controls.target.x = startLook.x + (look.x - startLook.x) * ease;
-                controls.target.y = startLook.y + (look.y - startLook.y) * ease;
-                controls.target.z = startLook.z + (look.z - startLook.z) * ease;
+        let targetCamPos = null;
+        let targetCamLook = null;
+        let animTimer = null;
+
+        function animateCamera(pos, look, instant = false) {
+            if (animTimer) clearInterval(animTimer);
+            targetCamPos = new THREE.Vector3(pos.x, pos.y, pos.z);
+            targetCamLook = new THREE.Vector3(look.x, look.y, look.z);
+
+            if (instant) {
+                camera.position.copy(targetCamPos);
+                controls.target.copy(targetCamLook);
                 controls.update();
-                if (t < duration) requestAnimationFrame(step);
+                targetCamPos = null;
+                targetCamLook = null;
+                return;
             }
-            step();
+
+            let steps = 0;
+            animTimer = setInterval(() => {
+                steps++;
+                if (targetCamPos && targetCamLook) {
+                    camera.position.lerp(targetCamPos, 0.2);
+                    controls.target.lerp(targetCamLook, 0.2);
+                    controls.update();
+                    if (camera.position.distanceTo(targetCamPos) < 0.08 || steps > 35) {
+                        camera.position.copy(targetCamPos);
+                        controls.target.copy(targetCamLook);
+                        controls.update();
+                        targetCamPos = null;
+                        targetCamLook = null;
+                        clearInterval(animTimer);
+                    }
+                } else {
+                    clearInterval(animTimer);
+                }
+            }, 20);
         }
 
         let roofTransparent = false;
@@ -2733,6 +2832,16 @@
         // Animation Loop
         function animate() {
             requestAnimationFrame(animate);
+            if (targetCamPos && targetCamLook) {
+                camera.position.lerp(targetCamPos, 0.12);
+                controls.target.lerp(targetCamLook, 0.12);
+                if (camera.position.distanceTo(targetCamPos) < 0.04 && controls.target.distanceTo(targetCamLook) < 0.04) {
+                    camera.position.copy(targetCamPos);
+                    controls.target.copy(targetCamLook);
+                    targetCamPos = null;
+                    targetCamLook = null;
+                }
+            }
             controls.update();
             renderer.render(scene, camera);
         }
