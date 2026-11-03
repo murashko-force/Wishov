@@ -545,25 +545,27 @@
 
         siteGroup.add(septicGroup);
 
-        // 9. Деревянная баня (2,40 × 5,00 м) с открытой террасой на плите и вторым скатом (навесом)
+        // 9. Деревянная баня (2,40 × 5,00 м) с открытой террасой на плите, ветрозащитной стеной и вторым скатом
         const leftAngle = Math.atan2(CAD_POINTS[4].x - CAD_POINTS[0].x, CAD_POINTS[0].z - CAD_POINTS[4].z);
-        const uL_x = Math.sin(leftAngle);
-        const uL_z = -Math.cos(leftAngle);
-        const nL_x = Math.cos(leftAngle);
-        const nL_z = Math.sin(leftAngle);
+        // Компромиссный угол поворота бани (среднее между осью дома 0° и межой забора 4.15°):
+        const bathRotAngle = leftAngle * 0.5; // ~2.08° (баня стоит гармонично и ровно относительно дома и забора)
+        const uL_x = Math.sin(bathRotAngle);
+        const uL_z = -Math.cos(bathRotAngle);
+        const nL_x = Math.cos(bathRotAngle);
+        const nL_z = Math.sin(bathRotAngle);
 
         // Точка на заборе в створе передней стены бани (6м от задней стены дома: Z = -15.50м)
         const tL = (-15.50 - CAD_POINTS[0].z) / (CAD_POINTS[4].z - CAD_POINTS[0].z);
         const fenceL_x = CAD_POINTS[0].x + (CAD_POINTS[4].x - CAD_POINTS[0].x) * tL;
         const fenceL_z = -15.50;
 
-        // Центр основного объёма бани: отступ 3.0м от забора + 1.20м (половина ширины 2.4м)
-        const bathCenterX = fenceL_x + (3.00 + 1.20) * nL_x + 2.50 * uL_x;
-        const bathCenterZ = fenceL_z + (3.00 + 1.20) * nL_z + 2.50 * uL_z;
+        // Центр основного объёма бани: гарантированный отступ не менее 3.0м от забора в узком месте (задний угол)
+        const bathCenterX = fenceL_x + (3.19 + 1.20) * nL_x + 2.50 * uL_x;
+        const bathCenterZ = fenceL_z + (3.19 + 1.20) * nL_z + 2.50 * uL_z;
 
         const bathGroup = new THREE.Group();
         bathGroup.position.set(bathCenterX, 0, bathCenterZ);
-        bathGroup.rotation.y = -leftAngle;
+        bathGroup.rotation.y = -bathRotAngle;
 
         // Материалы бани (строго по фото: янтарно-коричневый брус, белые наличники и дверь)
         const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide });
@@ -668,6 +670,22 @@
         slabMesh.castShadow = true;
         bathGroup.add(slabMesh);
 
+        // ВЕТРОЗАЩИТНАЯ ДЕРЕВЯННАЯ СТЕНА ТЕРРАСЫ (СЕВЕРНЫЙ ТОРЕЦ, СО СТОРОНЫ ДОРОГИ: Z = 2.46...2.54)
+        // Защищает от северного ветра и визуально закрывает террасу от въезда
+        const windWallShape = new THREE.Shape();
+        windWallShape.moveTo(1.20, 0.18);
+        windWallShape.lineTo(3.50, 0.18);
+        windWallShape.lineTo(3.50, 2.26);
+        windWallShape.lineTo(1.20, 2.85);
+        windWallShape.closePath();
+
+        const windWallGeo = new THREE.ExtrudeGeometry(windWallShape, { depth: 0.08, bevelEnabled: false });
+        const windWallMesh = new THREE.Mesh(windWallGeo, woodLogMat);
+        windWallMesh.position.set(0, 0, 2.46);
+        windWallMesh.castShadow = true;
+        windWallMesh.receiveShadow = true;
+        bathGroup.add(windWallMesh);
+
         // Е. НАВЕС (ВТОРОЙ СКАТ) НАД ТЕРРАСОЙ
         // Опорные деревянные столбы 120×120 мм по внешнему краю плиты
         const postMatBath = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.65 });
@@ -710,7 +728,7 @@
 
         siteGroup.add(bathGroup);
 
-        // 10. Блочный сарай (5,00 × 7,50 м, двускатная кровля, строго параллельно правому забору)
+        // 10. Блочный гараж / сарай (5,00 × 7,50 м, двускатная кровля, строго по фото с камер)
         const rightAngle = Math.atan2(CAD_POINTS[2].x - CAD_POINTS[1].x, CAD_POINTS[1].z - CAD_POINTS[2].z);
         const uR_x = Math.sin(rightAngle);
         const uR_z = -Math.cos(rightAngle);
@@ -722,7 +740,7 @@
         const fenceR_x = CAD_POINTS[1].x + (CAD_POINTS[2].x - CAD_POINTS[1].x) * tR;
         const fenceR_z = -9.50;
 
-        // Центр сарая: отступ 3.0м от забора + 2.50м (половина ширины 5.0м) по нормали, и 3.75м (половина длины 7.5м) вглубь по забору
+        // Центр гаража: отступ 3.0м от забора + 2.50м (половина ширины 5.0м) по нормали, и 3.75м (половина длины 7.5м) вглубь по забору
         const shedCenterX = fenceR_x + (3.00 + 2.50) * nR_x + 3.75 * uR_x;
         const shedCenterZ = fenceR_z + (3.00 + 2.50) * nR_z + 3.75 * uR_z;
 
@@ -730,13 +748,15 @@
         shedGroup.position.set(shedCenterX, 0, shedCenterZ);
         shedGroup.rotation.y = -rightAngle;
 
-        // Материалы сарая
-        const shedBlockMat = new THREE.MeshStandardMaterial({ color: 0xd1d9e2, roughness: 0.88 });
+        // Материалы гаража (белые газосиликатные блоки со швами раствора, как на фото)
+        const shedBlockMat = new THREE.MeshStandardMaterial({ color: 0xdde3ea, roughness: 0.90 });
         const shedSocleMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
         const shedRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
-        const shedGateMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+        const shedGateMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.65 });
+        const lintelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 }); // железобетонная перемычка над проёмами
+        const shedWinFrameMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
 
-        // Цоколь сарая
+        // Цоколь гаража
         const shedSocle = new THREE.Mesh(new THREE.BoxGeometry(5.00, 0.28, 7.50), shedSocleMat);
         shedSocle.position.set(0, 0.14, 0);
         shedSocle.castShadow = true;
@@ -748,27 +768,27 @@
         shedWalls.castShadow = true;
         shedGroup.add(shedWalls);
 
-        // Двускатная кровля сарая (конёк на высоте +3.95м)
+        // Двускатная кровля гаража (конёк на высоте +3.95м)
         const H_SHED_EAVE = 0.28 + 2.50; // 2.78м
         const H_SHED_RIDGE = 3.95;       // конёк
         const shedSlopeLen = Math.hypot(2.50 + 0.25, H_SHED_RIDGE - H_SHED_EAVE) + 0.1;
         const shedSlopeAngle = Math.atan2(H_SHED_RIDGE - H_SHED_EAVE, 2.50 + 0.25);
 
-        // Левый скат кровли сарая (со стороны двора)
+        // Левый скат кровли (со стороны двора)
         const shedRoofL = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
         shedRoofL.rotation.z = shedSlopeAngle;
         shedRoofL.position.set(-1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
         shedRoofL.castShadow = true;
         shedGroup.add(shedRoofL);
 
-        // Правый скат кровли сарая (со стороны забора)
+        // Правый скат кровли (со стороны забора)
         const shedRoofR = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
         shedRoofR.rotation.z = -shedSlopeAngle;
         shedRoofR.position.set(1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
         shedRoofR.castShadow = true;
         shedGroup.add(shedRoofR);
 
-        // Коньковая планка сарая
+        // Коньковая планка гаража
         const shedRidgeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.06, 7.82), new THREE.MeshStandardMaterial({ color: 0x1e242c }));
         shedRidgeMesh.position.set(0, H_SHED_RIDGE + 0.08, 0);
         shedGroup.add(shedRidgeMesh);
@@ -787,23 +807,57 @@
             shedGroup.add(fgMesh);
         }
 
-        // Хозяйственные двустворчатые распашные ворота сарая со стороны двора (Z = 3.76)
-        const shedGateFrame = new THREE.Mesh(new THREE.BoxGeometry(2.10, 2.20, 0.08), new THREE.MeshStandardMaterial({ color: 0x1e242c }));
-        shedGateFrame.position.set(-0.8, 0.28 + 1.10, 3.76);
-        shedGroup.add(shedGateFrame);
+        // А. ПЕРЕДНИЙ ТОРЦЕВОЙ ФАСАД (Z = +3.75, ЛИЦОМ К ДОМУ/ДОРОГЕ, СТРОГО ПО ФОТО С КАМЕРЫ)
+        // На торцевом фасаде под фронтоном РОВНО 2 ОКНА (квадратные окна с бетонными перемычками):
+        for (let wx of [-1.25, 1.25]) {
+            // Оконный блок 0.70 × 0.80 м
+            const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.80, 0.08), shedWinFrameMat);
+            winFrame.position.set(wx, 1.60, 3.76);
+            winFrame.castShadow = true;
+            shedGroup.add(winFrame);
 
-        const shedGateDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.98, 2.10, 0.04), shedGateMat);
-        shedGateDoorL.position.set(-1.31, 0.28 + 1.10, 3.78);
-        shedGroup.add(shedGateDoorL);
+            const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.66, 0.02), glassMatBath);
+            winGlass.position.set(wx, 1.60, 3.78);
+            shedGroup.add(winGlass);
 
-        const shedGateDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.98, 2.10, 0.04), shedGateMat);
-        shedGateDoorR.position.set(-0.29, 0.28 + 1.10, 3.78);
-        shedGroup.add(shedGateDoorR);
+            // Железобетонная перемычка над окном
+            const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.14, 0.12), lintelMat);
+            lintel.position.set(wx, 2.07, 3.76);
+            shedGroup.add(lintel);
+        }
 
-        // Окно сарая на боковой стене со стороны двора (X = -2.51)
-        const shedWin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.80, 1.20), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-        shedWin.position.set(-2.51, 1.80, -1.0);
-        shedGroup.add(shedWin);
+        // Б. ДЛИННЫЙ БОКОВОЙ ФАСАД (X = -2.50, ОБРАЩЁН ВО ДВОР К ДОМУ И ВЕРАНДЕ, СТРОГО ПО ФОТО)
+        // 1. Широкие распашные гаражные ворота в центральной части (2.50 × 2.20 м)
+        const gateCenterZ = 0.50;
+        const garageGateFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.22, 2.52), new THREE.MeshStandardMaterial({ color: 0x1e242c }));
+        garageGateFrame.position.set(-2.51, 0.28 + 1.11, gateCenterZ);
+        shedGroup.add(garageGateFrame);
+
+        const gateDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.16, 1.22), shedGateMat);
+        gateDoorL.position.set(-2.53, 0.28 + 1.11, gateCenterZ + 0.62);
+        shedGroup.add(gateDoorL);
+
+        const gateDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.16, 1.22), shedGateMat);
+        gateDoorR.position.set(-2.53, 0.28 + 1.11, gateCenterZ - 0.62);
+        shedGroup.add(gateDoorR);
+
+        // Монолитная ж/б перемычка над воротами
+        const gateLintel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 2.85), lintelMat);
+        gateLintel.position.set(-2.51, 0.28 + 2.22 + 0.09, gateCenterZ);
+        shedGroup.add(gateLintel);
+
+        // 2. Окно на боковом фасаде левее ворот (вглубь участка: Z = -2.10)
+        const sideWinFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.80, 0.80), shedWinFrameMat);
+        sideWinFrame.position.set(-2.51, 1.60, -2.10);
+        shedGroup.add(sideWinFrame);
+
+        const sideWinGlass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.66, 0.66), glassMatBath);
+        sideWinGlass.position.set(-2.53, 1.60, -2.10);
+        shedGroup.add(sideWinGlass);
+
+        const sideWinLintel = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 1.05), lintelMat);
+        sideWinLintel.position.set(-2.51, 2.07, -2.10);
+        shedGroup.add(sideWinLintel);
 
         siteGroup.add(shedGroup);
 
