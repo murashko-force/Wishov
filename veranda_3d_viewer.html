@@ -660,8 +660,14 @@
         infraGroup.add(lezMesh);
 
         // B. Опоры ЛЭП 0,4 кВ строго параллельно дороге в 1 м от края асфальта
+        // Фактически на территории участка стоит ровно 1 опора на X = 17.70м (на 50 см левее первого канализационного люка)
         const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
-        const poleXs = [CAD_POINTS[0].x, 5.0, 27.0];
+        const cabinetMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.5 });
+        const pipeMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
+
+        const sitePoleX = 17.70; // ровно на 50 см левее левого люка септика (X = 18.2)
+        const poleXs = [-25.0, sitePoleX, 55.0]; // 1 опора на участке + 2 внешние уличные опоры по трассе
+
         poleXs.forEach(px => {
             const pz = getRoadNearZ(px) - 1.0;
             const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 8.5, 8), poleMat);
@@ -673,6 +679,19 @@
             crossarm.position.set(px, 8.1, pz);
             crossarm.rotation.y = roadAngle;
             infraGroup.add(crossarm);
+
+            // На опоре участка смонтирован металлический ящик учёта электроэнергии (ВРУ) и кабельный опуск
+            if (px === sitePoleX) {
+                const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.52, 0.22), cabinetMat);
+                cabinet.position.set(px, 1.85, pz - 0.20);
+                cabinet.rotation.y = roadAngle;
+                cabinet.castShadow = true;
+                infraGroup.add(cabinet);
+
+                const cablePipe = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 4.8, 8), pipeMat);
+                cablePipe.position.set(px + 0.14, 4.2, pz - 0.10);
+                infraGroup.add(cablePipe);
+            }
         });
 
         // Воздушные кабели ЛЭП строго параллельно проезжей части в 1 м от края асфальта
