@@ -10,10 +10,14 @@
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
         .ui-panel {
             position: absolute; top: 20px; right: 20px; z-index: 10;
-            background: rgba(20, 24, 33, 0.88); backdrop-filter: blur(12px);
+            background: rgba(20, 24, 33, 0.90); backdrop-filter: blur(14px);
             border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
-            padding: 18px 22px; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            padding: 16px 20px; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            max-height: calc(100vh - 40px); overflow-y: auto;
         }
+        .ui-panel::-webkit-scrollbar { width: 6px; }
+        .ui-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        .ui-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
         h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #60a5fa; }
         p { font-size: 13px; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px; }
         .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 12px; }
@@ -41,19 +45,40 @@
 <body>
     <div id="canvas-container"></div>
     <div class="ui-panel">
-        <h1>Пристройка к дому в Вишове</h1>
-        <p>Интерактивная 3D-модель: отступ от дороги 7,0 м, монолитная бетонная плита (2,7 × 9,5 м), дом (8,5 × 9,5 м), Т-врезка крыши.</p>
+        <h1>Жилой дом и Генплан в Вишове</h1>
+        <p>Интерактивная 3D-модель: Участок 25 соток (2500 м²), кадастр 720480501101000392, дом (8,5 × 9,5 м), веранда (2,7 × 9,5 м), навес 6×4 м.</p>
+
+        <!-- Master Plan 25 Ares Controls Box -->
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: 700; margin-bottom: 7px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🗺 Генплан участка (25 соток)</span>
+                <span style="font-size: 10px; color: #a7f3d0; font-weight: 500;">аг. Вишов, 26</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
+                <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
+                <button onclick="setCamera('siteGarden')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🌳 Сад за домом</button>
+                <button onclick="setCamera('siteFarRear')" style="background: #047857; font-weight: 600; padding: 6px 8px;">🥕 Огород (дальняя межа)</button>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+                <button class="secondary" id="site-toggle" onclick="toggleSiteMode()" style="flex:1; background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; font-weight: 600; color: #a7f3d0; padding: 5px 8px; font-size: 11px;">Участок 25 соток: Вкл ⇄</button>
+                <button class="secondary" id="infra-toggle" onclick="toggleInfra()" style="flex:1; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; font-weight: 600; color: #93c5fd; padding: 5px 8px; font-size: 11px;">Сети / ЛЭП: Вкл ⇄</button>
+            </div>
+        </div>
         
         <div class="specs">
-            <div class="spec-box"><span>Ширина веранды</span><strong>2,70 м</strong></div>
-            <div class="spec-box"><span>Длина веранды</span><strong>9,50 м</strong></div>
+            <div class="spec-box"><span>Площадь участка</span><strong>25 соток (2500 м²)</strong></div>
+            <div class="spec-box"><span>Фасад по улице</span><strong>35,26 м (ул. Калинина)</strong></div>
+            <div class="spec-box"><span>Глубина участка</span><strong>72,64 м (Межа)</strong></div>
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
+            <div class="spec-box"><span>Дом + Веранда</span><strong>11,2 × 9,5 м (90,8 м²)</strong></div>
             <div class="spec-box"><span>Навес (1 авто)</span><strong>6,0 × 4,0 м (24 м²)</strong></div>
             <div class="spec-box"><span>Открытая терраса</span><strong>4,20 × 2,7 м (11,3 м²)</strong></div>
             <div class="spec-box"><span>Прихожая (тамбур)</span><strong>2,20 × 2,7 м (5,9 м²)</strong></div>
             <div class="spec-box"><span>Зона отдыха (диван)</span><strong>3,10 × 2,7 м (8,4 м²)</strong></div>
             <div class="spec-box"><span>Задняя терраса (сад)</span><strong>2,20 × 2,7 м (открытая)</strong></div>
             <div class="spec-box"><span>Высота конька</span><strong>5,80 м (Вровень)</strong></div>
+            <div class="spec-box"><span>Рельеф участка</span><strong>Перепад всего 38 см</strong></div>
         </div>
 
         <div class="btn-group">
@@ -81,12 +106,15 @@
         </div>
 
         <div class="legend">
-            <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен</div>
+            <div class="legend-item"><div class="color-dot" style="background:#15803d"></div> Границы участка 25 соток (35,26 × 72,64 м)</div>
+            <div class="legend-item"><div class="color-dot" style="background:#1f242c; border: 1px solid #94a3b8;"></div> Забор, откатные ворота 5м и калитка (RAL 7016)</div>
+            <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и опора с проводами</div>
+            <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Подземный ввод водопровода В-25пэ</div>
+            <div class="legend-item"><div class="color-dot" style="background:#78350f"></div> Зона отдыха с перголой, сад и огород с теплицей</div>
+            <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен дома</div>
             <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
             <div class="legend-item"><div class="color-dot" style="background:#27272a"></div> Т-образная кровля (металлочерепица)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#ffffff; border: 1px solid #94a3b8;"></div> Белые оконные рамы и наличники (ПВХ)</div>
             <div class="legend-item"><div class="color-dot" style="background:#92400e"></div> Деревянные стойки 150×150 на анкерах</div>
-            <div class="legend-item"><div class="color-dot" style="background:#242831; border: 1px solid #64748b;"></div> Ендовы (тёмно-графитовый металл)</div>
         </div>
     </div>
     <div class="info-badge">Вращение: ЛКМ | Панорама: ПКМ | Зум: Колёсико мыши</div>
@@ -133,84 +161,468 @@
         scene.add(hemiLight);
 
         const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
-        dirLight.position.set(20, 35, 18);
+        dirLight.position.set(25, 45, 20);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 100;
-        dirLight.shadow.camera.left = -20;
-        dirLight.shadow.camera.right = 20;
-        dirLight.shadow.camera.top = 20;
-        dirLight.shadow.camera.bottom = -20;
+        dirLight.shadow.camera.far = 160;
+        dirLight.shadow.camera.left = -30;
+        dirLight.shadow.camera.right = 30;
+        dirLight.shadow.camera.top = 35;
+        dirLight.shadow.camera.bottom = -45;
         scene.add(dirLight);
 
-        // Ground & Environment
-        const groundGeo = new THREE.PlaneGeometry(120, 120);
-        const groundMat = new THREE.MeshLambertMaterial({ color: 0x5a7d4a });
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        scene.add(ground);
+        // ==========================================
+        // MASTER PLAN: 25 ARES (2500 m²) SITE MODEL
+        // Кадастр: 720480501101000392, аг. Вишов, ул. Калинина, 26
+        // ==========================================
+        const siteGroup = new THREE.Group();
+        const infraGroup = new THREE.Group();
+        scene.add(siteGroup);
+        scene.add(infraGroup);
 
-        // 7-METER SETBACK FROM ROAD (Отступ от дороги 7,0 м до фасада дома)
-        const ROAD_EDGE_Z = 7.0; // Edge of asphalt road is exactly 7.0m from front wall (Z=0)
-        const ROAD_CENTER_Z = 10.25;
+        // 1. Cadastral Survey Boundary Points (Точные метрические координаты из дела)
+        // Точки 1-2: 35,26 м (ул. Калинина), 2-3: 59,55 м, 3-4: 13,25 м, 4-5: 33,72 м, 5-1: 72,64 м
+        const CAD_POINTS = [
+            { id: 1, x: -18.00, z:  7.00, name: 'Т1 (ул. Калинина / ЛЭП)' },
+            { id: 2, x:  17.26, z:  7.00, name: 'Т2 (ул. Калинина / С-В межа)' },
+            { id: 3, x:  20.00, z: -52.55, name: 'Т3 (Восточный уступ)' },
+            { id: 4, x:  21.00, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
+            { id: 5, x: -12.72, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
+        ];
 
-        // Asphalt road running along X axis
-        const roadGeo = new THREE.PlaneGeometry(120, 6.5);
-        const roadMat = new THREE.MeshLambertMaterial({ color: 0x374151 });
+        // 2. Surrounding Regional Terrain (Внешний ландшафт)
+        const outerGroundGeo = new THREE.PlaneGeometry(220, 220);
+        const outerGroundMat = new THREE.MeshLambertMaterial({ color: 0x526842 });
+        const groundMat = outerGroundMat;
+        const outerGround = new THREE.Mesh(outerGroundGeo, outerGroundMat);
+        outerGround.rotation.x = -Math.PI / 2;
+        outerGround.position.set(2, -0.015, -28);
+        outerGround.receiveShadow = true;
+        siteGroup.add(outerGround);
+
+        // 3. Inside Parcel Manicured Turf (Точный пятиугольный контур участка 25 соток)
+        const parcelShape = new THREE.Shape();
+        parcelShape.moveTo(CAD_POINTS[0].x, -CAD_POINTS[0].z);
+        for (let i = 1; i < CAD_POINTS.length; i++) {
+            parcelShape.lineTo(CAD_POINTS[i].x, -CAD_POINTS[i].z);
+        }
+        parcelShape.closePath();
+
+        const parcelGeo = new THREE.ShapeGeometry(parcelShape);
+        const parcelMat = new THREE.MeshStandardMaterial({
+            color: 0x477a38,
+            roughness: 0.88,
+            metalness: 0.02
+        });
+        const parcelMesh = new THREE.Mesh(parcelGeo, parcelMat);
+        parcelMesh.rotation.x = -Math.PI / 2;
+        parcelMesh.position.y = 0.005;
+        parcelMesh.receiveShadow = true;
+        siteGroup.add(parcelMesh);
+
+        // 4. Cadastral Boundary Line & Geodetic Boundary Stones (Межевая линия и реперы)
+        const borderPoints = [];
+        CAD_POINTS.forEach(p => borderPoints.push(new THREE.Vector3(p.x, 0.035, p.z)));
+        borderPoints.push(new THREE.Vector3(CAD_POINTS[0].x, 0.035, CAD_POINTS[0].z));
+
+        const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPoints);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 2 });
+        const borderLine = new THREE.Line(borderGeo, borderMat);
+        siteGroup.add(borderLine);
+
+        // 5 Geodetic Boundary Monuments (Кадастровые межевые знаки Т1-Т5)
+        const stoneGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.45, 8);
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
+        const stoneCapMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        CAD_POINTS.forEach(p => {
+            const stone = new THREE.Mesh(stoneGeo, stoneMat);
+            stone.position.set(p.x, 0.22, p.z);
+            stone.castShadow = true;
+            const cap = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 8), stoneCapMat);
+            cap.position.y = 0.22;
+            stone.add(cap);
+            siteGroup.add(stone);
+        });
+
+        // 5. Street: ул. Калинина (Roadway, curbs, markings, apron)
+        const ROAD_EDGE_Z = 7.0; // 7.0m setback from house wall
+        const ROAD_CENTER_Z = 10.7;
+
+        const roadGeo = new THREE.PlaneGeometry(160, 7.0);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.position.set(4, 0.02, ROAD_CENTER_Z);
         road.receiveShadow = true;
-        scene.add(road);
+        siteGroup.add(road);
 
-        // Road markings (dashed center line)
-        for (let x = -40; x <= 50; x += 4) {
-            const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.15), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        // Road center dashed line
+        for (let x = -70; x <= 80; x += 4.5) {
+            const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.15), new THREE.MeshBasicMaterial({ color: 0xf8fafc }));
             stripe.rotation.x = -Math.PI / 2;
             stripe.position.set(x, 0.025, ROAD_CENTER_Z);
-            scene.add(stripe);
+            siteGroup.add(stripe);
         }
 
-        // 7-meter Front Yard / Driveway area between Road and House
-        // Gravel driveway / parking zone leading from road to veranda steps
-        const driveGeo = new THREE.PlaneGeometry(7.0, ROAD_EDGE_Z + 0.2);
-        const driveMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
-        const driveway = new THREE.Mesh(driveGeo, driveMat);
-        driveway.rotation.x = -Math.PI / 2;
-        driveway.position.set(HW + 1.2, 0.015, ROAD_EDGE_Z / 2);
-        driveway.receiveShadow = true;
-        scene.add(driveway);
+        // Road curbs (бордюры)
+        const curbMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
+        const curbNear = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
+        curbNear.position.set(4, 0.08, 7.2);
+        siteGroup.add(curbNear);
 
-        // Pathway from driveway to the front steps
-        const pathGeo = new THREE.PlaneGeometry(2.2, 2.5);
-        const pathMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
-        const walkPath = new THREE.Mesh(pathGeo, pathMat);
-        walkPath.rotation.x = -Math.PI / 2;
-        walkPath.position.set(HW + 1.85, 0.018, 1.3);
-        walkPath.receiveShadow = true;
-        scene.add(walkPath);
+        const curbFar = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
+        curbFar.position.set(4, 0.08, 14.2);
+        siteGroup.add(curbFar);
 
-        // Two septic / sewerage covers in the front lawn (matching real site photo!)
+        // Asphalt driveway apron (съезд с ул. Калинина к воротам)
+        const rampGeo = new THREE.PlaneGeometry(6.2, 3.4);
+        const rampMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+        const ramp = new THREE.Mesh(rampGeo, rampMat);
+        ramp.rotation.x = -Math.PI / 2;
+        ramp.position.set(3.4, 0.022, 8.8);
+        siteGroup.add(ramp);
+
+        // 6. Architectural Front Fence along ул. Калинина (RAL 7016 Anthracite)
+        const fencePostMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.6 });
+        const fenceSlatMat = new THREE.MeshStandardMaterial({ color: 0x272d37, roughness: 0.5 });
+        const fencePlinthMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+
+        function createFencePlinth(x1, x2, z) {
+            const len = Math.abs(x2 - x1);
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(len, 0.22, 0.22), fencePlinthMat);
+            plinth.position.set((x1 + x2) / 2, 0.11, z);
+            plinth.castShadow = true;
+            plinth.receiveShadow = true;
+            siteGroup.add(plinth);
+        }
+
+        function createSlatSection(x1, x2, z, height = 1.7) {
+            const len = Math.abs(x2 - x1);
+            const numSlats = 11;
+            const slatH = 0.09;
+            const gap = (height - 0.2 - numSlats * slatH) / (numSlats - 1);
+            const panelGroup = new THREE.Group();
+            for (let i = 0; i < numSlats; i++) {
+                const y = 0.25 + i * (slatH + gap);
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(len - 0.06, slatH, 0.02), fenceSlatMat);
+                slat.position.set(0, y, 0);
+                slat.rotation.x = 0.25;
+                slat.castShadow = true;
+                panelGroup.add(slat);
+            }
+            panelGroup.position.set((x1 + x2) / 2, 0, z);
+            siteGroup.add(panelGroup);
+
+            const postCount = Math.max(2, Math.round(len / 2.6) + 1);
+            for (let i = 0; i < postCount; i++) {
+                const px = x1 + i * (len / (postCount - 1));
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, height + 0.08, 0.12), fencePostMat);
+                post.position.set(px, (height + 0.08) / 2, z);
+                post.castShadow = true;
+                siteGroup.add(post);
+            }
+        }
+
+        // Left street fence section: X = -18.0 to 0.8
+        createFencePlinth(-18.0, 0.8, 7.0);
+        createSlatSection(-18.0, 0.8, 7.0);
+
+        // Automated Sliding Gate (Откатные ворота 5,0 м: X = 0.8 to 5.8)
+        const gateGroup = new THREE.Group();
+        const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.75, 0.08), fencePostMat);
+        const gateSlats = new THREE.Mesh(new THREE.BoxGeometry(4.88, 1.62, 0.03), fenceSlatMat);
+        gateGroup.add(gateFrame);
+        gateGroup.add(gateSlats);
+
+        const gatePylonL = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.95, 0.20), fencePostMat);
+        gatePylonL.position.set(-2.55, 0.1, 0);
+        gateGroup.add(gatePylonL);
+        const gatePylonR = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.95, 0.20), fencePostMat);
+        gatePylonR.position.set(2.55, 0.1, 0);
+        gateGroup.add(gatePylonR);
+        gateGroup.position.set(3.3, 0.95, 7.0);
+        siteGroup.add(gateGroup);
+
+        // Pedestrian Wicket Gate (Калитка 1,1 м: X = 6.0 to 7.1)
+        const wicketGroup = new THREE.Group();
+        const wicketDoor = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.06), fenceSlatMat);
+        wicketDoor.castShadow = true;
+        wicketGroup.add(wicketDoor);
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
+        handle.position.set(-0.45, 0, 0.06);
+        wicketGroup.add(handle);
+        wicketGroup.position.set(6.55, 0.95, 7.0);
+        siteGroup.add(wicketGroup);
+
+        // Intercom & Mail pillar
+        const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.9, 0.18), fencePostMat);
+        intercom.position.set(7.18, 0.95, 7.0);
+        intercom.castShadow = true;
+        siteGroup.add(intercom);
+
+        // Address Sign on Fence
+        const signCanvas = document.createElement('canvas');
+        signCanvas.width = 256; signCanvas.height = 96;
+        const sCtx = signCanvas.getContext('2d');
+        sCtx.fillStyle = '#1e293b'; sCtx.fillRect(0, 0, 256, 96);
+        sCtx.strokeStyle = '#38bdf8'; sCtx.lineWidth = 4; sCtx.strokeRect(4, 4, 248, 88);
+        sCtx.fillStyle = '#ffffff'; sCtx.font = 'bold 26px sans-serif'; sCtx.textAlign = 'center';
+        sCtx.fillText('ул. Калинина, 26', 128, 42);
+        sCtx.fillStyle = '#94a3b8'; sCtx.font = '16px sans-serif';
+        sCtx.fillText('аг. Вишов • 25 соток', 128, 74);
+        const signTex = new THREE.CanvasTexture(signCanvas);
+        const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.26), new THREE.MeshBasicMaterial({ map: signTex }));
+        signMesh.position.set(7.6, 1.35, 7.07);
+        siteGroup.add(signMesh);
+
+        // Right street fence section: X = 7.3 to 17.26
+        createFencePlinth(7.3, 17.26, 7.0);
+        createSlatSection(7.3, 17.26, 7.0);
+
+        // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
+        const meshMat = new THREE.MeshStandardMaterial({
+            color: 0x334155,
+            roughness: 0.7,
+            transparent: true,
+            opacity: 0.75
+        });
+        function createBorderFenceSegment(pA, pB, height = 1.6) {
+            const vA = new THREE.Vector3(pA.x, 0, pA.z);
+            const vB = new THREE.Vector3(pB.x, 0, pB.z);
+            const dist = vA.distanceTo(vB);
+            const mid = new THREE.Vector3().addVectors(vA, vB).multiplyScalar(0.5);
+            const angle = Math.atan2(vB.x - vA.x, vB.z - vA.z);
+
+            const panel = new THREE.Mesh(new THREE.BoxGeometry(0.04, height, dist), meshMat);
+            panel.position.set(mid.x, height / 2, mid.z);
+            panel.rotation.y = angle;
+            panel.castShadow = true;
+            siteGroup.add(panel);
+
+            const numPosts = Math.max(2, Math.round(dist / 3.2) + 1);
+            for (let i = 0; i <= numPosts; i++) {
+                const t = i / numPosts;
+                const px = pA.x + (pB.x - pA.x) * t;
+                const pz = pA.z + (pB.z - pA.z) * t;
+                const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, height + 0.1, 8), fencePostMat);
+                post.position.set(px, (height + 0.1) / 2, pz);
+                post.castShadow = true;
+                siteGroup.add(post);
+            }
+        }
+        createBorderFenceSegment(CAD_POINTS[1], CAD_POINTS[2]); // 2 -> 3 (59.55 m)
+        createBorderFenceSegment(CAD_POINTS[2], CAD_POINTS[3]); // 3 -> 4 (13.25 m)
+        createBorderFenceSegment(CAD_POINTS[3], CAD_POINTS[4]); // 4 -> 5 (33.72 m)
+        createBorderFenceSegment(CAD_POINTS[4], CAD_POINTS[0]); // 5 -> 1 (72.64 m)
+
+        // 8. Paved Plaza & Pathways (Благоустройство и мощение)
+        const paveMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75 });
+
+        // Parking plaza connecting gate and carport
+        const parkingPlaza = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.1), paveMat);
+        parkingPlaza.rotation.x = -Math.PI / 2;
+        parkingPlaza.position.set(4.4, 0.016, 3.55);
+        parkingPlaza.receiveShadow = true;
+        siteGroup.add(parkingPlaza);
+
+        // Walkway from Wicket Gate to Veranda Porch
+        const walkWicket = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 5.4), paveMat);
+        walkWicket.rotation.x = -Math.PI / 2;
+        walkWicket.position.set(6.6, 0.018, 4.3);
+        walkWicket.receiveShadow = true;
+        siteGroup.add(walkWicket);
+
+        // Foundation Blind Area (Отмостка вокруг дома и веранды)
+        const blindMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+        const blindArea = new THREE.Mesh(new THREE.PlaneGeometry(HW + VW + 1.8, HL + 1.8), blindMat);
+        blindArea.rotation.x = -Math.PI / 2;
+        blindArea.position.set((HW + VW) / 2, 0.012, -HL / 2);
+        blindArea.receiveShadow = true;
+        siteGroup.add(blindArea);
+
+        // Garden Pathway (from rear terrace to orchard and patio)
+        const gardenPath = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 20.0), paveMat);
+        gardenPath.rotation.x = -Math.PI / 2;
+        gardenPath.position.set(HW + VW / 2, 0.016, -19.5);
+        gardenPath.receiveShadow = true;
+        siteGroup.add(gardenPath);
+
+        // Septic inspection covers in front lawn (matching real site photo)
         const coverMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
         const cover1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
-        cover1.position.set(2.5, 0.04, 3.8); // 3.8m in front of house
-        scene.add(cover1);
+        cover1.position.set(2.5, 0.04, 3.8);
+        siteGroup.add(cover1);
 
         const cover2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
-        cover2.position.set(2.5, 0.04, 5.2); // 5.2m in front of house
-        scene.add(cover2);
+        cover2.position.set(2.5, 0.04, 5.2);
+        siteGroup.add(cover2);
 
-        // General yard ground around house
-        const yardGeo = new THREE.PlaneGeometry(16, 22);
-        const yardMat = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
-        const yard = new THREE.Mesh(yardGeo, yardMat);
-        yard.rotation.x = -Math.PI / 2;
-        yard.position.set(4.1, 0.01, -3.75);
-        yard.receiveShadow = true;
-        scene.add(yard);
+        // 9. Relaxation Patio / BBQ Lounge Deck with Pergola (X = 11 to 17, Z = -20 to -25)
+        const deckMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.14, 5.0), deckMat);
+        deck.position.set(13.8, 0.07, -22.5);
+        deck.receiveShadow = true;
+        deck.castShadow = true;
+        siteGroup.add(deck);
+
+        const pergolaMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
+        for (let px of [11.3, 16.3]) {
+            for (let pz of [-20.2, -24.8]) {
+                const column = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.6, 0.14), pergolaMat);
+                column.position.set(px, 1.3, pz);
+                column.castShadow = true;
+                siteGroup.add(column);
+            }
+        }
+        for (let bz = -24.8; bz <= -20.2; bz += 0.8) {
+            const beam = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.10, 0.08), pergolaMat);
+            beam.position.set(13.8, 2.65, bz);
+            beam.castShadow = true;
+            siteGroup.add(beam);
+        }
+
+        // 10. Fruit Orchard (Плодовый сад: яблони, груши за домом, Z = -13 to -36)
+        function createFruitTree(x, z, scale = 1.0) {
+            const treeGroup = new THREE.Group();
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.85 });
+            const leafMat = new THREE.MeshStandardMaterial({ color: 0x3d7032, roughness: 0.8 });
+            
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * scale, 0.18 * scale, 1.8 * scale, 8), trunkMat);
+            trunk.position.y = 0.9 * scale;
+            trunk.castShadow = true;
+            treeGroup.add(trunk);
+            
+            const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.4 * scale, 8, 8), leafMat);
+            crown1.position.y = 2.4 * scale;
+            crown1.castShadow = true;
+            treeGroup.add(crown1);
+            
+            const crown2 = new THREE.Mesh(new THREE.SphereGeometry(1.0 * scale, 8, 8), leafMat);
+            crown2.position.set(0.4 * scale, 2.8 * scale, 0.3 * scale);
+            crown2.castShadow = true;
+            treeGroup.add(crown2);
+
+            treeGroup.position.set(x, 0, z);
+            siteGroup.add(treeGroup);
+        }
+
+        const treeCoords = [
+            [-6.0, -15.0], [-1.0, -16.5], [5.0, -15.5],
+            [-8.0, -23.0], [-3.0, -24.0], [3.0, -23.5],
+            [-9.0, -31.0], [-4.0, -32.0], [2.0, -31.5], [8.0, -32.5],
+            [14.0, -31.0], [17.0, -22.0]
+        ];
+        treeCoords.forEach(([tx, tz], idx) => {
+            const sc = 0.85 + (idx % 4) * 0.1;
+            createFruitTree(tx, tz, sc);
+        });
+
+        // 11. Vegetable Garden & Greenhouse (Огород в южной части участка, Z = -40 to -63)
+        const gardenBedSoilMat = new THREE.MeshStandardMaterial({ color: 0x271e16, roughness: 0.95 });
+        const gardenBedGreenMat = new THREE.MeshStandardMaterial({ color: 0x2e6b27, roughness: 0.85 });
+        const gardenZoneMesh = new THREE.Mesh(new THREE.PlaneGeometry(28.0, 22.0), gardenBedSoilMat);
+        gardenZoneMesh.rotation.x = -Math.PI / 2;
+        gardenZoneMesh.position.set(4.0, 0.012, -51.5);
+        gardenZoneMesh.receiveShadow = true;
+        siteGroup.add(gardenZoneMesh);
+
+        for (let gy = 0; gy < 7; gy++) {
+            const zPos = -42.0 - gy * 2.8;
+            const bedL = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
+            bedL.position.set(-3.5, 0.09, zPos);
+            bedL.castShadow = true;
+            siteGroup.add(bedL);
+            
+            const bedR = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
+            bedR.position.set(9.5, 0.09, zPos);
+            bedR.castShadow = true;
+            siteGroup.add(bedR);
+        }
+
+        // Polycarbonate Arched Greenhouse (Теплица 6,0 × 3,0 м)
+        const ghGroup = new THREE.Group();
+        const ghMat = new THREE.MeshStandardMaterial({
+            color: 0x93c5fd,
+            roughness: 0.2,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.45
+        });
+        const ghFrameMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7 });
+        const ghGeo = new THREE.CylinderGeometry(1.6, 1.6, 6.0, 16, 1, false, 0, Math.PI);
+        const ghArch = new THREE.Mesh(ghGeo, ghMat);
+        ghArch.rotation.z = Math.PI / 2;
+        ghArch.rotation.y = Math.PI / 2;
+        ghArch.position.set(15.5, 1.0, -49.0);
+        ghArch.castShadow = true;
+        ghGroup.add(ghArch);
+
+        const ghBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.35, 6.0), ghFrameMat);
+        ghBase.position.set(15.5, 0.17, -49.0);
+        ghGroup.add(ghBase);
+        siteGroup.add(ghGroup);
+
+        // 12. Engineering Utilities Layer (Инженерные сети и охранные зоны)
+        // A. Охранная зона ЛЭП (код 5.2, 35 м² в С-З углу у Точки 1)
+        const lezGeo = new THREE.CylinderGeometry(4.8, 4.8, 0.08, 16, 1, false, 0, Math.PI / 2);
+        const lezMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.35 });
+        const lezMesh = new THREE.Mesh(lezGeo, lezMat);
+        lezMesh.position.set(-17.5, 0.04, 6.5);
+        lezMesh.rotation.y = -Math.PI / 2;
+        infraGroup.add(lezMesh);
+
+        // Опора ЛЭП 0,4 кВ (Power utility pole)
+        const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 8.5, 8), poleMat);
+        pole.position.set(-17.8, 4.25, 7.8);
+        pole.castShadow = true;
+        infraGroup.add(pole);
+
+        const crossarm = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+        crossarm.position.set(-17.8, 8.1, 7.8);
+        infraGroup.add(crossarm);
+
+        const wireMat = new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 });
+        for (let wy of [7.9, 8.1, 8.3]) {
+            const wireGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-45, wy, 7.8),
+                new THREE.Vector3(45, wy, 7.8)
+            ]);
+            infraGroup.add(new THREE.Line(wireGeo, wireMat));
+        }
+
+        // B. Подземный ввод водопровода В-25пэ (от уличной магистрали в коридор/санузел)
+        const waterLinePoints = [
+            new THREE.Vector3(8.5, 0.05, 10.7),
+            new THREE.Vector3(8.5, 0.05, 7.0),
+            new THREE.Vector3(8.5, 0.05, 0.5)
+        ];
+        const waterGeo = new THREE.BufferGeometry().setFromPoints(waterLinePoints);
+        const waterMat = new THREE.LineDashedMaterial({ color: 0x0284c7, dashSize: 0.6, gapSize: 0.3, linewidth: 3 });
+        const waterLine = new THREE.Line(waterGeo, waterMat);
+        waterLine.computeLineDistances();
+        infraGroup.add(waterLine);
+
+        const waterManhole = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
+        waterManhole.position.set(8.5, 0.05, 10.7);
+        infraGroup.add(waterManhole);
+
+        // C. Распределительный газопровод среднего давления Г-32пэ с.д.
+        const gasPoints = [
+            new THREE.Vector3(-45, 0.05, 8.2),
+            new THREE.Vector3(45, 0.05, 8.2)
+        ];
+        const gasGeo = new THREE.BufferGeometry().setFromPoints(gasPoints);
+        const gasMat = new THREE.LineDashedMaterial({ color: 0xeab308, dashSize: 0.8, gapSize: 0.4, linewidth: 3 });
+        const gasLine = new THREE.Line(gasGeo, gasMat);
+        gasLine.computeLineDistances();
+        infraGroup.add(gasLine);
+
+        const gasPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
+        gasPost.position.set(-10.0, 0.7, 7.5);
+        infraGroup.add(gasPost);
 
 // (Dimensions moved to top of script)
 
@@ -443,6 +855,10 @@
         const grassTex = createGrassTexture();
         groundMat.map = grassTex;
         groundMat.needsUpdate = true;
+        if (typeof parcelMat !== 'undefined') {
+            parcelMat.map = grassTex;
+            parcelMat.needsUpdate = true;
+        }
 
         const socleMat = new THREE.MeshStandardMaterial({ color: 0x333338, roughness: 0.9 });
         const blockMat = new THREE.MeshStandardMaterial({
@@ -2200,7 +2616,19 @@
 
         function setCamera(view) {
             let targetPos, targetLook;
-            if (view === 'road') {
+            if (view === 'siteTop') {
+                targetPos = { x: 3.5, y: 78.0, z: 28.0 };
+                targetLook = { x: 3.5, y: 0.0, z: -28.0 };
+            } else if (view === 'siteStreet') {
+                targetPos = { x: 4.8, y: 3.6, z: 18.5 };
+                targetLook = { x: 4.8, y: 2.2, z: 1.0 };
+            } else if (view === 'siteGarden') {
+                targetPos = { x: 12.0, y: 6.5, z: -25.0 };
+                targetLook = { x: 6.0, y: 2.2, z: -9.5 };
+            } else if (view === 'siteFarRear') {
+                targetPos = { x: 4.0, y: 12.0, z: -76.0 };
+                targetLook = { x: 4.0, y: 3.5, z: -20.0 };
+            } else if (view === 'road') {
                 targetPos = { x: 10.5, y: 7.5, z: 25.0 };
                 targetLook = { x: (HW + VW)/2, y: 2.5, z: -2.0 };
             } else if (view === 'carport') {
@@ -2230,6 +2658,22 @@
                 targetLook = { x: 4.5, y: 0, z: -4.75 };
             }
             animateCamera(targetPos, targetLook);
+        }
+
+        let siteModeVisible = true;
+        function toggleSiteMode() {
+            siteModeVisible = !siteModeVisible;
+            siteGroup.visible = siteModeVisible;
+            const btn = document.getElementById('site-toggle');
+            if (btn) btn.textContent = siteModeVisible ? 'Участок 25 соток: Вкл ⇄' : 'Участок 25 соток: Выкл ⇄';
+        }
+
+        let infraVisible = true;
+        function toggleInfra() {
+            infraVisible = !infraVisible;
+            infraGroup.visible = infraVisible;
+            const btn = document.getElementById('infra-toggle');
+            if (btn) btn.textContent = infraVisible ? 'Сети / ЛЭП: Вкл ⇄' : 'Сети / ЛЭП: Выкл ⇄';
         }
 
         function animateCamera(pos, look) {
