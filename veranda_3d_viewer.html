@@ -56,9 +56,9 @@
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
+                <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня с лаунж-террасой</button>
                 <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
                 <button onclick="setCamera('siteGarden')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🌳 Сад за домом</button>
-                <button onclick="setCamera('siteFarRear')" style="background: #047857; font-weight: 600; padding: 6px 8px;">🥕 Огород (дальняя межа)</button>
             </div>
             <div style="display: flex; gap: 6px; margin-top: 6px;">
                 <button class="secondary" id="site-toggle" onclick="toggleSiteMode()" style="flex:1; background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; font-weight: 600; color: #a7f3d0; padding: 5px 8px; font-size: 11px;">Участок 25 соток: Вкл ⇄</button>
@@ -570,20 +570,34 @@
         // Материалы бани (строго по фото: янтарно-коричневый брус, белые наличники и дверь)
         const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide });
         const whiteTrimMatBath = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
-        const bathSocleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85 });
-        const slabMat = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.85 });
+        const bathStylobateMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 }); // Единый тёмно-графитовый стилобат RAL 7016
         const bathRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
         const metalChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.85 });
         const glassMatBath = new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.1, transparent: true, opacity: 0.65 });
 
-        // А. БЕТОННЫЙ ЦОКОЛЬ И СТЕНЫ БАНИ (2,40 × 5,00 м)
-        const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.22, 5.00), bathSocleMat);
-        bathSocle.position.set(0, 0.11, 0);
+        // Материалы мягких окон и дверей ПВХ (полный герметичный контур 700 мкм)
+        const softPvcMat = new THREE.MeshStandardMaterial({
+            color: 0xbae6fd,
+            roughness: 0.10,
+            metalness: 0.05,
+            transparent: true,
+            opacity: 0.40,
+            side: THREE.DoubleSide
+        });
+        const softPvcBorderMat = new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.85 }); // Тёмно-графитовый кант (армированный тент ПВХ)
+        const softPvcLockMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.85, roughness: 0.25 }); // Поворотные металлические замки
+        const softPvcZipperMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.90 }); // Силовая тракторная молния двери
+        const softPvcStrapMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.80 }); // Тканевые ремешки фиксации рулонов
+
+        // А. ЕДИНЫЙ ГРАФИТОВЫЙ СТИЛОБАТ (RAL 7016) И СТЕНЫ БАНИ (2,40 × 5,00 м)
+        const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.20, 5.00), bathStylobateMat);
+        bathSocle.position.set(0, 0.10, 0);
         bathSocle.castShadow = true;
+        bathSocle.receiveShadow = true;
         bathGroup.add(bathSocle);
 
         const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.40, 2.30, 5.00), woodLogMat);
-        bathWalls.position.set(0, 0.22 + 1.15, 0);
+        bathWalls.position.set(0, 0.20 + 1.15, 0);
         bathWalls.castShadow = true;
         bathGroup.add(bathWalls);
 
@@ -663,71 +677,242 @@
         winSmallGlass.position.set(1.22, 1.70, -1.25);
         bathGroup.add(winSmallGlass);
 
-        // Д. ПРИСТРОЕННАЯ МОНОЛИТНАЯ БЕТОННАЯ ПЛИТА (терраса 2,40 × 5,00 м перед фасадом)
-        const slabMesh = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.18, 5.00), slabMat);
-        slabMesh.position.set(1.20 + 1.20, 0.09, 0);
+        // Д. ПРИСТРОЕННАЯ МОНОЛИТНАЯ ПЛИТА ТЕРРАСЫ (2,40 × 5,00 м) — ЧАСТЬ ЕДИНОГО ГРАФИТОВОГО СТИЛОБАТА
+        const slabMesh = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.20, 5.00), bathStylobateMat);
+        slabMesh.position.set(1.20 + 1.20, 0.10, 0);
         slabMesh.receiveShadow = true;
         slabMesh.castShadow = true;
         bathGroup.add(slabMesh);
 
-        // ВАРИАНТ 1: СКАНДИНАВСКИЙ ЖАЛЮЗИЙНЫЙ РЕЕЧНЫЙ ЭКРАН И ЛЁГКИЕ ПЕРИЛА
+        // ВАРИАНТ 3: ЛАУНЖ-ОГРАЖДЕНИЕ (1,25 м) С ПОЛНЫМ КОНТУРОМ МЯГКИХ ОКОН И МЯГКОЙ ДВЕРЬЮ ПВХ
         const postMatBath = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.65 });
         const slatMat = new THREE.MeshStandardMaterial({ color: 0x8a451c, roughness: 0.70 });
+        const handrailMat = new THREE.MeshStandardMaterial({ color: 0x6e3514, roughness: 0.60 });
 
-        // 1. Северный ветрозащитный экран из горизонтальных реек (Z = 2.48м)
-        // Эффективно гасит северный ветер без турбулентности, выглядит стильно, легко и воздушно
-        const postSlatInner = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.70, 0.08), postMatBath);
-        postSlatInner.position.set(1.22, 0.18 + 1.35, 2.46);
-        bathGroup.add(postSlatInner);
+        // Вспомогательная функция создания мягкого окна ПВХ с армированной графитовой окантовкой и поворотными замками
+        function createSoftWindow(width, height, isAlongZ, pX, pY, pZ) {
+            const winGroup = new THREE.Group();
+            
+            // 1. Прозрачное полотно морозостойкой плёнки ПВХ 700 мкм
+            const paneGeo = isAlongZ 
+                ? new THREE.BoxGeometry(0.006, height, width) 
+                : new THREE.BoxGeometry(width, height, 0.006);
+            const pane = new THREE.Mesh(paneGeo, softPvcMat);
+            winGroup.add(pane);
 
-        const numSlatsBath = 24;
-        for (let i = 0; i < numSlatsBath; i++) {
-            const sy = 0.24 + i * 0.095;
-            const tRoof = Math.max(0, Math.min(1, (sy - 2.25) / (2.85 - 2.25)));
-            const maxX = 3.50 - tRoof * 0.15;
-            const slatLen = maxX - 1.20;
-            if (slatLen > 0.3) {
-                const slat = new THREE.Mesh(new THREE.BoxGeometry(slatLen, 0.045, 0.035), slatMat);
-                slat.position.set(1.20 + slatLen / 2, sy, 2.48);
-                slat.rotation.x = 0.18; // наклон жалюзи для мягкого сброса ветра
-                slat.castShadow = true;
-                bathGroup.add(slat);
+            // 2. Армированная окантовка (графитовый тент ПВХ шириной 4.5 см по периметру)
+            const bw = 0.045;
+            const bThick = 0.012;
+            if (isAlongZ) {
+                for (let by of [-height / 2 + bw / 2, height / 2 - bw / 2]) {
+                    const hBorder = new THREE.Mesh(new THREE.BoxGeometry(bThick, bw, width), softPvcBorderMat);
+                    hBorder.position.y = by;
+                    winGroup.add(hBorder);
+                }
+                for (let bz of [-width / 2 + bw / 2, width / 2 - bw / 2]) {
+                    const vBorder = new THREE.Mesh(new THREE.BoxGeometry(bThick, height, bw), softPvcBorderMat);
+                    vBorder.position.z = bz;
+                    winGroup.add(vBorder);
+                }
+            } else {
+                for (let by of [-height / 2 + bw / 2, height / 2 - bw / 2]) {
+                    const hBorder = new THREE.Mesh(new THREE.BoxGeometry(width, bw, bThick), softPvcBorderMat);
+                    hBorder.position.y = by;
+                    winGroup.add(hBorder);
+                }
+                for (let bx of [-width / 2 + bw / 2, width / 2 - bw / 2]) {
+                    const vBorder = new THREE.Mesh(new THREE.BoxGeometry(bw, height, bThick), softPvcBorderMat);
+                    vBorder.position.x = bx;
+                    winGroup.add(vBorder);
+                }
             }
+
+            // 3. Поворотные металлические замки (французские скобы) по канту
+            const lockGeo = new THREE.CylinderGeometry(0.009, 0.009, 0.018, 8);
+            lockGeo.rotateX(Math.PI / 2);
+            const numLocksW = Math.max(2, Math.round(width / 0.35));
+            for (let i = 0; i <= numLocksW; i++) {
+                const f = -0.5 + i / numLocksW;
+                for (let s of [-1, 1]) {
+                    const lock = new THREE.Mesh(lockGeo, softPvcLockMat);
+                    if (isAlongZ) {
+                        lock.position.set(0, s * (height / 2 - bw / 2), f * (width - bw));
+                    } else {
+                        lock.position.set(f * (width - bw), s * (height / 2 - bw / 2), 0);
+                    }
+                    winGroup.add(lock);
+                }
+            }
+
+            winGroup.position.set(pX, pY, pZ);
+            return winGroup;
         }
 
-        // 2. Перила со двора (высота 90 см): закрывают северную треть (Z = 2.40 ... 0.80м)
-        const railPost = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.95, 0.10), postMatBath);
-        railPost.position.set(3.50, 0.18 + 0.475, 0.80);
-        railPost.castShadow = true;
-        bathGroup.add(railPost);
+        // --- 1. СЕВЕРНЫЙ ТОРЕЦ (Z = 2.40, ширина 2.30 м, ветрозащитный фасад со стороны дороги) ---
+        // А. Центральный вертикальный брус 100×100 мм (дополнительное ребро жесткости против парусности)
+        const postNorthMid = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.38, 0.10), postMatBath);
+        postNorthMid.position.set(2.35, 0.20 + 1.19, 2.40);
+        postNorthMid.castShadow = true;
+        bathGroup.add(postNorthMid);
 
-        const handrailFront = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.04, 1.62), new THREE.MeshStandardMaterial({ color: 0x6e3514, roughness: 0.6 }));
-        handrailFront.position.set(3.50, 0.18 + 0.90, 1.60);
-        handrailFront.castShadow = true;
-        bathGroup.add(handrailFront);
+        // Б. Пристенный вертикальный брус у стены бани
+        const postNorthWall = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.65, 0.08), postMatBath);
+        postNorthWall.position.set(1.22, 0.20 + 1.325, 2.40);
+        bathGroup.add(postNorthWall);
 
-        for (let ry of [0.45, 0.70]) {
-            const subRail = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 1.62), slatMat);
-            subRail.position.set(3.50, 0.18 + ry, 1.60);
-            bathGroup.add(subRail);
+        // В. Поручень-подоконник лаунж-ограждения (высота 1.25 м от пола, отметка Y = 1.45 м)
+        const sillNorth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.05, 0.12), handrailMat);
+        sillNorth.position.set(2.35, 1.45, 2.40);
+        sillNorth.castShadow = true;
+        bathGroup.add(sillNorth);
+
+        // Г. Жалюзийные рейки лаунж-ограждения (от пола Y = 0.20 до подоконника Y = 1.42, 13 рядов)
+        for (let i = 0; i < 13; i++) {
+            const ry = 0.28 + i * 0.088;
+            const slatN = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.045, 0.025), slatMat);
+            slatN.position.set(2.35, ry, 2.40);
+            slatN.rotation.x = 0.18; // наклон жалюзи
+            slatN.castShadow = true;
+            bathGroup.add(slatN);
         }
 
-        // 3. Перила по южному торцу террасы (Z = -2.40, X = 1.20 ... 3.50)
-        const handrailSouth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.04, 0.10), new THREE.MeshStandardMaterial({ color: 0x6e3514, roughness: 0.6 }));
-        handrailSouth.position.set(1.20 + 1.15, 0.18 + 0.90, -2.40);
-        handrailSouth.castShadow = true;
-        bathGroup.add(handrailSouth);
+        // Д. Два раздельных мягких окна над рейками (прочные, не парусят, легко натягиваются)
+        const winN1 = createSoftWindow(1.02, 1.22, false, 1.77, 1.475 + 1.22 / 2, 2.40);
+        bathGroup.add(winN1);
+        const winN2 = createSoftWindow(1.02, 0.92, false, 2.92, 1.475 + 0.92 / 2, 2.40);
+        bathGroup.add(winN2);
 
-        for (let ry of [0.45, 0.70]) {
-            const subRailSouth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.04, 0.04), slatMat);
-            subRailSouth.position.set(1.20 + 1.15, 0.18 + ry, -2.40);
-            bathGroup.add(subRailSouth);
+
+        // --- 2. ЮЖНЫЙ ТОРЕЦ (Z = -2.40, ширина 2.30 м, фасад в сторону сада) ---
+        // А. Центральный вертикальный брус 100×100 мм
+        const postSouthMid = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.38, 0.10), postMatBath);
+        postSouthMid.position.set(2.35, 0.20 + 1.19, -2.40);
+        postSouthMid.castShadow = true;
+        bathGroup.add(postSouthMid);
+
+        // Б. Пристенный вертикальный брус у стены бани
+        const postSouthWall = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.65, 0.08), postMatBath);
+        postSouthWall.position.set(1.22, 0.20 + 1.325, -2.40);
+        bathGroup.add(postSouthWall);
+
+        // В. Поручень-подоконник (Y = 1.45 м)
+        const sillSouth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.05, 0.12), handrailMat);
+        sillSouth.position.set(2.35, 1.45, -2.40);
+        sillSouth.castShadow = true;
+        bathGroup.add(sillSouth);
+
+        // Г. Жалюзийные рейки лаунж-ограждения
+        for (let i = 0; i < 13; i++) {
+            const ry = 0.28 + i * 0.088;
+            const slatS = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.045, 0.025), slatMat);
+            slatS.position.set(2.35, ry, -2.40);
+            slatS.rotation.x = -0.18;
+            slatS.castShadow = true;
+            bathGroup.add(slatS);
         }
 
-        // 4. Широкий свободный спуск во двор и сад (пролёт Z = 0.80 ... -2.40 шириной 3.2м)
-        const stepMatBath = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.75 });
-        const terraceStep = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.10, 2.40), stepMatBath);
-        terraceStep.position.set(3.68, 0.05, -0.60);
+        // Д. Два мягких окна в сторону сада
+        const winS1 = createSoftWindow(1.02, 1.22, false, 1.77, 1.475 + 1.22 / 2, -2.40);
+        bathGroup.add(winS1);
+        const winS2 = createSoftWindow(1.02, 0.92, false, 2.92, 1.475 + 0.92 / 2, -2.40);
+        bathGroup.add(winS2);
+
+
+        // --- 3. ВОСТОЧНЫЙ ФАСАД ВО ДВОР (X = 3.50, длина 4.80 м) ---
+        // Стойки по фасаду: угловые Z = 2.40 и Z = -2.40, центральная Z = 0.00
+        // А. СЕВЕРНЫЙ ПРОЛЁТ ФАСАДА (Z = 0.00 ... 2.40, глухое лаунж-остекление)
+        // Промежуточная стойка жесткости 100×100 мм при Z = 1.20
+        const postFrontMidN = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
+        postFrontMidN.position.set(3.50, 0.20 + 1.05, 1.20);
+        postFrontMidN.castShadow = true;
+        bathGroup.add(postFrontMidN);
+
+        // Поручень-подоконник (Y = 1.45 м)
+        const sillFrontN = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 2.38), handrailMat);
+        sillFrontN.position.set(3.50, 1.45, 1.20);
+        sillFrontN.castShadow = true;
+        bathGroup.add(sillFrontN);
+
+        // Жалюзийные рейки лаунж-ограждения
+        for (let i = 0; i < 13; i++) {
+            const ry = 0.28 + i * 0.088;
+            const slatFN = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.045, 2.36), slatMat);
+            slatFN.position.set(3.50, ry, 1.20);
+            slatFN.castShadow = true;
+            bathGroup.add(slatFN);
+        }
+
+        // Два мягких окна фасада над рейками (высота 0.78 м)
+        const winFN1 = createSoftWindow(1.05, 0.78, true, 3.50, 1.475 + 0.39, 0.60);
+        bathGroup.add(winFN1);
+        const winFN2 = createSoftWindow(1.05, 0.78, true, 3.50, 1.475 + 0.39, 1.80);
+        bathGroup.add(winFN2);
+
+
+        // Б. ЮЖНЫЙ ПРОЛЁТ ФАСАДА (Z = -2.40 ... 0.00, ВХОДНАЯ ЗОНА С МЯГКОЙ ДВЕРЬЮ)
+        // Дверная промежуточная стойка 100×100 мм при Z = -1.15
+        const postDoor = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
+        postDoor.position.set(3.50, 0.20 + 1.05, -1.15);
+        postDoor.castShadow = true;
+        bathGroup.add(postDoor);
+
+        // 1. Полноростовая мягкая дверь ПВХ со скручиванием (Z = 0.00 ... -1.15, ширина 1.10 м, высота 2.06 м)
+        const softDoorGroup = new THREE.Group();
+        const doorPane = new THREE.Mesh(new THREE.BoxGeometry(0.006, 2.05, 1.06), softPvcMat);
+        softDoorGroup.add(doorPane);
+
+        // Вертикальные тракторные молнии по бокам двери
+        for (let dz of [-0.50, 0.50]) {
+            const zipper = new THREE.Mesh(new THREE.BoxGeometry(0.012, 2.05, 0.025), softPvcZipperMat);
+            zipper.position.z = dz;
+            softDoorGroup.add(zipper);
+
+            // Бегунки замков молнии
+            const runner = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.05, 0.035), softPvcLockMat);
+            runner.position.set(0, 0.10, dz);
+            softDoorGroup.add(runner);
+        }
+
+        // Верхний кант и ремешки фиксации свернутого рулона
+        const doorTopBorder = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.06, 1.08), softPvcBorderMat);
+        doorTopBorder.position.y = 1.02;
+        softDoorGroup.add(doorTopBorder);
+
+        for (let sz of [-0.30, 0.30]) {
+            const strap = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.03), softPvcStrapMat);
+            strap.position.set(0, 0.98, sz);
+            softDoorGroup.add(strap);
+        }
+
+        // Нижний утяжелитель-отбойник
+        const doorBottomBorder = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.08, 1.06), softPvcBorderMat);
+        doorBottomBorder.position.y = -1.00;
+        softDoorGroup.add(doorBottomBorder);
+
+        softDoorGroup.position.set(3.50, 0.20 + 1.03, -0.575);
+        bathGroup.add(softDoorGroup);
+
+        // 2. Смежное окно в южном пролёте (Z = -1.15 ... -2.40, ширина 1.20 м)
+        const sillFrontS = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 1.22), handrailMat);
+        sillFrontS.position.set(3.50, 1.45, -1.775);
+        sillFrontS.castShadow = true;
+        bathGroup.add(sillFrontS);
+
+        for (let i = 0; i < 13; i++) {
+            const ry = 0.28 + i * 0.088;
+            const slatFS = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.045, 1.20), slatMat);
+            slatFS.position.set(3.50, ry, -1.775);
+            slatFS.castShadow = true;
+            bathGroup.add(slatFS);
+        }
+
+        const winFS = createSoftWindow(1.16, 0.78, true, 3.50, 1.475 + 0.39, -1.775);
+        bathGroup.add(winFS);
+
+        // 3. Монолитные ступени входа прямо перед мягкой дверью
+        const stepMatBath = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 });
+        const terraceStep = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.10, 1.40), stepMatBath);
+        terraceStep.position.set(3.70, 0.05, -0.575);
         terraceStep.castShadow = true;
         terraceStep.receiveShadow = true;
         bathGroup.add(terraceStep);
@@ -3062,6 +3247,9 @@
             } else if (view === 'siteGarden') {
                 targetPos = { x: 16.0, y: 6.5, z: -25.0 };
                 targetLook = { x: 8.0, y: 2.2, z: -9.5 };
+            } else if (view === 'siteBath') {
+                targetPos = { x: 9.8, y: 3.5, z: -14.2 };
+                targetLook = { x: 4.8, y: 1.5, z: -18.2 };
             } else if (view === 'siteFarRear') {
                 targetPos = { x: 15.0, y: 12.0, z: -76.0 };
                 targetLook = { x: 10.0, y: 3.5, z: -20.0 };
