@@ -110,7 +110,7 @@
             <div class="legend-item"><div class="color-dot" style="background:#1f242c; border: 1px solid #94a3b8;"></div> Забор, откатные ворота 5м и калитка (RAL 7016)</div>
             <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и трасса ЛЭП вдоль улицы</div>
             <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Септик / канализация (2 колодца во дворе)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#78350f"></div> Зона отдыха с перголой, сад и огород с теплицей</div>
+            <div class="legend-item"><div class="color-dot" style="background:#9a6b43"></div> Деревянная баня (2,3×5м) и блочный сарай (5×7,5м) параллельно заборам</div>
             <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен дома</div>
             <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
             <div class="legend-item"><div class="color-dot" style="background:#27272a"></div> Т-образная кровля (металлочерепица)</div>
@@ -545,65 +545,190 @@
 
         siteGroup.add(septicGroup);
 
-        // 9. Relaxation Patio / BBQ Lounge Deck with Pergola (В просторном восточном дворе X = 15 to 21, Z = -16 to -22)
-        const deckMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
-        const deck = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.14, 5.5), deckMat);
-        deck.position.set(18.0, 0.07, -19.0);
-        deck.receiveShadow = true;
-        deck.castShadow = true;
-        siteGroup.add(deck);
+        // 9. Деревянная баня (2,30 × 5,00 м, односкатная кровля, строго параллельно левому забору)
+        const leftAngle = Math.atan2(CAD_POINTS[4].x - CAD_POINTS[0].x, CAD_POINTS[0].z - CAD_POINTS[4].z);
+        const uL_x = Math.sin(leftAngle);
+        const uL_z = -Math.cos(leftAngle);
+        const nL_x = Math.cos(leftAngle);
+        const nL_z = Math.sin(leftAngle);
 
-        const pergolaMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
-        for (let px of [15.3, 20.7]) {
-            for (let pz of [-16.5, -21.5]) {
-                const column = new THREE.Mesh(new THREE.BoxGeometry(0.14, 2.6, 0.14), pergolaMat);
-                column.position.set(px, 1.3, pz);
-                column.castShadow = true;
-                siteGroup.add(column);
-            }
+        // Точка на заборе в створе передней стены бани (6м от задней стены дома: Z = -15.50м)
+        const tL = (-15.50 - CAD_POINTS[0].z) / (CAD_POINTS[4].z - CAD_POINTS[0].z);
+        const fenceL_x = CAD_POINTS[0].x + (CAD_POINTS[4].x - CAD_POINTS[0].x) * tL;
+        const fenceL_z = -15.50;
+
+        // Центр бани: отступ 3.0м от забора + 1.15м (половина ширины 2.3м) по нормали, и 2.5м (половина длины 5.0м) вглубь по забору
+        const bathCenterX = fenceL_x + (3.00 + 1.15) * nL_x + 2.50 * uL_x;
+        const bathCenterZ = fenceL_z + (3.00 + 1.15) * nL_z + 2.50 * uL_z;
+
+        const bathGroup = new THREE.Group();
+        bathGroup.position.set(bathCenterX, 0, bathCenterZ);
+        bathGroup.rotation.y = -leftAngle;
+
+        // Материалы бани
+        const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x9a6b43, roughness: 0.72 });
+        const bathSocleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85 });
+        const bathRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
+        const bathDoorMat = new THREE.MeshStandardMaterial({ color: 0x603813, roughness: 0.7 });
+        const metalChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.85 });
+
+        // Бетонный цоколь
+        const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.22, 5.00), bathSocleMat);
+        bathSocle.position.set(0, 0.11, 0);
+        bathSocle.castShadow = true;
+        bathGroup.add(bathSocle);
+
+        // Стены из бруса (высота 2.4м)
+        const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.30, 2.30, 5.00), woodLogMat);
+        bathWalls.position.set(0, 0.22 + 1.15, 0);
+        bathWalls.castShadow = true;
+        bathGroup.add(bathWalls);
+
+        // Односкатная кровля с уклоном в сторону двора (+X)
+        const bathRoofGeo = new THREE.BoxGeometry(2.65, 0.08, 5.35);
+        const bathRoof = new THREE.Mesh(bathRoofGeo, bathRoofMat);
+        const bathRoofAngle = Math.atan2(0.35, 2.30);
+        bathRoof.rotation.z = -bathRoofAngle;
+        bathRoof.position.set(0, 2.52 + 0.18, 0);
+        bathRoof.castShadow = true;
+        bathGroup.add(bathRoof);
+
+        // Треугольные зашивки односкатного фронтона с торцов
+        for (let bz of [2.50, -2.50]) {
+            const tgGeo = new THREE.BufferGeometry();
+            const verts = new Float32Array([
+                -1.15, 2.52, bz,
+                 1.15, 2.52, bz,
+                -1.15, 2.52 + 0.35, bz
+            ]);
+            tgGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            tgGeo.computeVertexNormals();
+            const tgMesh = new THREE.Mesh(tgGeo, woodLogMat);
+            bathGroup.add(tgMesh);
         }
-        for (let bz = -21.5; bz <= -16.5; bz += 0.8) {
-            const beam = new THREE.Mesh(new THREE.BoxGeometry(5.8, 0.10, 0.08), pergolaMat);
-            beam.position.set(18.0, 2.65, bz);
-            beam.castShadow = true;
-            siteGroup.add(beam);
+
+        // Входная дверь на переднем торце (лицом к дому, Z = 2.50)
+        const bathDoor = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.85, 0.05), bathDoorMat);
+        bathDoor.position.set(0.2, 0.22 + 0.925, 2.51);
+        bathDoor.castShadow = true;
+        bathGroup.add(bathDoor);
+
+        // Небольшое банное окошко со стороны двора (+X = 1.16)
+        const bathWinFrame = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.60, 0.60), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
+        bathWinFrame.position.set(1.16, 1.6, -0.5);
+        bathGroup.add(bathWinFrame);
+        const bathWinGlass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.48, 0.48), new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.1, transparent: true, opacity: 0.6 }));
+        bathWinGlass.position.set(1.165, 1.6, -0.5);
+        bathGroup.add(bathWinGlass);
+
+        // Сэндвич-дымоход банной печи с дефлектором
+        const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 12), metalChimneyMat);
+        chimney.position.set(-0.4, 3.1, -1.2);
+        chimney.castShadow = true;
+        bathGroup.add(chimney);
+
+        const deflector = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.12, 12), metalChimneyMat);
+        deflector.position.set(-0.4, 3.7, -1.2);
+        bathGroup.add(deflector);
+
+        siteGroup.add(bathGroup);
+
+        // 10. Блочный сарай (5,00 × 7,50 м, двускатная кровля, строго параллельно правому забору)
+        const rightAngle = Math.atan2(CAD_POINTS[2].x - CAD_POINTS[1].x, CAD_POINTS[1].z - CAD_POINTS[2].z);
+        const uR_x = Math.sin(rightAngle);
+        const uR_z = -Math.cos(rightAngle);
+        const nR_x = -Math.cos(rightAngle); // нормаль внутрь участка (влево от правого забора)
+        const nR_z = -Math.sin(rightAngle);
+
+        // Точка на заборе в створе задней стены дома (Z = -9.50м)
+        const tR = (-9.50 - CAD_POINTS[1].z) / (CAD_POINTS[2].z - CAD_POINTS[1].z);
+        const fenceR_x = CAD_POINTS[1].x + (CAD_POINTS[2].x - CAD_POINTS[1].x) * tR;
+        const fenceR_z = -9.50;
+
+        // Центр сарая: отступ 3.0м от забора + 2.50м (половина ширины 5.0м) по нормали, и 3.75м (половина длины 7.5м) вглубь по забору
+        const shedCenterX = fenceR_x + (3.00 + 2.50) * nR_x + 3.75 * uR_x;
+        const shedCenterZ = fenceR_z + (3.00 + 2.50) * nR_z + 3.75 * uR_z;
+
+        const shedGroup = new THREE.Group();
+        shedGroup.position.set(shedCenterX, 0, shedCenterZ);
+        shedGroup.rotation.y = -rightAngle;
+
+        // Материалы сарая
+        const shedBlockMat = new THREE.MeshStandardMaterial({ color: 0xd1d9e2, roughness: 0.88 });
+        const shedSocleMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+        const shedRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
+        const shedGateMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+
+        // Цоколь сарая
+        const shedSocle = new THREE.Mesh(new THREE.BoxGeometry(5.00, 0.28, 7.50), shedSocleMat);
+        shedSocle.position.set(0, 0.14, 0);
+        shedSocle.castShadow = true;
+        shedGroup.add(shedSocle);
+
+        // Стены из блоков (высота 2.50м до карниза)
+        const shedWalls = new THREE.Mesh(new THREE.BoxGeometry(5.00, 2.50, 7.50), shedBlockMat);
+        shedWalls.position.set(0, 0.28 + 1.25, 0);
+        shedWalls.castShadow = true;
+        shedGroup.add(shedWalls);
+
+        // Двускатная кровля сарая (конёк на высоте +3.95м)
+        const H_SHED_EAVE = 0.28 + 2.50; // 2.78м
+        const H_SHED_RIDGE = 3.95;       // конёк
+        const shedSlopeLen = Math.hypot(2.50 + 0.25, H_SHED_RIDGE - H_SHED_EAVE) + 0.1;
+        const shedSlopeAngle = Math.atan2(H_SHED_RIDGE - H_SHED_EAVE, 2.50 + 0.25);
+
+        // Левый скат кровли сарая (со стороны двора)
+        const shedRoofL = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
+        shedRoofL.rotation.z = shedSlopeAngle;
+        shedRoofL.position.set(-1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
+        shedRoofL.castShadow = true;
+        shedGroup.add(shedRoofL);
+
+        // Правый скат кровли сарая (со стороны забора)
+        const shedRoofR = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
+        shedRoofR.rotation.z = -shedSlopeAngle;
+        shedRoofR.position.set(1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
+        shedRoofR.castShadow = true;
+        shedGroup.add(shedRoofR);
+
+        // Коньковая планка сарая
+        const shedRidgeMesh = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.06, 7.82), new THREE.MeshStandardMaterial({ color: 0x1e242c }));
+        shedRidgeMesh.position.set(0, H_SHED_RIDGE + 0.08, 0);
+        shedGroup.add(shedRidgeMesh);
+
+        // Треугольные фронтоны спереди (Z = +3.75) и сзади (Z = -3.75)
+        for (let fz of [3.75, -3.75]) {
+            const fgGeo = new THREE.BufferGeometry();
+            const fgVerts = new Float32Array([
+                -2.50, H_SHED_EAVE, fz,
+                 2.50, H_SHED_EAVE, fz,
+                 0.00, H_SHED_RIDGE, fz
+            ]);
+            fgGeo.setAttribute('position', new THREE.BufferAttribute(fgVerts, 3));
+            fgGeo.computeVertexNormals();
+            const fgMesh = new THREE.Mesh(fgGeo, shedBlockMat);
+            shedGroup.add(fgMesh);
         }
 
-        // 10. Fruit Orchard (Плодовый сад в восточной и центральной зоне за домом, Z = -16 to -38)
-        function createFruitTree(x, z, scale = 1.0) {
-            const treeGroup = new THREE.Group();
-            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.85 });
-            const leafMat = new THREE.MeshStandardMaterial({ color: 0x3d7032, roughness: 0.8 });
-            
-            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * scale, 0.18 * scale, 1.8 * scale, 8), trunkMat);
-            trunk.position.y = 0.9 * scale;
-            trunk.castShadow = true;
-            treeGroup.add(trunk);
-            
-            const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.4 * scale, 8, 8), leafMat);
-            crown1.position.y = 2.4 * scale;
-            crown1.castShadow = true;
-            treeGroup.add(crown1);
-            
-            const crown2 = new THREE.Mesh(new THREE.SphereGeometry(1.0 * scale, 8, 8), leafMat);
-            crown2.position.set(0.4 * scale, 2.8 * scale, 0.3 * scale);
-            crown2.castShadow = true;
-            treeGroup.add(crown2);
+        // Хозяйственные двустворчатые распашные ворота сарая со стороны двора (Z = 3.76)
+        const shedGateFrame = new THREE.Mesh(new THREE.BoxGeometry(2.10, 2.20, 0.08), new THREE.MeshStandardMaterial({ color: 0x1e242c }));
+        shedGateFrame.position.set(-0.8, 0.28 + 1.10, 3.76);
+        shedGroup.add(shedGateFrame);
 
-            treeGroup.position.set(x, 0, z);
-            siteGroup.add(treeGroup);
-        }
+        const shedGateDoorL = new THREE.Mesh(new THREE.BoxGeometry(0.98, 2.10, 0.04), shedGateMat);
+        shedGateDoorL.position.set(-1.31, 0.28 + 1.10, 3.78);
+        shedGroup.add(shedGateDoorL);
 
-        const treeCoords = [
-            [7.0, -16.0], [12.0, -16.5], [24.0, -16.0],
-            [5.0, -24.0], [11.0, -24.5], [17.0, -25.0], [23.0, -24.0],
-            [6.0, -32.0], [12.0, -32.5], [18.0, -32.0], [24.0, -33.0],
-            [15.0, -38.0], [21.0, -38.5]
-        ];
-        treeCoords.forEach(([tx, tz], idx) => {
-            const sc = 0.85 + (idx % 4) * 0.1;
-            createFruitTree(tx, tz, sc);
-        });
+        const shedGateDoorR = new THREE.Mesh(new THREE.BoxGeometry(0.98, 2.10, 0.04), shedGateMat);
+        shedGateDoorR.position.set(-0.29, 0.28 + 1.10, 3.78);
+        shedGroup.add(shedGateDoorR);
+
+        // Окно сарая на боковой стене со стороны двора (X = -2.51)
+        const shedWin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.80, 1.20), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+        shedWin.position.set(-2.51, 1.80, -1.0);
+        shedGroup.add(shedWin);
+
+        siteGroup.add(shedGroup);
 
         // 11. Vegetable Garden & Greenhouse (Огород в южной части участка, Z = -42 to -63)
         const gardenBedSoilMat = new THREE.MeshStandardMaterial({ color: 0x271e16, roughness: 0.95 });
