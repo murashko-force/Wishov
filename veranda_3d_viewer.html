@@ -1,0 +1,2304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D-Модель: Веранда с Т-образной крышей</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { overflow: hidden; background: #1a1e24; color: #fff; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        .ui-panel {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            background: rgba(20, 24, 33, 0.88); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+            padding: 18px 22px; max-width: 360px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #60a5fa; }
+        p { font-size: 13px; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px; }
+        .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 12px; }
+        .spec-box { background: rgba(255,255,255,0.06); padding: 8px 10px; border-radius: 6px; }
+        .spec-box span { display: block; color: #94a3b8; font-size: 11px; }
+        .spec-box strong { color: #f8fafc; font-size: 14px; }
+        .btn-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        button {
+            background: #2563eb; color: #fff; border: none; padding: 7px 12px;
+            border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover { background: #1d4ed8; transform: translateY(-1px); }
+        button.secondary { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+        button.secondary:hover { background: rgba(255,255,255,0.2); }
+        .legend { font-size: 11px; color: #94a3b8; display: flex; flex-direction: column; gap: 4px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .color-dot { width: 10px; height: 10px; border-radius: 2px; }
+        .info-badge { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); padding: 8px 14px; border-radius: 20px; font-size: 12px; color: #94a3b8; }
+    </style>
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="ui-panel">
+        <h1>Пристройка к дому в Вишове</h1>
+        <p>Интерактивная 3D-модель: отступ от дороги 7,0 м, монолитная бетонная плита (2,7 × 9,5 м), дом (8,5 × 9,5 м), Т-врезка крыши.</p>
+        
+        <div class="specs">
+            <div class="spec-box"><span>Ширина веранды</span><strong>2,70 м</strong></div>
+            <div class="spec-box"><span>Длина веранды</span><strong>9,50 м</strong></div>
+            <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
+            <div class="spec-box"><span>Навес (1 авто)</span><strong>6,0 × 4,0 м (24 м²)</strong></div>
+            <div class="spec-box"><span>Открытая терраса</span><strong>4,20 × 2,7 м (11,3 м²)</strong></div>
+            <div class="spec-box"><span>Прихожая (тамбур)</span><strong>2,20 × 2,7 м (5,9 м²)</strong></div>
+            <div class="spec-box"><span>Зона отдыха (диван)</span><strong>3,10 × 2,7 м (8,4 м²)</strong></div>
+            <div class="spec-box"><span>Задняя терраса (сад)</span><strong>2,20 × 2,7 м (открытая)</strong></div>
+            <div class="spec-box"><span>Высота конька</span><strong>5,80 м (Вровень)</strong></div>
+        </div>
+
+        <div class="btn-group">
+            <a href="gallery.html" style="grid-column: span 2; display:flex; align-items:center; justify-content:center; text-decoration:none; background: #0284c7; color: #ffffff; font-weight: 700; padding: 9px 12px; border-radius: 6px; font-size: 0.85rem; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4); border: 1px solid #38bdf8;">🖼 Фотогалерея экстерьера (Все ракурсы) ↗</a>
+            <button onclick="setCamera('road')">Вид с дороги</button>
+            <button onclick="setCamera('carport')">Навес (1 авто)</button>
+            <button onclick="setCamera('garden')">Выход в сад (сзади)</button>
+            <button onclick="setCamera('houseSide')">Окна дома (сад/бок)</button>
+            <button onclick="setCamera('yard')">Вид сбоку (окна)</button>
+            <button onclick="setCamera('lounge')">Зона отдыха (диван)</button>
+            <button onclick="setCamera('hallway')">Прихожая (шкаф/обувь)</button>
+            <button onclick="setCamera('top')">Планировка (сверху)</button>
+        </div>
+
+        <div class="btn-group">
+            <button class="secondary" id="win-mode-toggle" onclick="toggleWindowMode()" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; font-weight: 600; color: #f59e0b;">Окна: 3. Центр фасада (1,1м) ⇄</button>
+            <button class="secondary" id="tile-accent-toggle" onclick="cycleTileAccent()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; font-weight: 600; color: #38bdf8;">Плитка: Графит (В цвет кровли) ⇄</button>
+            <button class="secondary" id="wall-finish-toggle" onclick="cycleWallFinish()">Стены: Светло-серые блоки ⇄</button>
+            <button class="secondary" id="win-color-toggle" onclick="cycleWindowColor()">Окна: Белые (Классика)</button>
+            <button class="secondary" id="carport-toggle" onclick="toggleCarport()">Навес (1 авто 6×4м): Вкл</button>
+            <button class="secondary" id="roof-toggle" onclick="toggleRoofTransparency()">Прозрачность крыши</button>
+            <button class="secondary" id="ridge-toggle" onclick="cycleRidgeHeight()">Конёк: 5,8 м (Вровень с домом!)</button>
+            <button class="secondary" id="rear-roof-toggle" onclick="toggleRearCanopy()">Крыша сзади: Навес (Вкл)</button>
+            <button class="secondary" id="grid-toggle" onclick="toggleDimensions()">Размеры</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен</div>
+            <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
+            <div class="legend-item"><div class="color-dot" style="background:#27272a"></div> Т-образная кровля (металлочерепица)</div>
+            <div class="legend-item"><div class="color-dot" style="background:#ffffff; border: 1px solid #94a3b8;"></div> Белые оконные рамы и наличники (ПВХ)</div>
+            <div class="legend-item"><div class="color-dot" style="background:#92400e"></div> Деревянные стойки 150×150 на анкерах</div>
+            <div class="legend-item"><div class="color-dot" style="background:#242831; border: 1px solid #64748b;"></div> Ендовы (тёмно-графитовый металл)</div>
+        </div>
+    </div>
+    <div class="info-badge">Вращение: ЛКМ | Панорама: ПКМ | Зум: Колёсико мыши</div>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xb0d0e6);
+        scene.fog = new THREE.FogExp2(0xb0d0e6, 0.015);
+
+        // CORE ARCHITECTURAL DIMENSIONS (Defined at top)
+        const HW = 8.5; // Реальная ширина фасада 8,5 м!       // House width
+        const HL = 9.5;       // House length
+        const H_WALL = 2.9;   // Wall height to eaves
+        const H_RIDGE = 5.8; // Высота конька при ширине 8,5 м  // Ridge height
+        const SOCLE = 0.4;    // Foundation height
+        const VW = 2.7;       // Veranda width
+        const L_OPEN = 4.2;   // Open terrace length
+        const L_CLOSED = HL - L_OPEN; // 5.3m
+        const YE = 2.85;      // Eaves height at front and rear
+        const ZR = -HL / 2;   // -4.75m (T-intersection ridge line)
+        const ZF = 0.45;      // Front eave overhang (road)
+        const ZB = -HL - 0.45;// Rear eave overhang (garden)
+        const XW_IN = HW;     // 8.5m (Wall line where valley meets eave)
+
+        const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(17, 9, 25); // adjusted for 8.5m facade + 7m setback
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(5.5, 2.2, -4.5);
+        controls.update();
+        controls.maxPolarAngle = Math.PI / 2 - 0.02;
+
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x445544, 0.6);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
+        dirLight.position.set(20, 35, 18);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 100;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        scene.add(dirLight);
+
+        // Ground & Environment
+        const groundGeo = new THREE.PlaneGeometry(120, 120);
+        const groundMat = new THREE.MeshLambertMaterial({ color: 0x5a7d4a });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 7-METER SETBACK FROM ROAD (Отступ от дороги 7,0 м до фасада дома)
+        const ROAD_EDGE_Z = 7.0; // Edge of asphalt road is exactly 7.0m from front wall (Z=0)
+        const ROAD_CENTER_Z = 10.25;
+
+        // Asphalt road running along X axis
+        const roadGeo = new THREE.PlaneGeometry(120, 6.5);
+        const roadMat = new THREE.MeshLambertMaterial({ color: 0x374151 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.position.set(4, 0.02, ROAD_CENTER_Z);
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Road markings (dashed center line)
+        for (let x = -40; x <= 50; x += 4) {
+            const stripe = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 0.15), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            stripe.rotation.x = -Math.PI / 2;
+            stripe.position.set(x, 0.025, ROAD_CENTER_Z);
+            scene.add(stripe);
+        }
+
+        // 7-meter Front Yard / Driveway area between Road and House
+        // Gravel driveway / parking zone leading from road to veranda steps
+        const driveGeo = new THREE.PlaneGeometry(7.0, ROAD_EDGE_Z + 0.2);
+        const driveMat = new THREE.MeshLambertMaterial({ color: 0x94a3b8 });
+        const driveway = new THREE.Mesh(driveGeo, driveMat);
+        driveway.rotation.x = -Math.PI / 2;
+        driveway.position.set(HW + 1.2, 0.015, ROAD_EDGE_Z / 2);
+        driveway.receiveShadow = true;
+        scene.add(driveway);
+
+        // Pathway from driveway to the front steps
+        const pathGeo = new THREE.PlaneGeometry(2.2, 2.5);
+        const pathMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
+        const walkPath = new THREE.Mesh(pathGeo, pathMat);
+        walkPath.rotation.x = -Math.PI / 2;
+        walkPath.position.set(HW + 1.85, 0.018, 1.3);
+        walkPath.receiveShadow = true;
+        scene.add(walkPath);
+
+        // Two septic / sewerage covers in the front lawn (matching real site photo!)
+        const coverMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+        const cover1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
+        cover1.position.set(2.5, 0.04, 3.8); // 3.8m in front of house
+        scene.add(cover1);
+
+        const cover2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
+        cover2.position.set(2.5, 0.04, 5.2); // 5.2m in front of house
+        scene.add(cover2);
+
+        // General yard ground around house
+        const yardGeo = new THREE.PlaneGeometry(16, 22);
+        const yardMat = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
+        const yard = new THREE.Mesh(yardGeo, yardMat);
+        yard.rotation.x = -Math.PI / 2;
+        yard.position.set(4.1, 0.01, -3.75);
+        yard.receiveShadow = true;
+        scene.add(yard);
+
+// (Dimensions moved to top of script)
+
+        // ==========================================
+        // PROCEDURAL REALISTIC ARCHITECTURAL TEXTURES
+        // ==========================================
+        function createRoofTileTextures() {
+            const W = 512, H = 512;
+            const cCanvas = document.createElement('canvas');
+            cCanvas.width = W; cCanvas.height = H;
+            const cCtx = cCanvas.getContext('2d');
+
+            const bCanvas = document.createElement('canvas');
+            bCanvas.width = W; bCanvas.height = H;
+            const bCtx = bCanvas.getContext('2d');
+
+            const cImg = cCtx.createImageData(W, H);
+            const bImg = bCtx.createImageData(W, H);
+
+            const cols = 8; // 8 tile waves across
+            const rows = 6; // 6 tile step rows down
+            const col_w = W / cols;
+            const row_h = H / rows;
+
+            for (let y = 0; y < H; y++) {
+                const row_prog = (y % row_h) / row_h;
+                const step_relief = 1.0 - row_prog * 0.28;
+                for (let x = 0; x < W; x++) {
+                    const col_prog = (x % col_w) / col_w;
+                    const wave = Math.sin(col_prog * Math.PI * 2);
+
+                    const shade = 1.0 + wave * 0.22 - (row_prog > 0.88 ? 0.35 : 0.0);
+                    const noise = (Math.random() - 0.5) * 5;
+                    const r = Math.min(255, Math.max(0, 36 * shade * step_relief + noise));
+                    const g = Math.min(255, Math.max(0, 40 * shade * step_relief + noise));
+                    const b = Math.min(255, Math.max(0, 46 * shade * step_relief + noise));
+
+                    const idx = (y * W + x) * 4;
+                    cImg.data[idx] = r;
+                    cImg.data[idx+1] = g;
+                    cImg.data[idx+2] = b;
+                    cImg.data[idx+3] = 255;
+
+                    const bVal = Math.min(255, Math.max(0, 128 + wave * 65 + (1.0 - row_prog) * 55));
+                    bImg.data[idx] = bVal;
+                    bImg.data[idx+1] = bVal;
+                    bImg.data[idx+2] = bVal;
+                    bImg.data[idx+3] = 255;
+                }
+            }
+            cCtx.putImageData(cImg, 0, 0);
+            bCtx.putImageData(bImg, 0, 0);
+
+            const colorTex = new THREE.CanvasTexture(cCanvas);
+            colorTex.wrapS = THREE.RepeatWrapping; colorTex.wrapT = THREE.RepeatWrapping;
+            colorTex.repeat.set(6, 6);
+
+            const bumpTex = new THREE.CanvasTexture(bCanvas);
+            bumpTex.wrapS = THREE.RepeatWrapping; bumpTex.wrapT = THREE.RepeatWrapping;
+            bumpTex.repeat.set(6, 6);
+
+            return { colorTex, bumpTex };
+        }
+
+        function createBlockTextures() {
+            const W = 512, H = 512;
+            const cCanvas = document.createElement('canvas');
+            cCanvas.width = W; cCanvas.height = H;
+            const cCtx = cCanvas.getContext('2d');
+
+            const bCanvas = document.createElement('canvas');
+            bCanvas.width = W; bCanvas.height = H;
+            const bCtx = bCanvas.getContext('2d');
+
+            cCtx.fillStyle = '#e8ecf1';
+            cCtx.fillRect(0, 0, W, H);
+            bCtx.fillStyle = '#808080';
+            bCtx.fillRect(0, 0, W, H);
+
+            const cImg = cCtx.getImageData(0, 0, W, H);
+            for (let i = 0; i < cImg.data.length; i += 4) {
+                const n = (Math.random() - 0.5) * 10;
+                cImg.data[i] = Math.min(255, Math.max(0, cImg.data[i] + n));
+                cImg.data[i+1] = Math.min(255, Math.max(0, cImg.data[i+1] + n));
+                cImg.data[i+2] = Math.min(255, Math.max(0, cImg.data[i+2] + n));
+            }
+            cCtx.putImageData(cImg, 0, 0);
+
+            const rows = 8;
+            const rowH = H / rows;
+            const cols = 4;
+            const colW = W / cols;
+
+            cCtx.strokeStyle = '#b8bec8';
+            cCtx.lineWidth = 2.0;
+            bCtx.strokeStyle = '#353535';
+            bCtx.lineWidth = 2.5;
+
+            for (let r = 0; r <= rows; r++) {
+                const y = r * rowH;
+                cCtx.beginPath(); cCtx.moveTo(0, y); cCtx.lineTo(W, y); cCtx.stroke();
+                bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(W, y); bCtx.stroke();
+
+                if (r < rows) {
+                    const offset = (r % 2 === 0) ? 0 : colW / 2;
+                    for (let c = 0; c <= cols + 1; c++) {
+                        const x = c * colW + offset;
+                        cCtx.beginPath(); cCtx.moveTo(x, y); cCtx.lineTo(x, y + rowH); cCtx.stroke();
+                        bCtx.beginPath(); bCtx.moveTo(x, y); bCtx.lineTo(x, y + rowH); bCtx.stroke();
+                    }
+                }
+            }
+
+            const colorTex = new THREE.CanvasTexture(cCanvas);
+            colorTex.wrapS = THREE.RepeatWrapping; colorTex.wrapT = THREE.RepeatWrapping;
+            colorTex.repeat.set(4, 4);
+
+            const bumpTex = new THREE.CanvasTexture(bCanvas);
+            bumpTex.wrapS = THREE.RepeatWrapping; bumpTex.wrapT = THREE.RepeatWrapping;
+            bumpTex.repeat.set(4, 4);
+
+            return { colorTex, bumpTex };
+        }
+
+        function createWoodTexture() {
+            const W = 256, H = 512;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#9a5a22';
+            ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = '#713b0c';
+            ctx.lineWidth = 1.2;
+            for (let i = 0; i < 35; i++) {
+                ctx.beginPath();
+                const x0 = Math.random() * W;
+                ctx.moveTo(x0, 0);
+                ctx.bezierCurveTo(x0 + (Math.random()-0.5)*25, H*0.33, x0 + (Math.random()-0.5)*25, H*0.66, x0 + (Math.random()-0.5)*15, H);
+                ctx.stroke();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(2, 4);
+            return tex;
+        }
+
+        function createGrassTexture() {
+            const W = 512, H = 512;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#4ade80';
+            ctx.fillRect(0, 0, W, H);
+            const img = ctx.getImageData(0, 0, W, H);
+            for (let i = 0; i < img.data.length; i += 4) {
+                const n = (Math.random() - 0.5) * 35;
+                img.data[i] = Math.min(255, Math.max(0, 60 + n * 0.4));
+                img.data[i+1] = Math.min(255, Math.max(0, 150 + n));
+                img.data[i+2] = Math.min(255, Math.max(0, 70 + n * 0.5));
+            }
+            ctx.putImageData(img, 0, 0);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(16, 16);
+            return tex;
+        }
+
+        function createClinkerTextures() {
+            const W = 512, H = 512;
+            const cCanvas = document.createElement('canvas');
+            cCanvas.width = W; cCanvas.height = H;
+            const cCtx = cCanvas.getContext('2d');
+            const bCanvas = document.createElement('canvas');
+            bCanvas.width = W; bCanvas.height = H;
+            const bCtx = bCanvas.getContext('2d');
+
+            // Dark graphite architectural clinker tile
+            cCtx.fillStyle = '#2c3038';
+            cCtx.fillRect(0, 0, W, H);
+            bCtx.fillStyle = '#808080';
+            bCtx.fillRect(0, 0, W, H);
+
+            const rows = 16;
+            const rowH = H / rows;
+            const cols = 4;
+            const colW = W / cols;
+
+            // Joint lines
+            cCtx.strokeStyle = '#181a1f';
+            cCtx.lineWidth = 2.0;
+            bCtx.strokeStyle = '#202020';
+            bCtx.lineWidth = 3.0;
+
+            for (let r = 0; r <= rows; r++) {
+                const y = r * rowH;
+                cCtx.beginPath(); cCtx.moveTo(0, y); cCtx.lineTo(W, y); cCtx.stroke();
+                bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(W, y); bCtx.stroke();
+
+                if (r < rows) {
+                    const offset = (r % 2 === 0) ? 0 : colW / 2;
+                    for (let c = 0; c <= cols + 1; c++) {
+                        const x = c * colW + offset;
+                        cCtx.beginPath(); cCtx.moveTo(x, y); cCtx.lineTo(x, y + rowH); cCtx.stroke();
+                        bCtx.beginPath(); bCtx.moveTo(x, y); bCtx.lineTo(x, y + rowH); bCtx.stroke();
+                        
+                        // subtle brick surface variation
+                        const shade = (Math.random() - 0.5) * 15;
+                        cCtx.fillStyle = `rgba(${Math.floor(45 + shade)}, ${Math.floor(48 + shade)}, ${Math.floor(55 + shade)}, 0.15)`;
+                        cCtx.fillRect(x - colW/2, y + 2, colW - 2, rowH - 4);
+                    }
+                }
+            }
+
+            const colorTex = new THREE.CanvasTexture(cCanvas);
+            colorTex.wrapS = THREE.RepeatWrapping; colorTex.wrapT = THREE.RepeatWrapping;
+            colorTex.repeat.set(2, 4);
+
+            const bumpTex = new THREE.CanvasTexture(bCanvas);
+            bumpTex.wrapS = THREE.RepeatWrapping; bumpTex.wrapT = THREE.RepeatWrapping;
+            bumpTex.repeat.set(2, 4);
+
+            return { colorTex, bumpTex };
+        }
+
+        // Materials Initialization with Textures
+        const roofTexs = createRoofTileTextures();
+        const blockTexs = createBlockTextures();
+        const clinkerTexs = createClinkerTextures();
+        const woodTex = createWoodTexture();
+        const grassTex = createGrassTexture();
+        groundMat.map = grassTex;
+        groundMat.needsUpdate = true;
+
+        const socleMat = new THREE.MeshStandardMaterial({ color: 0x333338, roughness: 0.9 });
+        const blockMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            map: blockTexs.colorTex,
+            bumpMap: blockTexs.bumpTex,
+            bumpScale: 0.02,
+            roughness: 0.88
+        });
+        const clinkerMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            map: clinkerTexs.colorTex,
+            bumpMap: clinkerTexs.bumpTex,
+            bumpScale: 0.035,
+            roughness: 0.70
+        });
+        const roofMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            map: roofTexs.colorTex,
+            bumpMap: roofTexs.bumpTex,
+            bumpScale: 0.04,
+            roughness: 0.38,
+            metalness: 0.30,
+            side: THREE.DoubleSide
+        });
+        const woodMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            map: woodTex,
+            roughness: 0.65,
+            side: THREE.DoubleSide
+        });
+        const woodDeckMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            map: woodTex,
+            roughness: 0.75
+        });
+        const glassMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35, roughness: 0.1 });
+        const whiteTrimMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 }); // Чистый белый цвет окон (ПВХ)
+        const doorMat = new THREE.MeshStandardMaterial({ color: 0x3b1c0b, roughness: 0.5 });
+        const valleyMat = new THREE.MeshStandardMaterial({ color: 0x242831, roughness: 0.4, metalness: 0.5 }); // Dark graphite valley flashing matching roof
+
+        // HOUSE STRUCTURE GROUP
+        const houseGroup = new THREE.Group();
+        scene.add(houseGroup);
+
+        // 1. House Socle
+        const socleGeo = new THREE.BoxGeometry(HW, SOCLE, HL);
+        const socle = new THREE.Mesh(socleGeo, socleMat);
+        socle.position.set(HW/2, SOCLE/2, -HL/2);
+        socle.receiveShadow = true;
+        houseGroup.add(socle);
+
+        // 2. House Main Block Walls
+        // Front wall (Z = 0)
+        const frontWall = new THREE.Mesh(new THREE.BoxGeometry(HW, H_WALL - SOCLE, 0.4), blockMat);
+        frontWall.position.set(HW/2, SOCLE + (H_WALL - SOCLE)/2, -0.2);
+        frontWall.castShadow = true;
+        frontWall.receiveShadow = true;
+        houseGroup.add(frontWall);
+
+        // Helper to construct realistic windows for the main house with clinker decorative trim
+        function createHouseWindow(cx, cy, cz, w, h, facing) {
+            const grp = new THREE.Group();
+            if (facing === 'X') {
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, h + 0.04, w + 0.04), whiteTrimMat);
+                frame.position.set(cx, cy, cz);
+                frame.castShadow = true;
+                grp.add(frame);
+
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, w + 0.10), whiteTrimMat);
+                sill.position.set(cx - 0.06, cy - h/2 - 0.02, cz);
+                sill.castShadow = true;
+                grp.add(sill);
+
+                // Декоративный клинкерный подоконный фартук и надоконная перемычка
+                const clinkerApron = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, w + 0.14), clinkerMat);
+                clinkerApron.position.set(cx - 0.03, cy - h/2 - 0.10, cz);
+                clinkerApron.castShadow = true;
+                grp.add(clinkerApron);
+
+                const clinkerLintel = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.12, w + 0.14), clinkerMat);
+                clinkerLintel.position.set(cx - 0.03, cy + h/2 + 0.08, cz);
+                clinkerLintel.castShadow = true;
+                grp.add(clinkerLintel);
+
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.09, h - 0.04, 0.06), whiteTrimMat);
+                mullion.position.set(cx, cy, cz);
+                grp.add(mullion);
+
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, h - 0.08, w - 0.08), glassMat);
+                glass.position.set(cx, cy, cz);
+                grp.add(glass);
+            } else {
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, h + 0.04, 0.08), whiteTrimMat);
+                frame.position.set(cx, cy, cz);
+                frame.castShadow = true;
+                grp.add(frame);
+
+                const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.10, 0.05, 0.18), whiteTrimMat);
+                sill.position.set(cx, cy - h/2 - 0.02, cz - 0.06);
+                sill.castShadow = true;
+                grp.add(sill);
+
+                // Декоративный клинкерный подоконный фартук и надоконная перемычка
+                const clinkerApron = new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, 0.12, 0.03), clinkerMat);
+                clinkerApron.position.set(cx, cy - h/2 - 0.10, cz - 0.03);
+                clinkerApron.castShadow = true;
+                grp.add(clinkerApron);
+
+                const clinkerLintel = new THREE.Mesh(new THREE.BoxGeometry(w + 0.14, 0.12, 0.03), clinkerMat);
+                clinkerLintel.position.set(cx, cy + h/2 + 0.08, cz - 0.03);
+                clinkerLintel.castShadow = true;
+                grp.add(clinkerLintel);
+
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.06, h - 0.04, 0.09), whiteTrimMat);
+                mullion.position.set(cx, cy, cz);
+                grp.add(mullion);
+
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, h - 0.08, 0.04), glassMat);
+                glass.position.set(cx, cy, cz);
+                grp.add(glass);
+            }
+            return grp;
+        }
+
+        // Back wall (Z = -HL = -9.5m, width HW = 8.5m) with 2 windows 1.50x1.50m facing the garden
+        const BACK_Z = -HL + 0.2;
+        const WALL_H = H_WALL - SOCLE;
+        const HWIN_W = 1.50;
+        const HWIN_H = 1.50;
+        const HWIN_SILL_H = 0.85;
+        const HWIN_LINTEL_H = WALL_H - HWIN_SILL_H - HWIN_H; // 0.15m
+        const HWIN_CY = SOCLE + HWIN_SILL_H + HWIN_H / 2; // 2.00m
+        const HWIN_SILL_CY = SOCLE + HWIN_SILL_H / 2;       // 0.825m
+        const HWIN_LINTEL_CY = H_WALL - HWIN_LINTEL_H / 2;  // 2.825m
+
+        // Back Wall: Pier 1 (0 to 1.45m), Pier 2 (2.95 to 5.55m), Pier 3 (7.05 to 8.50m)
+        const bPier1 = new THREE.Mesh(new THREE.BoxGeometry(1.45, WALL_H, 0.4), blockMat);
+        bPier1.position.set(1.45 / 2, SOCLE + WALL_H / 2, BACK_Z);
+        bPier1.castShadow = true; bPier1.receiveShadow = true;
+        houseGroup.add(bPier1);
+
+        const bPier2 = new THREE.Mesh(new THREE.BoxGeometry(2.60, WALL_H, 0.4), blockMat);
+        bPier2.position.set(4.25, SOCLE + WALL_H / 2, BACK_Z);
+        bPier2.castShadow = true; bPier2.receiveShadow = true;
+        houseGroup.add(bPier2);
+
+        const bPier3 = new THREE.Mesh(new THREE.BoxGeometry(1.45, WALL_H, 0.4), blockMat);
+        bPier3.position.set(8.50 - 1.45 / 2, SOCLE + WALL_H / 2, BACK_Z);
+        bPier3.castShadow = true; bPier3.receiveShadow = true;
+        houseGroup.add(bPier3);
+
+        // Back Wall: 2 Windows (1.50x1.50m) at X = 2.20m and X = 6.30m
+        [2.20, 6.30].forEach(wx => {
+            const underWall = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_SILL_H, 0.4), blockMat);
+            underWall.position.set(wx, HWIN_SILL_CY, BACK_Z);
+            underWall.castShadow = true; underWall.receiveShadow = true;
+            houseGroup.add(underWall);
+
+            const overWall = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_LINTEL_H, 0.4), blockMat);
+            overWall.position.set(wx, HWIN_LINTEL_CY, BACK_Z);
+            overWall.castShadow = true; overWall.receiveShadow = true;
+            houseGroup.add(overWall);
+
+            houseGroup.add(createHouseWindow(wx, HWIN_CY, BACK_Z, HWIN_W, HWIN_H, 'Z'));
+        });
+
+        // Left wall (X = 0, length HL = 9.5m) with 2 windows 1.50x1.50m
+        const LEFT_X = 0.2;
+        // Left Wall: Pier 1 (Z: 0 to -1.80m), Pier 2 (Z: -3.30 to -6.20m), Pier 3 (Z: -7.70 to -9.50m)
+        const lPier1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, WALL_H, 1.80), blockMat);
+        lPier1.position.set(LEFT_X, SOCLE + WALL_H / 2, -1.80 / 2);
+        lPier1.castShadow = true; lPier1.receiveShadow = true;
+        houseGroup.add(lPier1);
+
+        const lPier2 = new THREE.Mesh(new THREE.BoxGeometry(0.4, WALL_H, 2.90), blockMat);
+        lPier2.position.set(LEFT_X, SOCLE + WALL_H / 2, -4.75);
+        lPier2.castShadow = true; lPier2.receiveShadow = true;
+        houseGroup.add(lPier2);
+
+        const lPier3 = new THREE.Mesh(new THREE.BoxGeometry(0.4, WALL_H, 1.80), blockMat);
+        lPier3.position.set(LEFT_X, SOCLE + WALL_H / 2, -9.50 + 1.80 / 2);
+        lPier3.castShadow = true; lPier3.receiveShadow = true;
+        houseGroup.add(lPier3);
+
+        // Left Wall: 2 Windows (1.50x1.50m) at Z = -2.55m and Z = -6.95m
+        [-2.55, -6.95].forEach(wz => {
+            const underWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, HWIN_SILL_H, HWIN_W), blockMat);
+            underWall.position.set(LEFT_X, HWIN_SILL_CY, wz);
+            underWall.castShadow = true; underWall.receiveShadow = true;
+            houseGroup.add(underWall);
+
+            const overWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, HWIN_LINTEL_H, HWIN_W), blockMat);
+            overWall.position.set(LEFT_X, HWIN_LINTEL_CY, wz);
+            overWall.castShadow = true; overWall.receiveShadow = true;
+            houseGroup.add(overWall);
+
+            houseGroup.add(createHouseWindow(LEFT_X, HWIN_CY, wz, HWIN_W, HWIN_H, 'X'));
+        });
+
+        // Right wall (X = HW = 6.2)
+        // Section 1: Front blank wall (Z: 0 to -2.8)
+        const rWall1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, H_WALL - SOCLE, 2.8), blockMat);
+        rWall1.position.set(HW - 0.2, SOCLE + (H_WALL - SOCLE)/2, -1.4);
+        rWall1.castShadow = true;
+        houseGroup.add(rWall1);
+
+        // Window opening (Z: -2.8 to -4.2)
+        const rWallWinUnder = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.9, 1.4), blockMat);
+        rWallWinUnder.position.set(HW - 0.2, SOCLE + 0.45, -3.5);
+        houseGroup.add(rWallWinUnder);
+        const rWallWinOver = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 1.4), blockMat);
+        rWallWinOver.position.set(HW - 0.2, H_WALL - 0.25, -3.5);
+        houseGroup.add(rWallWinOver);
+        const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3, 1.3), whiteTrimMat);
+        winFrame.position.set(HW - 0.2, SOCLE + 0.9 + 0.65, -3.5);
+        houseGroup.add(winFrame);
+        const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.2, 1.2), glassMat);
+        winGlass.position.set(HW - 0.2, SOCLE + 0.9 + 0.65, -3.5);
+        houseGroup.add(winGlass);
+
+        // Mid wall between window and door (Z: -4.2 to -4.7)
+        const rWallMid = new THREE.Mesh(new THREE.BoxGeometry(0.4, H_WALL - SOCLE, 0.5), blockMat);
+        rWallMid.position.set(HW - 0.2, SOCLE + (H_WALL - SOCLE)/2, -4.45);
+        houseGroup.add(rWallMid);
+
+        // House entrance door (Z: -4.7 to -5.7)
+        const rWallDoorOver = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.6, 1.0), blockMat);
+        rWallDoorOver.position.set(HW - 0.2, H_WALL - 0.3, -5.2);
+        houseGroup.add(rWallDoorOver);
+        const hDoor = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.1, 0.9), doorMat);
+        hDoor.position.set(HW - 0.2, SOCLE + 1.05, -5.2);
+        houseGroup.add(hDoor);
+
+        // Section behind door to back corner (Z: -5.7 to -9.5)
+        const rWallBack = new THREE.Mesh(new THREE.BoxGeometry(0.4, H_WALL - SOCLE, 3.8), blockMat);
+        rWallBack.position.set(HW - 0.2, SOCLE + (H_WALL - SOCLE)/2, -7.6);
+        houseGroup.add(rWallBack);
+
+        // Front Triangular Gable (Z = 0)
+        function createTriangleMesh(p1, p2, p3, mat) {
+            const geo = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                p1[0], p1[1], p1[2],
+                p2[0], p2[1], p2[2],
+                p3[0], p3[1], p3[2],
+                p1[0], p1[1], p1[2],
+                p3[0], p3[1], p3[2],
+                p2[0], p2[1], p2[2]
+            ]);
+            geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            const uvScale = 0.5;
+            const uvs = new Float32Array([
+                p1[0] * uvScale, p1[1] * uvScale,
+                p2[0] * uvScale, p2[1] * uvScale,
+                p3[0] * uvScale, p3[1] * uvScale,
+                p1[0] * uvScale, p1[1] * uvScale,
+                p3[0] * uvScale, p3[1] * uvScale,
+                p2[0] * uvScale, p2[1] * uvScale
+            ]);
+            geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            geo.computeVertexNormals();
+            return new THREE.Mesh(geo, mat);
+        }
+
+        const frontGable = createTriangleMesh([0, H_WALL, -0.3], [HW, H_WALL, -0.3], [HW/2, H_RIDGE, -0.3], blockMat);
+        frontGable.castShadow = true;
+        houseGroup.add(frontGable);
+
+        // Small attic window on front gable
+        const atticWin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.42), whiteTrimMat);
+        atticWin.position.set(HW/2, H_WALL + 1.1, -0.2);
+        houseGroup.add(atticWin);
+
+        // Rear Triangular Gable (Z = -HL)
+        const rearGable = createTriangleMesh([0, H_WALL, -HL + 0.3], [HW/2, H_RIDGE, -HL + 0.3], [HW, H_WALL, -HL + 0.3], blockMat);
+        houseGroup.add(rearGable);
+
+        // Small attic window on rear gable
+        const rearAtticWin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.42), whiteTrimMat);
+        rearAtticWin.position.set(HW/2, H_WALL + 1.1, -HL + 0.2);
+        houseGroup.add(rearAtticWin);
+
+        // MAIN ROOF
+        const roofOverhang = 0.45;
+        const slopeLen = Math.hypot(HW/2 + roofOverhang, H_RIDGE - H_WALL) + 0.1;
+        const slopeAngle = Math.atan2(H_RIDGE - H_WALL, HW/2);
+
+        // Left roof slope
+        const leftSlopeGeo = new THREE.BoxGeometry(slopeLen, 0.12, HL + 2*roofOverhang);
+        const leftRoof = new THREE.Mesh(leftSlopeGeo, roofMat);
+        leftRoof.rotation.z = slopeAngle;
+        leftRoof.position.set(HW/4 - 0.15, (H_WALL + H_RIDGE)/2 + 0.05, -HL/2);
+        leftRoof.castShadow = true;
+        houseGroup.add(leftRoof);
+
+        // Right roof slope of the house (cut around the T-intersection veranda roof)
+        // Two exact triangular roof slopes meeting the veranda strictly at the valleys!
+        const houseRightRoofGroup = new THREE.Group();
+        houseGroup.add(houseRightRoofGroup);
+
+        function buildHouseRightRoof(ridgeY, ridgeX) {
+            while (houseRightRoofGroup.children.length > 0) {
+                houseRightRoofGroup.remove(houseRightRoofGroup.children[0]);
+            }
+            // 1. Front-right triangle (from front ridge to T-ridge and front valley eave)
+            const fMesh = createTriangleMesh(
+                [ridgeX, ridgeY, ZF],
+                [ridgeX, ridgeY, ZR],
+                [XW_IN, YE, ZF],
+                roofMat
+            );
+            fMesh.castShadow = true;
+            houseRightRoofGroup.add(fMesh);
+
+            // 2. Rear-right triangle (from rear ridge to T-ridge and rear valley eave)
+            const rMesh = createTriangleMesh(
+                [ridgeX, ridgeY, ZR],
+                [ridgeX, ridgeY, ZB],
+                [XW_IN, YE, ZB],
+                roofMat
+            );
+            rMesh.castShadow = true;
+            houseRightRoofGroup.add(rMesh);
+        }
+        buildHouseRightRoof(H_RIDGE, HW / 2);
+
+        // ==========================================
+        // ARCHITECTURAL CORNER CLADDING (Рустовка углов фасада)
+        // ==========================================
+        const cornerRustsGroup = new THREE.Group();
+        houseGroup.add(cornerRustsGroup);
+
+        function createCornerRusts(cx, cz, signX, signZ) {
+            const grp = new THREE.Group();
+            const pitch = 0.245;
+            const bH = 0.20;
+            const thick = 0.025;
+            const count = Math.floor((H_WALL - SOCLE) / pitch); // 10 courses
+            for (let i = 0; i < count; i++) {
+                const y = SOCLE + 0.02 + i * pitch + bH / 2;
+                const isEven = (i % 2 === 0);
+                const lenX = isEven ? 0.42 : 0.22;
+                const lenZ = isEven ? 0.22 : 0.42;
+
+                // Face along X wall
+                const bX = new THREE.Mesh(new THREE.BoxGeometry(lenX, bH, thick), clinkerMat);
+                bX.position.set(cx + signX * lenX / 2, y, cz + signZ * (thick / 2));
+                bX.castShadow = true;
+                grp.add(bX);
+
+                // Face along Z wall
+                const bZ = new THREE.Mesh(new THREE.BoxGeometry(thick, bH, lenZ), clinkerMat);
+                bZ.position.set(cx + signX * (thick / 2), y, cz + signZ * lenZ / 2);
+                bZ.castShadow = true;
+                grp.add(bZ);
+            }
+            return grp;
+        }
+
+        // 1. Передний левый угол дома (X = 0, Z = 0)
+        cornerRustsGroup.add(createCornerRusts(0, 0, +1, -1));
+        // 2. Задний левый угол дома (X = 0, Z = -HL)
+        cornerRustsGroup.add(createCornerRusts(0, -HL, +1, +1));
+        // 3. Задний правый угол дома у сада (X = HW, Z = -HL)
+        cornerRustsGroup.add(createCornerRusts(HW, -HL, -1, +1));
+        // 4. Задний правый угол веранды у сада (X = HW + VW, Z = -HL)
+        cornerRustsGroup.add(createCornerRusts(HW + VW, -HL, -1, +1));
+        // 5. Передний наружный угол стены прихожей (X = HW + VW, Z = -L_OPEN)
+        cornerRustsGroup.add(createCornerRusts(HW + VW, -L_OPEN, -1, -1));
+
+
+        // ==========================================
+        // VERANDA (2.7m WIDTH ALONG FULL 9.5m LENGTH)
+        // ==========================================
+        const verandaGroup = new THREE.Group();
+        scene.add(verandaGroup);
+
+        const V_X0 = HW;        // 6.2
+        const V_X1 = HW + VW;   // 8.9
+
+        // MONOLITHIC CONCRETE SLAB (Монолитная железобетонная плита 2,7 × 9,5 м)
+        const concreteSlabMat = new THREE.MeshStandardMaterial({ color: 0x3b3f46, roughness: 0.9 });
+        const concreteSlab = new THREE.Mesh(new THREE.BoxGeometry(VW, SOCLE, HL), concreteSlabMat);
+        concreteSlab.position.set(V_X0 + VW/2, SOCLE/2, -HL/2);
+        concreteSlab.castShadow = true;
+        concreteSlab.receiveShadow = true;
+        verandaGroup.add(concreteSlab);
+
+        // Terrace flooring on top of the concrete slab (Open zone: Z 0 to -L_OPEN)
+        const terraceDeck = new THREE.Mesh(new THREE.BoxGeometry(VW - 0.04, 0.04, L_OPEN - 0.04), woodDeckMat);
+        terraceDeck.position.set(V_X0 + VW/2, SOCLE + 0.02, -L_OPEN/2);
+        terraceDeck.receiveShadow = true;
+        verandaGroup.add(terraceDeck);
+
+        // Galvanized steel post anchors on the concrete slab under each timber post
+        const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
+
+        // ==========================================
+        // OPEN TERRACE (Z: 0 to -L_OPEN = -4.2m)
+        // ==========================================
+        const postGeo = new THREE.BoxGeometry(0.15, H_WALL - SOCLE, 0.15);
+        const postPositions = [
+            [V_X1 - 0.1, 0],
+            [V_X1 - 0.1, -2.1],
+            [V_X1 - 0.1, -L_OPEN],
+            [V_X0 + 0.1, 0],
+        ];
+        postPositions.forEach(pos => {
+            const post = new THREE.Mesh(postGeo, woodMat);
+            post.position.set(pos[0], SOCLE + (H_WALL - SOCLE)/2, pos[1]);
+            post.castShadow = true;
+            verandaGroup.add(post);
+        });
+
+        // Open Terrace Railings
+        const railHeight = 0.9;
+        const frontRail1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.08), woodMat);
+        frontRail1.position.set(V_X0 + 0.6, SOCLE + railHeight, 0);
+        verandaGroup.add(frontRail1);
+
+        const sideRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 4.0), woodMat);
+        sideRail1.position.set(V_X1 - 0.1, SOCLE + railHeight, -2.1);
+        verandaGroup.add(sideRail1);
+
+        for (let h = 0.25; h < railHeight; h += 0.22) {
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 4.0), woodMat);
+            slat.position.set(V_X1 - 0.1, SOCLE + h, -2.1);
+            verandaGroup.add(slat);
+        }
+
+        // Concrete entrance steps from slab to road
+        const stepWidth = 1.4;
+        const stepMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+        for (let s = 1; s <= 3; s++) {
+            const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.13, 0.33), stepMat);
+            stepMesh.position.set(V_X0 + 1.85, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
+            stepMesh.castShadow = true;
+            stepMesh.receiveShadow = true;
+            verandaGroup.add(stepMesh);
+        }
+
+        // ==========================================
+        // TRANSVERSE WALL WITH ENTRANCE DOOR (Z = -4.2m)
+        // ==========================================
+        const partWallH = H_WALL - SOCLE;
+        const partWallL = new THREE.Mesh(new THREE.BoxGeometry(0.8, partWallH, 0.15), blockMat);
+        partWallL.position.set(V_X0 + 0.4, SOCLE + partWallH/2, -L_OPEN);
+        verandaGroup.add(partWallL);
+
+        const partWallR = new THREE.Mesh(new THREE.BoxGeometry(0.9, partWallH, 0.15), blockMat);
+        partWallR.position.set(V_X1 - 0.45, SOCLE + partWallH/2, -L_OPEN);
+        verandaGroup.add(partWallR);
+
+        const partWallTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, partWallH - 2.1, 0.15), blockMat);
+        partWallTop.position.set(V_X0 + 1.3, H_WALL - (partWallH - 2.1)/2, -L_OPEN);
+        verandaGroup.add(partWallTop);
+
+        // Entrance door facing road
+        const mainDoor = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.1, 0.08), doorMat);
+        mainDoor.position.set(V_X0 + 1.3, SOCLE + 1.05, -L_OPEN);
+        mainDoor.castShadow = true;
+        verandaGroup.add(mainDoor);
+
+        const doorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.2, 0.09), glassMat);
+        doorGlass.position.set(V_X0 + 1.3, SOCLE + 1.3, -L_OPEN);
+        verandaGroup.add(doorGlass);
+
+        const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.25, 8), new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.6 }));
+        lamp.position.set(V_X0 + 0.65, SOCLE + 1.8, -L_OPEN + 0.12);
+        verandaGroup.add(lamp);
+
+        // ==========================================
+        // ENCLOSED VERANDA (Z: -4.2 to -9.5m)
+        // Standard windows with 0.9m windowsill wall (NOT floor-to-ceiling glass)
+        // ==========================================
+        // ENCLOSED VERANDA (Z: -4.2 to -9.5m, length 5.3m)
+        // Divided into 2 functional zones:
+        // 1. Entrance / Cloakroom (Z: -4.2 to -6.375m, len 2.175m)
+        // 2. Solid partition wall with sliding door (Z: -6.375m)
+        // 3. Lounge / Sitting room (Z: -6.375 to -9.5m, len 3.125m)
+        // ==========================================
+        const parapetH = 0.9; // Solid insulated wall up to window sill
+        const winH = 1.4;     // Standard window height
+        const topWallH = (H_WALL - SOCLE) - (parapetH + winH); // Wall above window (header)
+
+        // ==========================================
+        // 3 MATCHING WINDOWS (Скандинавское трио: 3 одинаковых окна по 0,75 м)
+        // Окно 1: Прихожая (сохранено как есть)
+        // Окна 2 и 3: Два таких же окна в зоне отдыха!
+        // ==========================================
+        const WIN_W = 0.75;
+        function createSingleWindowMesh(zCenter) {
+            const grp = new THREE.Group();
+            const parapet = new THREE.Mesh(new THREE.BoxGeometry(0.25, parapetH, WIN_W), blockMat);
+            parapet.position.set(V_X1 - 0.125, SOCLE + parapetH/2, zCenter);
+            parapet.castShadow = true;
+            grp.add(parapet);
+
+            const topWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, topWallH, WIN_W), blockMat);
+            topWall.position.set(V_X1 - 0.125, SOCLE + parapetH + winH + topWallH/2, zCenter);
+            topWall.castShadow = true;
+            grp.add(topWall);
+
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.12, winH, WIN_W - 0.05), whiteTrimMat);
+            frame.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            grp.add(frame);
+
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH - 0.12, WIN_W - 0.14), glassMat);
+            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            grp.add(glass);
+
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, WIN_W + 0.1), whiteTrimMat);
+            sill.position.set(V_X1 - 0.1, SOCLE + parapetH + 0.02, zCenter);
+            grp.add(sill);
+
+            return grp;
+        }
+
+        const Z_PARTITION = -6.375; // Капитальная перегородка между прихожей и лаунжем
+
+        // ==========================================
+        // ВАРИАНТ А: «Скандинавское трио» (3 одинаковых окна по 0,75 м)
+        // ==========================================
+        const modeTrioGroup = new THREE.Group();
+        verandaGroup.add(modeTrioGroup);
+
+        // 1. FRONT CORNER PIER (Z: -4.20 до -4.65м, len 0.45m)
+        const CORNER_PIER_FRONT = 0.45;
+        const frontCornerPier = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, CORNER_PIER_FRONT), blockMat);
+        frontCornerPier.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -L_OPEN - CORNER_PIER_FRONT/2);
+        frontCornerPier.castShadow = true;
+        modeTrioGroup.add(frontCornerPier);
+
+        // 2. WINDOW 1: ПРИХОЖАЯ (Z: -4.65 до -5.40м, center -5.025m)
+        const WIN1_Z = -5.025;
+        modeTrioGroup.add(createSingleWindowMesh(WIN1_Z));
+
+        // 3. PIER 1: МЕЖКОМНАТНЫЙ ПРОСТЕНОК (Z: -5.40 до -6.55м, len 1.15m)
+        // Содержит внутри стык с капитальной перегородкой Z = -6.375м!
+        const PIER_MID_LEN = 1.15;
+        const midPier = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_MID_LEN), blockMat);
+        midPier.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -5.40 - PIER_MID_LEN/2);
+        midPier.castShadow = true;
+        modeTrioGroup.add(midPier);
+
+        // 4. WINDOW 2: ЗОНА ОТДЫХА (ОКНО 1) (Z: -6.55 до -7.30м, center -6.925m)
+        const WIN2_Z = -6.925;
+        modeTrioGroup.add(createSingleWindowMesh(WIN2_Z));
+
+        // 5. PIER 2: МЕЖОКОННЫЙ ПРОСТЕНОК В ЛАУНЖЕ (Z: -7.30 до -8.10м, len 0.80m)
+        const PIER_LOUNGE_LEN = 0.80;
+        const loungeMidPier = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_LOUNGE_LEN), blockMat);
+        loungeMidPier.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -7.30 - PIER_LOUNGE_LEN/2);
+        loungeMidPier.castShadow = true;
+        modeTrioGroup.add(loungeMidPier);
+
+        // 6. WINDOW 3: ЗОНА ОТДЫХА (ОКНО 2) (Z: -8.10 до -8.85м, center -8.475m)
+        const WIN3_Z = -8.475;
+        modeTrioGroup.add(createSingleWindowMesh(WIN3_Z));
+
+        // 7. REAR CORNER PIER (Z: -8.85 до -9.50м, len 0.65m)
+        const REAR_CORNER_LEN = 0.65;
+        const rearCornerPier = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, REAR_CORNER_LEN), blockMat);
+        rearCornerPier.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -HL + REAR_CORNER_LEN/2);
+        rearCornerPier.castShadow = true;
+        modeTrioGroup.add(rearCornerPier);
+
+        // ==========================================
+        // ВАРИАНТ 2: «Лаунж у сада» (Глухая прихожая + 1 окно 1,40м по центру зоны отдыха)
+        // ==========================================
+        const modeSingleGroup = new THREE.Group();
+        modeSingleGroup.visible = false;
+        verandaGroup.add(modeSingleGroup);
+
+        // Общая группа гардероба прихожей для вариантов с глухой стеной (Вариант 2 и 3)
+        const modeSolidHallwayGroup = new THREE.Group();
+        modeSolidHallwayGroup.visible = false;
+        verandaGroup.add(modeSolidHallwayGroup);
+
+        // 1. СПЛОШНАЯ СТЕНА ПРИХОЖЕЙ (Z: -4.20 до -7.24м, len 3.04m)
+        const PIER_SINGLE_FRONT_LEN = 3.04;
+        const frontSolidWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_SINGLE_FRONT_LEN), blockMat);
+        frontSolidWall.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -L_OPEN - PIER_SINGLE_FRONT_LEN/2);
+        frontSolidWall.castShadow = true;
+        modeSingleGroup.add(frontSolidWall);
+
+        // 2. ОТЦЕНТРОВАННОЕ ОКНО В ЛАУНЖЕ (Z: -7.24 до -8.64м, width 1.40m, center -7.94m)
+        const WIN_SINGLE_W = 1.40;
+        const WIN_SINGLE_Z = -7.94;
+        function createWideWindowMesh(zCenter, w) {
+            const grp = new THREE.Group();
+            const parapet = new THREE.Mesh(new THREE.BoxGeometry(0.25, parapetH, w), blockMat);
+            parapet.position.set(V_X1 - 0.125, SOCLE + parapetH/2, zCenter);
+            parapet.castShadow = true;
+            grp.add(parapet);
+
+            const topWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, topWallH, w), blockMat);
+            topWall.position.set(V_X1 - 0.125, SOCLE + parapetH + winH + topWallH/2, zCenter);
+            topWall.castShadow = true;
+            grp.add(topWall);
+
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.12, winH, w - 0.05), whiteTrimMat);
+            frame.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            grp.add(frame);
+
+            // 1 центральный вертикальный импост (деление на 2 гармоничные створки)
+            const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.13, winH - 0.06, 0.06), whiteTrimMat);
+            mullion.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            grp.add(mullion);
+
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH - 0.12, w - 0.14), glassMat);
+            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            grp.add(glass);
+
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, w + 0.12), whiteTrimMat);
+            sill.position.set(V_X1 - 0.1, SOCLE + parapetH + 0.02, zCenter);
+            grp.add(sill);
+
+            return grp;
+        }
+        modeSingleGroup.add(createWideWindowMesh(WIN_SINGLE_Z, WIN_SINGLE_W));
+
+        // 3. ЗАДНИЙ УГЛОВОЙ ПРОСТЕНОК (Z: -8.64 до -9.50м, len 0.86m)
+        const PIER_SINGLE_REAR_LEN = 0.86;
+        const rearSolidPier = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_SINGLE_REAR_LEN), blockMat);
+        rearSolidPier.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -HL + PIER_SINGLE_REAR_LEN/2);
+        rearSolidPier.castShadow = true;
+        modeSingleGroup.add(rearSolidPier);
+
+        // ==========================================
+        // ВАРИАНТ 3: «Центр фасада» (1 окно 1,10м вместо 3-х по центру стены Z = -6,95м)
+        // ==========================================
+        const modeCenterGroup = new THREE.Group();
+        modeCenterGroup.visible = false;
+        verandaGroup.add(modeCenterGroup);
+
+        // 1. СПЛОШНАЯ СТЕНА ПРИХОЖЕЙ (Z: -4.20 до -6.40м, len 2.20m)
+        const PIER_CENTER_FRONT_LEN = 2.20;
+        const centerFrontWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_CENTER_FRONT_LEN), blockMat);
+        centerFrontWall.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -L_OPEN - PIER_CENTER_FRONT_LEN/2);
+        centerFrontWall.castShadow = true;
+        modeCenterGroup.add(centerFrontWall);
+
+        // 2. ЦЕНТРАЛЬНОЕ ОКНО (Z: -6.40 до -7.50м, width 1.10m, center -6.95m)
+        const WIN_MID_W = 1.10;
+        const WIN_MID_Z = -6.95;
+        modeCenterGroup.add(createWideWindowMesh(WIN_MID_Z, WIN_MID_W));
+
+        // 3. СПЛОШНАЯ СТЕНА ЛАУНЖА У САДА (Z: -7.50 до -9.50м, len 2.00m)
+        const PIER_CENTER_REAR_LEN = 2.00;
+        const centerRearWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, partWallH, PIER_CENTER_REAR_LEN), blockMat);
+        centerRearWall.position.set(V_X1 - 0.125, SOCLE + partWallH/2, -HL + PIER_CENTER_REAR_LEN/2);
+        centerRearWall.castShadow = true;
+        modeCenterGroup.add(centerRearWall);
+
+        // 4. Картина и бра на сплошной 2-метровой стене лаунжа (Z = -8.50м)
+        const artMatC = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+        const artC = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.75, 0.6), artMatC);
+        artC.position.set(V_X1 - 0.13, SOCLE + 1.6, -8.50);
+        modeCenterGroup.add(artC);
+
+        const sconceC = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.12), new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.7 }));
+        sconceC.position.set(V_X1 - 0.15, SOCLE + 2.05, -8.50);
+        modeCenterGroup.add(sconceC);
+
+        // 5. ДЕКОРАТИВНЫЙ КЛИНКЕРНЫЙ АКЦЕНТ ПО ЦЕНТРУ ФАСАДА (вокруг окна 1,10м)
+        const clinkerAccentGroup = new THREE.Group();
+        modeCenterGroup.add(clinkerAccentGroup);
+
+        const TILE_THICK = 0.025;
+        const TILE_X = V_X1 + TILE_THICK / 2;
+        const TILE_BAND_W = 0.45; // ширина плиточного обрамления по бокам окна
+
+        // Левый вертикальный пилон (Z: -5.95 до -6.40, ширина 0.45м, высота partWallH)
+        const leftTilePier = new THREE.Mesh(new THREE.BoxGeometry(TILE_THICK, partWallH, TILE_BAND_W), clinkerMat);
+        leftTilePier.position.set(TILE_X, SOCLE + partWallH/2, -6.175);
+        leftTilePier.castShadow = true;
+        clinkerAccentGroup.add(leftTilePier);
+
+        // Правый вертикальный пилон (Z: -7.50 до -7.95, ширина 0.45м, высота partWallH)
+        const rightTilePier = new THREE.Mesh(new THREE.BoxGeometry(TILE_THICK, partWallH, TILE_BAND_W), clinkerMat);
+        rightTilePier.position.set(TILE_X, SOCLE + partWallH/2, -7.725);
+        rightTilePier.castShadow = true;
+        clinkerAccentGroup.add(rightTilePier);
+
+        // Подоконный фартук (Z: -6.40 до -7.50, ширина 1.10м, высота 0.90м)
+        const bottomTilePanel = new THREE.Mesh(new THREE.BoxGeometry(TILE_THICK, parapetH, WIN_MID_W), clinkerMat);
+        bottomTilePanel.position.set(TILE_X, SOCLE + parapetH/2, WIN_MID_Z);
+        bottomTilePanel.castShadow = true;
+        clinkerAccentGroup.add(bottomTilePanel);
+
+        // Надоконная перемычка (Z: -6.40 до -7.50, ширина 1.10м, высота 0.35м)
+        const topTilePanel = new THREE.Mesh(new THREE.BoxGeometry(TILE_THICK, topWallH, WIN_MID_W), clinkerMat);
+        topTilePanel.position.set(TILE_X, SOCLE + parapetH + winH + topWallH/2, WIN_MID_Z);
+        topTilePanel.castShadow = true;
+        clinkerAccentGroup.add(topTilePanel);
+
+        // Верхний декоративный металлический отлив/планка (Z: -5.95 до -7.95, длина 2.02м)
+        const tileCapMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.4 });
+        const tileTopCap = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 2.02), tileCapMat);
+        tileTopCap.position.set(TILE_X + 0.01, SOCLE + partWallH, WIN_MID_Z);
+        clinkerAccentGroup.add(tileTopCap);
+
+        // Цокольный декоративный отлив
+        const tileBottomCap = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.03, 2.02), tileCapMat);
+        tileBottomCap.position.set(TILE_X + 0.01, SOCLE, WIN_MID_Z);
+        clinkerAccentGroup.add(tileBottomCap);
+
+        // 6. ДЕКОРАТИВНАЯ ОТДЕЛКА ГЛУХОЙ СТЕНЫ ПРИХОЖЕЙ (Z: -4.20 до -5.95м)
+        const hallwayWallDecorGroup = new THREE.Group();
+        modeCenterGroup.add(hallwayWallDecorGroup);
+
+        const HW_Z_START = -4.40;
+        const HW_Z_END = -5.70;
+        const HW_PANEL_W = Math.abs(HW_Z_END - HW_Z_START); // 1.30m
+        const HW_PANEL_H = 2.10;
+        const HW_PANEL_CY = SOCLE + 0.15 + HW_PANEL_H / 2; // 1.60m
+        const HW_PANEL_CZ = (HW_Z_START + HW_Z_END) / 2;   // -5.05m
+
+        // Тёмная графитовая подложка панно
+        const baffleBacking = new THREE.Mesh(new THREE.BoxGeometry(0.012, HW_PANEL_H + 0.04, HW_PANEL_W), socleMat);
+        baffleBacking.position.set(V_X1 + 0.006, HW_PANEL_CY, HW_PANEL_CZ);
+        hallwayWallDecorGroup.add(baffleBacking);
+
+        // Вертикальные деревянные рейки (баффели из термодерева в цвет стоек террасы)
+        const numWallSlats = 8;
+        const slatSpacing = HW_PANEL_W / (numWallSlats + 1);
+        for (let s = 1; s <= numWallSlats; s++) {
+            const slatZ = HW_Z_START - s * slatSpacing;
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(0.035, HW_PANEL_H, 0.045), woodMat);
+            slat.position.set(V_X1 + 0.025, HW_PANEL_CY, slatZ);
+            slat.castShadow = true;
+            hallwayWallDecorGroup.add(slat);
+        }
+
+        // Дизайнерский фасадный светильник-бра Up & Down
+        const sconceBody = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.18, 0.09), socleMat);
+        sconceBody.position.set(V_X1 + 0.065, HW_PANEL_CY, HW_PANEL_CZ);
+        sconceBody.castShadow = true;
+        hallwayWallDecorGroup.add(sconceBody);
+
+        const sconceLightMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfde047, emissiveIntensity: 1.2 });
+        const sconceUpLens = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.015, 0.075), sconceLightMat);
+        sconceUpLens.position.set(V_X1 + 0.065, HW_PANEL_CY + 0.09, HW_PANEL_CZ);
+        hallwayWallDecorGroup.add(sconceUpLens);
+
+        const sconceDownLens = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.015, 0.075), sconceLightMat);
+        sconceDownLens.position.set(V_X1 + 0.065, HW_PANEL_CY - 0.09, HW_PANEL_CZ);
+        hallwayWallDecorGroup.add(sconceDownLens);
+
+        // Мягкий луч подсветки от бра
+        const sconceLight = new THREE.PointLight(0xffedd5, 0.6, 3.5);
+        sconceLight.position.set(V_X1 + 0.12, HW_PANEL_CY, HW_PANEL_CZ);
+        hallwayWallDecorGroup.add(sconceLight);
+
+        // Табличка с номером дома / адресный знак (на стене рядом со светильником)
+        const plaqueMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.5 });
+        const plaque = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.18, 0.28), plaqueMat);
+        plaque.position.set(V_X1 + 0.01, SOCLE + 2.15, -4.30);
+        hallwayWallDecorGroup.add(plaque);
+        const plaqueNum = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.09, 0.16), whiteTrimMat);
+        plaqueNum.position.set(V_X1 + 0.018, SOCLE + 2.15, -4.30);
+        hallwayWallDecorGroup.add(plaqueNum);
+
+        // ==========================================
+        // SOLID PARTITION WALL WITH SLIDING DOOR (Капитальная перегородка)
+        // At Z = Z_PARTITION = -6.375m
+        // ==========================================
+        const partGroup = new THREE.Group();
+        verandaGroup.add(partGroup);
+
+        // Door opening: width 0.9m, height 2.1m. Center at X = V_X0 + 1.25m
+        const DOOR_W = 0.9;
+        const DOOR_H = 2.1;
+        const DOOR_X = V_X0 + 1.25; // 9.75m
+
+        // Left wall of partition (from house wall X = 8.5m to 9.3m, width 0.8m)
+        const partWallLeftW = (DOOR_X - DOOR_W/2) - V_X0; // 0.8m
+        const partLeftMesh = new THREE.Mesh(new THREE.BoxGeometry(partWallLeftW, partWallH, 0.14), blockMat);
+        partLeftMesh.position.set(V_X0 + partWallLeftW/2, SOCLE + partWallH/2, Z_PARTITION);
+        partLeftMesh.castShadow = true;
+        partGroup.add(partLeftMesh);
+
+        // Right wall of partition (from X = 10.2m to 11.2m, width 1.0m)
+        const partWallRightW = V_X1 - (DOOR_X + DOOR_W/2); // 1.0m
+        const partRightMesh = new THREE.Mesh(new THREE.BoxGeometry(partWallRightW, partWallH, 0.14), blockMat);
+        partRightMesh.position.set(V_X1 - partWallRightW/2, SOCLE + partWallH/2, Z_PARTITION);
+        partRightMesh.castShadow = true;
+        partGroup.add(partRightMesh);
+
+        // Lintel above sliding door
+        const partLintelH = partWallH - DOOR_H;
+        const partLintelMesh = new THREE.Mesh(new THREE.BoxGeometry(DOOR_W, partLintelH, 0.14), blockMat);
+        partLintelMesh.position.set(DOOR_X, H_WALL - partLintelH/2, Z_PARTITION);
+        partGroup.add(partLintelMesh);
+
+        // Sliding door track (верхний направляющий рельс чёрный матовый)
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+        const trackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.05), trackMat);
+        trackMesh.position.set(DOOR_X + 0.3, SOCLE + DOOR_H + 0.05, Z_PARTITION + 0.09);
+        partGroup.add(trackMesh);
+
+        // Sliding door leaf (раздвижная дверь, сдвинута на 30 см для наглядности)
+        const slidingDoorMat = new THREE.MeshStandardMaterial({ color: 0x5a3825, roughness: 0.6 });
+        const slidingDoor = new THREE.Mesh(new THREE.BoxGeometry(0.95, DOOR_H, 0.05), slidingDoorMat);
+        slidingDoor.position.set(DOOR_X + 0.3, SOCLE + DOOR_H/2, Z_PARTITION + 0.09);
+        slidingDoor.castShadow = true;
+        partGroup.add(slidingDoor);
+
+        // Glass inserts in sliding door (матовое стекло)
+        const frostGlassMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4, transparent: true, opacity: 0.7 });
+        for (let gy = 0.5; gy <= 1.5; gy += 0.5) {
+            const glassInsert = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.32, 0.06), frostGlassMat);
+            glassInsert.position.set(DOOR_X + 0.3, SOCLE + gy, Z_PARTITION + 0.09);
+            partGroup.add(glassInsert);
+        }
+
+        // Sleek black handle
+        const handleMesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.5, 0.06), trackMat);
+        handleMesh.position.set(DOOR_X + 0.3 - 0.38, SOCLE + 1.0, Z_PARTITION + 0.09);
+        partGroup.add(handleMesh);
+
+        // 5. REAR WALL WITH PANORAMIC GLASS & EXIT DOOR TO GARDEN TERRACE (Z = -HL = -9.5m)
+        // Panoramic glass wall facing the garden
+        const rearWinW = 1.4;
+        const rearGlassH = 2.1;
+        // Wall left of panoramic portal
+        const rWallL = new THREE.Mesh(new THREE.BoxGeometry(0.5, partWallH, 0.2), blockMat);
+        rWallL.position.set(V_X0 + 0.25, SOCLE + partWallH/2, -HL);
+        verandaGroup.add(rWallL);
+
+        // Wall right of panoramic portal
+        const rWallR = new THREE.Mesh(new THREE.BoxGeometry(0.5, partWallH, 0.2), blockMat);
+        rWallR.position.set(V_X1 - 0.25, SOCLE + partWallH/2, -HL);
+        verandaGroup.add(rWallR);
+
+        // Lintel above panoramic glass
+        const rWallTop = new THREE.Mesh(new THREE.BoxGeometry(1.7, partWallH - rearGlassH, 0.2), blockMat);
+        rWallTop.position.set(V_X0 + 0.5 + 0.85, H_WALL - (partWallH - rearGlassH)/2, -HL);
+        verandaGroup.add(rWallTop);
+
+        // Panoramic Glass Door / Exit to garden terrace
+        const rearDoorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, rearGlassH, 0.12), whiteTrimMat);
+        rearDoorFrame.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
+        verandaGroup.add(rearDoorFrame);
+
+        const rearDoorGlass = new THREE.Mesh(new THREE.BoxGeometry(1.6, rearGlassH - 0.1, 0.04), glassMat);
+        rearDoorGlass.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
+        verandaGroup.add(rearDoorGlass);
+
+        // Door divider mullion (double glazed doors)
+        const rearDoorDiv = new THREE.Mesh(new THREE.BoxGeometry(0.08, rearGlassH, 0.14), whiteTrimMat);
+        rearDoorDiv.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
+        verandaGroup.add(rearDoorDiv);
+
+        // 6. REAR GARDEN TERRACE (Задняя терраса 2,7 × 2,2 м)
+        const REAR_TERR_LEN = 2.2;
+        const rearDeckGeo = new THREE.BoxGeometry(VW, SOCLE, REAR_TERR_LEN);
+        const rearDeck = new THREE.Mesh(rearDeckGeo, concreteSlabMat);
+        rearDeck.position.set(V_X0 + VW/2, SOCLE/2, -HL - REAR_TERR_LEN/2);
+        rearDeck.receiveShadow = true;
+        rearDeck.castShadow = true;
+        verandaGroup.add(rearDeck);
+
+        // Decking on rear terrace
+        const rearDeckPlanks = new THREE.Mesh(new THREE.BoxGeometry(VW - 0.05, 0.04, REAR_TERR_LEN - 0.05), woodDeckMat);
+        rearDeckPlanks.position.set(V_X0 + VW/2, SOCLE + 0.02, -HL - REAR_TERR_LEN/2);
+        verandaGroup.add(rearDeckPlanks);
+
+        // Garden steps down from rear terrace
+        for (let s = 1; s <= 2; s++) {
+            const rStep = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.13, 0.32), stepMat);
+            rStep.position.set(V_X0 + VW/2, SOCLE - s * 0.13 + 0.02, -HL - REAR_TERR_LEN - s * 0.3);
+            rStep.castShadow = true;
+            verandaGroup.add(rStep);
+        }
+
+        // Modern open timber railings on rear terrace (matching front porch with horizontal slats)
+        const rearRailHeight = 0.9;
+        const rPostL = new THREE.Mesh(new THREE.BoxGeometry(0.12, rearRailHeight, 0.12), woodMat);
+        rPostL.position.set(V_X0 + 0.08, SOCLE + rearRailHeight/2, -HL - REAR_TERR_LEN + 0.08);
+        rPostL.castShadow = true;
+        verandaGroup.add(rPostL);
+
+        const rPostR = new THREE.Mesh(new THREE.BoxGeometry(0.12, rearRailHeight, 0.12), woodMat);
+        rPostR.position.set(V_X1 - 0.08, SOCLE + rearRailHeight/2, -HL - REAR_TERR_LEN + 0.08);
+        rPostR.castShadow = true;
+        verandaGroup.add(rPostR);
+
+        const rearHandRailL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, REAR_TERR_LEN), woodMat);
+        rearHandRailL.position.set(V_X0 + 0.08, SOCLE + rearRailHeight, -HL - REAR_TERR_LEN/2);
+        verandaGroup.add(rearHandRailL);
+
+        const rearHandRailR = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, REAR_TERR_LEN), woodMat);
+        rearHandRailR.position.set(V_X1 - 0.08, SOCLE + rearRailHeight, -HL - REAR_TERR_LEN/2);
+        verandaGroup.add(rearHandRailR);
+
+        for (let h = 0.25; h < rearRailHeight; h += 0.22) {
+            const slatL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, REAR_TERR_LEN), woodMat);
+            slatL.position.set(V_X0 + 0.08, SOCLE + h, -HL - REAR_TERR_LEN/2);
+            verandaGroup.add(slatL);
+
+            const slatR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, REAR_TERR_LEN), woodMat);
+            slatR.position.set(V_X1 - 0.08, SOCLE + h, -HL - REAR_TERR_LEN/2);
+            verandaGroup.add(slatR);
+        }
+
+        // 7. ROOF OVER REAR GARDEN TERRACE (Навес над террасой выхода в сад - активен по умолчанию)
+        const rearCanopyGroup = new THREE.Group();
+        rearCanopyGroup.visible = true;
+        verandaGroup.add(rearCanopyGroup);
+
+        const Z_CANOPY_START = -HL; // -9.5m
+        const Z_CANOPY_END = -HL - REAR_TERR_LEN - 0.35; // -12.05m (with eave overhang)
+        const Y_CANOPY_START = YE; // 2.85m
+        const Y_CANOPY_END = 2.35; // 2.35m (comfortable walking height at outer edge)
+        const CANOPY_W = VW + 0.4; // 3.1m (with side overhangs)
+
+        // Lean-to shed roof slope over rear terrace
+        const rearCanopySlopeMesh = createQuadMesh(
+            [V_X0 - 0.2, Y_CANOPY_START, Z_CANOPY_START],
+            [V_X1 + 0.2, Y_CANOPY_START, Z_CANOPY_START],
+            [V_X1 + 0.2, Y_CANOPY_END, Z_CANOPY_END],
+            [V_X0 - 0.2, Y_CANOPY_END, Z_CANOPY_END],
+            roofMat
+        );
+        rearCanopySlopeMesh.castShadow = true;
+        rearCanopyGroup.add(rearCanopySlopeMesh);
+
+        // Timber support posts (стойки 150×150) under the rear canopy at the terrace corners
+        const rPost1 = new THREE.Mesh(new THREE.BoxGeometry(0.15, Y_CANOPY_END - SOCLE, 0.15), woodMat);
+        rPost1.position.set(V_X0 + 0.1, SOCLE + (Y_CANOPY_END - SOCLE)/2, -HL - REAR_TERR_LEN + 0.1);
+        rPost1.castShadow = true;
+        rearCanopyGroup.add(rPost1);
+
+        const rPost2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, Y_CANOPY_END - SOCLE, 0.15), woodMat);
+        rPost2.position.set(V_X1 - 0.1, SOCLE + (Y_CANOPY_END - SOCLE)/2, -HL - REAR_TERR_LEN + 0.1);
+        rPost2.castShadow = true;
+        rearCanopyGroup.add(rPost2);
+
+        // Header beam across the two rear posts
+        const rBeam = new THREE.Mesh(new THREE.BoxGeometry(VW, 0.15, 0.15), woodMat);
+        rBeam.position.set(V_X0 + VW/2, Y_CANOPY_END - 0.08, -HL - REAR_TERR_LEN + 0.1);
+        rBeam.castShadow = true;
+        rearCanopyGroup.add(rBeam);
+
+        // Fascia trim on rear canopy
+        const rFascia = new THREE.Mesh(new THREE.BoxGeometry(CANOPY_W, 0.14, 0.04), roofMat);
+        rFascia.position.set(V_X0 + VW/2, Y_CANOPY_END - 0.05, Z_CANOPY_END);
+        rearCanopyGroup.add(rFascia);
+
+        // Timber rafters under rear canopy (3 rafters)
+        const rearRafterLen = Math.hypot(Z_CANOPY_END - Z_CANOPY_START, Y_CANOPY_START - Y_CANOPY_END);
+        const rearRafterPitch = Math.atan2(Y_CANOPY_START - Y_CANOPY_END, Math.abs(Z_CANOPY_END - Z_CANOPY_START));
+        [V_X0 + 0.1, V_X0 + VW/2, V_X1 - 0.1].forEach(rx => {
+            const rr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, rearRafterLen), woodMat);
+            rr.position.set(rx, (Y_CANOPY_START + Y_CANOPY_END)/2 - 0.06, (Z_CANOPY_START + Z_CANOPY_END)/2);
+            rr.rotation.x = -rearRafterPitch;
+            rr.castShadow = true;
+            rearCanopyGroup.add(rr);
+        });
+
+
+        // INTERIOR FURNISHINGS (ДВЕ ЗОНЫ: ПРИХОЖАЯ + ГОСТИНАЯ-ЛАУНЖ)
+        const interiorGroup = new THREE.Group();
+        verandaGroup.add(interiorGroup);
+
+        // ------------------------------------------
+        // ЗОНА 1: СКАНДИ-ПРИХОЖАЯ (Z: -4.2 до -6.375м)
+        // ------------------------------------------
+        const oakMat = new THREE.MeshStandardMaterial({ color: 0x9a5b28, roughness: 0.65 });
+        const blackMetalMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.7 });
+        const wallBackingMat = new THREE.MeshStandardMaterial({ color: 0xede9fe, roughness: 0.9 }); // Светлая стеновая панель
+        const X_INNER_WALL = V_X1 - 0.25; // Внутренняя грань наружной стены веранды (10,95 м)
+
+        // === ПРИХОЖАЯ ДЛЯ ВАРИАНТА А (С ОКНОМ 0,75м): ===
+        // 1. Декоративная реечная панель (Баффели из дуба) в простенке Z = -5.85м
+        const SLAT_W = 0.82;
+        const SLAT_Z_CENTER = -5.85;
+
+        const slatBacking = new THREE.Mesh(new THREE.BoxGeometry(0.02, partWallH - 0.1, SLAT_W), wallBackingMat);
+        slatBacking.position.set(X_INNER_WALL - 0.01, SOCLE + partWallH/2, SLAT_Z_CENTER);
+        modeTrioGroup.add(slatBacking);
+
+        const numSlats = 9;
+        for (let i = 0; i < numSlats; i++) {
+            const sz = SLAT_Z_CENTER - SLAT_W/2 + (i + 0.5) * (SLAT_W / numSlats);
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(0.03, partWallH - 0.1, 0.04), oakMat);
+            slat.position.set(X_INNER_WALL - 0.035, SOCLE + partWallH/2, sz);
+            slat.castShadow = true;
+            modeTrioGroup.add(slat);
+        }
+
+        const hatShelf = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, SLAT_W + 0.04), oakMat);
+        hatShelf.position.set(X_INNER_WALL - 0.14, SOCLE + 2.05, SLAT_Z_CENTER);
+        hatShelf.castShadow = true;
+        modeTrioGroup.add(hatShelf);
+
+        for (let hi = 0; hi < 4; hi++) {
+            const hz = SLAT_Z_CENTER - 0.3 + hi * 0.2;
+            const hook = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), blackMetalMat);
+            hook.position.set(X_INNER_WALL - 0.05, SOCLE + 1.62, hz);
+            modeTrioGroup.add(hook);
+        }
+
+        const jacketMat1 = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 }); // Графитовая куртка
+        const jacket1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.85, 0.28), jacketMat1);
+        jacket1.position.set(X_INNER_WALL - 0.16, SOCLE + 1.25, SLAT_Z_CENTER - 0.18);
+        jacket1.castShadow = true;
+        modeTrioGroup.add(jacket1);
+
+        const jacketMat2 = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 }); // Светло-серый плащ
+        const jacket2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.92, 0.26), jacketMat2);
+        jacket2.position.set(X_INNER_WALL - 0.16, SOCLE + 1.22, SLAT_Z_CENTER + 0.18);
+        jacket2.castShadow = true;
+        modeTrioGroup.add(jacket2);
+
+        // Банкетка под окном прихожей для Варианта А
+        const benchMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+        const benchBase = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.35, 0.95), oakMat);
+        benchBase.position.set(X_INNER_WALL - 0.21, SOCLE + 0.175, WIN1_Z);
+        benchBase.castShadow = true;
+        modeTrioGroup.add(benchBase);
+
+        const benchCushion = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 0.97), benchMat);
+        benchCushion.position.set(X_INNER_WALL - 0.21, SOCLE + 0.39, WIN1_Z);
+        modeTrioGroup.add(benchCushion);
+
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.9 });
+        const shoe1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.07, 0.27), shoeMat);
+        shoe1.position.set(X_INNER_WALL - 0.21, SOCLE + 0.05, WIN1_Z - 0.22);
+        modeTrioGroup.add(shoe1);
+        const shoe2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.07, 0.27), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 }));
+        shoe2.position.set(X_INNER_WALL - 0.21, SOCLE + 0.05, WIN1_Z + 0.22);
+        modeTrioGroup.add(shoe2);
+
+        // === ПРИХОЖАЯ ДЛЯ ВАРИАНТОВ 2 И 3 (СПЛОШНАЯ СТЕНА 2,2 М): ===
+        // Полноразмерный роскошный сканди-гарнитур на всю стену!
+        const SLAT_B_W = 1.40;
+        const SLAT_B_CENTER = -5.25;
+
+        const slatBackingB = new THREE.Mesh(new THREE.BoxGeometry(0.02, partWallH - 0.1, SLAT_B_W), wallBackingMat);
+        slatBackingB.position.set(X_INNER_WALL - 0.01, SOCLE + partWallH/2, SLAT_B_CENTER);
+        modeSolidHallwayGroup.add(slatBackingB);
+
+        const numSlatsB = 14;
+        for (let i = 0; i < numSlatsB; i++) {
+            const sz = SLAT_B_CENTER - SLAT_B_W/2 + (i + 0.5) * (SLAT_B_W / numSlatsB);
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(0.03, partWallH - 0.1, 0.04), oakMat);
+            slat.position.set(X_INNER_WALL - 0.035, SOCLE + partWallH/2, sz);
+            slat.castShadow = true;
+            modeSolidHallwayGroup.add(slat);
+        }
+
+        const hatShelfB = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, SLAT_B_W + 0.04), oakMat);
+        hatShelfB.position.set(X_INNER_WALL - 0.14, SOCLE + 2.05, SLAT_B_CENTER);
+        hatShelfB.castShadow = true;
+        modeSolidHallwayGroup.add(hatShelfB);
+
+        for (let hi = 0; hi < 6; hi++) {
+            const hz = SLAT_B_CENTER - 0.5 + hi * 0.2;
+            const hook = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), blackMetalMat);
+            hook.position.set(X_INNER_WALL - 0.05, SOCLE + 1.62, hz);
+            modeSolidHallwayGroup.add(hook);
+        }
+
+        // 3 куртки на вешалке для Вариантов 2 и 3
+        const jacketB1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.85, 0.28), jacketMat1);
+        jacketB1.position.set(X_INNER_WALL - 0.16, SOCLE + 1.25, SLAT_B_CENTER - 0.35);
+        jacketB1.castShadow = true;
+        modeSolidHallwayGroup.add(jacketB1);
+
+        const jacketB2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.90, 0.26), new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85 })); // Горчичная/рыжая куртка
+        jacketB2.position.set(X_INNER_WALL - 0.16, SOCLE + 1.22, SLAT_B_CENTER);
+        jacketB2.castShadow = true;
+        modeSolidHallwayGroup.add(jacketB2);
+
+        const jacketB3 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.92, 0.26), jacketMat2);
+        jacketB3.position.set(X_INNER_WALL - 0.16, SOCLE + 1.20, SLAT_B_CENTER + 0.35);
+        jacketB3.castShadow = true;
+        modeSolidHallwayGroup.add(jacketB3);
+
+        // Широкая удобная банкетка (1,4 м) для Вариантов 2 и 3
+        const benchBaseB = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.35, SLAT_B_W), oakMat);
+        benchBaseB.position.set(X_INNER_WALL - 0.21, SOCLE + 0.175, SLAT_B_CENTER);
+        benchBaseB.castShadow = true;
+        modeSolidHallwayGroup.add(benchBaseB);
+
+        const benchCushionB = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, SLAT_B_W + 0.02), benchMat);
+        benchCushionB.position.set(X_INNER_WALL - 0.21, SOCLE + 0.39, SLAT_B_CENTER);
+        modeSolidHallwayGroup.add(benchCushionB);
+
+        // 4 пары обуви под банкеткой
+        for (let si = 0; si < 4; si++) {
+            const shoeColors = [0x1f2937, 0x78350f, 0xe2e8f0, 0x475569];
+            const sh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.07, 0.24), new THREE.MeshStandardMaterial({ color: shoeColors[si], roughness: 0.85 }));
+            sh.position.set(X_INNER_WALL - 0.21, SOCLE + 0.05, SLAT_B_CENTER - 0.45 + si * 0.3);
+            modeSolidHallwayGroup.add(sh);
+        }
+
+        // 6. Ростовое зеркало с теплой LED-подсветкой
+        // Размещено на перегородке справа от раздвижной двери
+        const mirrorFrameMat = new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.2 });
+        const mirrorGlassMat = new THREE.MeshStandardMaterial({ color: 0xbfdbfe, metalness: 0.95, roughness: 0.05 });
+        const ledGlowMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.4 });
+
+        // Рама зеркала (0,55 × 1,65 м)
+        const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.65, 0.03), mirrorFrameMat);
+        mirrorFrame.position.set(V_X1 - 0.45, SOCLE + 1.15, Z_PARTITION + 0.08);
+        interiorGroup.add(mirrorFrame);
+
+        // Стекло зеркала
+        const mirrorGlass = new THREE.Mesh(new THREE.BoxGeometry(0.51, 1.61, 0.01), mirrorGlassMat);
+        mirrorGlass.position.set(V_X1 - 0.45, SOCLE + 1.15, Z_PARTITION + 0.10);
+        interiorGroup.add(mirrorGlass);
+
+        // LED подсветка контура зеркала
+        const ledHalo = new THREE.Mesh(new THREE.BoxGeometry(0.57, 1.67, 0.01), ledGlowMat);
+        ledHalo.position.set(V_X1 - 0.45, SOCLE + 1.15, Z_PARTITION + 0.07);
+        interiorGroup.add(ledHalo);
+
+        // ------------------------------------------
+        // ЗОНА 2: ГОСТИНАЯ / ЗОНА ОТДЫХА (Z: -6.375 до -9.5м)
+        // ------------------------------------------
+        // Мебельная группа лаунжа (может плавно сдвигаться соосно окну)
+        const loungeFurnitureGroup = new THREE.Group();
+        interiorGroup.add(loungeFurnitureGroup);
+
+        const SOFA_Z = -7.70; // Базовая ось для Варианта А (между двумя окнами)
+
+        // 1. Уютный мягкий диванчик (длина 1,6 м, глубина 0,8 м)
+        // Расположен у стены дома по центру зоны отдыха!
+        const sofaMat = new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.8 }); // Стильный благородный хвойно-бирюзовый
+        const sofaGroup = new THREE.Group();
+
+        // Сиденье дивана
+        const sofaSeat = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.42, 1.6), sofaMat);
+        sofaSeat.position.set(V_X0 + 0.5, SOCLE + 0.21, SOFA_Z);
+        sofaGroup.add(sofaSeat);
+
+        // Спинка дивана
+        const sofaBack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.5, 1.6), sofaMat);
+        sofaBack.position.set(V_X0 + 0.15, SOCLE + 0.42 + 0.25, SOFA_Z);
+        sofaGroup.add(sofaBack);
+
+        // Подлокотники
+        for (let dz of [-0.75, 0.75]) {
+            const arm = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.3, 0.12), sofaMat);
+            arm.position.set(V_X0 + 0.48, SOCLE + 0.42 + 0.05, SOFA_Z + dz);
+            sofaGroup.add(arm);
+        }
+
+        // Подушки на диване
+        const pillowMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.9 });
+        for (let dz of [-0.4, 0.4]) {
+            const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.28, 0.28), pillowMat);
+            pillow.position.set(V_X0 + 0.32, SOCLE + 0.5, SOFA_Z + dz);
+            sofaGroup.add(pillow);
+        }
+        loungeFurnitureGroup.add(sofaGroup);
+
+        // 2. Кофейный / чайный столик перед диваном
+        const coffeeTableMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.6 });
+        const coffeeTableTop = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 0.9), coffeeTableMat);
+        coffeeTableTop.position.set(V_X0 + 1.25, SOCLE + 0.45, SOFA_Z);
+        loungeFurnitureGroup.add(coffeeTableTop);
+
+        for (let dx of [-0.22, 0.22]) {
+            for (let dz of [-0.38, 0.38]) {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.45, 0.04), trackMat);
+                leg.position.set(V_X0 + 1.25 + dx, SOCLE + 0.225, SOFA_Z + dz);
+                loungeFurnitureGroup.add(leg);
+            }
+        }
+
+        // Чайный сервиз на столике
+        const teapotMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+        const teapot = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.12, 12), teapotMat);
+        teapot.position.set(V_X0 + 1.25, SOCLE + 0.53, SOFA_Z);
+        loungeFurnitureGroup.add(teapot);
+
+        const cup1 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.06, 8), teapotMat);
+        cup1.position.set(V_X0 + 1.25 - 0.12, SOCLE + 0.5, SOFA_Z + 0.15);
+        loungeFurnitureGroup.add(cup1);
+        const cup2 = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.06, 8), teapotMat);
+        cup2.position.set(V_X0 + 1.25 + 0.12, SOCLE + 0.5, SOFA_Z - 0.15);
+        loungeFurnitureGroup.add(cup2);
+
+        // 3. Мягкий ковёр перед диваном
+        const rugMat = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.95 });
+        const rug = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.015, 1.8), rugMat);
+        rug.position.set(V_X0 + 1.0, SOCLE + 0.01, SOFA_Z);
+        loungeFurnitureGroup.add(rug);
+
+        // 4. Картина и настенный бра-светильник
+        // Для Варианта А: ровно в межоконном простенке по центру (Z = -7.70м)
+        const artMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+        const art = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.7, 0.5), artMat);
+        art.position.set(V_X1 - 0.13, SOCLE + 1.6, SOFA_Z);
+        modeTrioGroup.add(art);
+
+        const sconce = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.12), new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.7 }));
+        sconce.position.set(V_X1 - 0.15, SOCLE + 2.05, SOFA_Z);
+        modeTrioGroup.add(sconce);
+
+        // Для Варианта Б (окно отцентровано по Z = -7.94м): картина и бра на простенке Z = -6.81м
+        const artB = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.6, 0.35), artMat);
+        artB.position.set(V_X1 - 0.13, SOCLE + 1.6, -6.81);
+        modeSingleGroup.add(artB);
+
+        const sconceB = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1, 0.1), new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.7 }));
+        sconceB.position.set(V_X1 - 0.15, SOCLE + 2.05, -6.81);
+        modeSingleGroup.add(sconceB);
+
+        // 5. Стильный торшер в углу зоны отдыха
+        const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.6, 8), trackMat);
+        lampPole.position.set(V_X1 - 0.35, SOCLE + 0.8, -HL + 0.4);
+        interiorGroup.add(lampPole);
+
+        const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.25, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.5, side: THREE.DoubleSide }));
+        lampShade.position.set(V_X1 - 0.35, SOCLE + 1.6, -HL + 0.4);
+        interiorGroup.add(lampShade);
+
+        // Кресла на открытой парадной террасе
+        const porchChair1 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 0.65), woodMat);
+        porchChair1.position.set(V_X0 + 0.7, SOCLE + 0.35, -1.5);
+        interiorGroup.add(porchChair1);
+        const porchChair2 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.65, 0.65), woodMat);
+        porchChair2.position.set(V_X0 + 0.7, SOCLE + 0.35, -2.6);
+        interiorGroup.add(porchChair2);
+
+        // ==========================================
+        // ACCURATE UNIFIED T-SHAPED ROOF GEOMETRY
+        // ==========================================
+        const roofGroup = new THREE.Group();
+        verandaGroup.add(roofGroup);
+
+        // Key geometric coordinates for the T-roof:
+        // Ridge is at Z = ZR = -4.75 (middle of the 9.5m veranda)
+        let YR = 5.8; // Конёк веранды вровень с коньком дома 5,8 м!
+        let XI = HW / 2; // 4.25м - точно конёк дома
+        const XO = V_X1 + 0.45;   // 11.65 (Outer ridge edge with overhang)
+
+        // Helper: create quad mesh from 4 points (A, B, C, D) with normalized UV mapping
+        function createQuadMesh(p1, p2, p3, p4, mat) {
+            const geo = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                // Triangle 1: p1, p2, p3
+                p1[0], p1[1], p1[2],
+                p2[0], p2[1], p2[2],
+                p3[0], p3[1], p3[2],
+                // Triangle 2: p1, p3, p4
+                p1[0], p1[1], p1[2],
+                p3[0], p3[1], p3[2],
+                p4[0], p4[1], p4[2],
+                // Backface Triangle 1
+                p1[0], p1[1], p1[2],
+                p3[0], p3[1], p3[2],
+                p2[0], p2[1], p2[2],
+                // Backface Triangle 2
+                p1[0], p1[1], p1[2],
+                p4[0], p4[1], p4[2],
+                p3[0], p3[1], p3[2]
+            ]);
+            geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+            // Normalized UVs so material repeat tiles uniformly across slope
+            const uvs = new Float32Array([
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 0,
+                1, 1,
+                0, 1,
+                // Backface
+                0, 0,
+                1, 1,
+                1, 0,
+                0, 0,
+                0, 1,
+                1, 1
+            ]);
+            geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.castShadow = true;
+            return mesh;
+        }
+
+        // 1. FRONT ROOF SLOPE (covers open terrace, sloping toward ROAD)
+        // p1: Inner ridge (XI, YR, ZR)
+        // p2: Outer ridge (XO, YR, ZR)
+        // p3: Outer front eave (XO, YE, ZF)
+        // p4: Inner front eave (XW_IN, YE, ZF)
+        const frontSlopeMesh = createQuadMesh(
+            [XI, YR, ZR],
+            [XO, YR, ZR],
+            [XO, YE, ZF],
+            [XW_IN, YE, ZF],
+            roofMat
+        );
+        roofGroup.add(frontSlopeMesh);
+
+        // 2. REAR ROOF SLOPE (covers closed veranda, sloping toward GARDEN)
+        // p1: Outer ridge (XO, YR, ZR)
+        // p2: Inner ridge (XI, YR, ZR)
+        // p3: Inner rear eave (XW_IN, YE, ZB)
+        // p4: Outer rear eave (XO, YE, ZB)
+        const rearSlopeMesh = createQuadMesh(
+            [XO, YR, ZR],
+            [XI, YR, ZR],
+            [XW_IN, YE, ZB],
+            [XO, YE, ZB],
+            roofMat
+        );
+        roofGroup.add(rearSlopeMesh);
+
+        // 3. TRIANGULAR GABLE PEDIMENT (facing the YARD at outer wall X = V_X1 = 8.9m)
+        // Perfectly bounded triangle under the roof ridge:
+        // P1: front eave at wall (V_X1, YE, 0)
+        // P2: rear eave at wall (V_X1, YE, -HL)
+        // P3: ridge peak at wall (V_X1, YR - 0.05, ZR)
+        const yardGable = createTriangleMesh(
+            [V_X1, YE, 0],
+            [V_X1, YE, -HL],
+            [V_X1, YR - 0.05, ZR],
+            blockMat
+        );
+        yardGable.castShadow = true;
+        roofGroup.add(yardGable);
+
+        // Окошко во фронтоне со двора (Скандинавское слуховое окно с переплётом)
+        function createGableWindow(peakYR) {
+            const gwGrp = new THREE.Group();
+            const W_GW = 0.75;
+            const H_GW = 0.85;
+            const Y_CENTER = YE + (peakYR - YE) * 0.42;
+
+            // Наличники и рама (синхронизированы с whiteTrimMat)
+            const casing = new THREE.Mesh(new THREE.BoxGeometry(0.06, H_GW + 0.10, W_GW + 0.10), whiteTrimMat);
+            casing.position.set(V_X1 + 0.02, Y_CENTER, ZR);
+            gwGrp.add(casing);
+
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.08, H_GW, W_GW), whiteTrimMat);
+            frame.position.set(V_X1 + 0.03, Y_CENTER, ZR);
+            gwGrp.add(frame);
+
+            // Остекление
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_GW - 0.12, W_GW - 0.12), glassMat);
+            glass.position.set(V_X1 + 0.045, Y_CENTER, ZR);
+            gwGrp.add(glass);
+
+            // Скандинавские шпросы (крестообразный переплёт на 4 стекла)
+            const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.035, H_GW - 0.12, 0.04), whiteTrimMat);
+            vBar.position.set(V_X1 + 0.05, Y_CENTER, ZR);
+            gwGrp.add(vBar);
+
+            const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, W_GW - 0.12), whiteTrimMat);
+            hBar.position.set(V_X1 + 0.05, Y_CENTER, ZR);
+            gwGrp.add(hBar);
+
+            // Подоконный отлив
+            const sill = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, W_GW + 0.16), whiteTrimMat);
+            sill.position.set(V_X1 + 0.05, Y_CENTER - H_GW/2 - 0.01, ZR);
+            gwGrp.add(sill);
+
+            gwGrp.traverse(child => { if (child.isMesh) child.castShadow = true; });
+            return gwGrp;
+        }
+        roofGroup.add(createGableWindow(YR));
+
+        // 4. RIDGE CAP (Конёк пристройки)
+        const ridgeCapGeo = new THREE.BoxGeometry(XO - XI + 0.1, 0.08, 0.22);
+        const ridgeCap = new THREE.Mesh(ridgeCapGeo, roofMat);
+        ridgeCap.position.set((XI + XO) / 2, YR + 0.04, ZR);
+        roofGroup.add(ridgeCap);
+
+        // 5. VALLEY FLASHINGS (Ендовы - сопряжение с крышей дома)
+        function createValleyTube(pStart, pEnd) {
+            const dir = new THREE.Vector3().subVectors(new THREE.Vector3(...pEnd), new THREE.Vector3(...pStart));
+            const len = dir.length();
+            const tube = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, len), valleyMat);
+            tube.position.set((pStart[0] + pEnd[0])/2, (pStart[1] + pEnd[1])/2 + 0.02, (pStart[2] + pEnd[2])/2);
+            tube.lookAt(new THREE.Vector3(...pEnd));
+            return tube;
+        }
+
+        // Front Valley: from ridge (XI, YR, ZR) to eave corner (XW_IN, YE, ZF)
+        const valleyFront = createValleyTube([XI, YR, ZR], [XW_IN, YE, ZF]);
+        roofGroup.add(valleyFront);
+
+        // Rear Valley: from ridge (XI, YR, ZR) to rear eave corner (XW_IN, YE, ZB)
+        const valleyRear = createValleyTube([XI, YR, ZR], [XW_IN, YE, ZB]);
+        roofGroup.add(valleyRear);
+
+        // ==========================================
+        // CARPORT FOR 1 CAR (НАВЕС 6,0 × 4,0 М ДЛЯ 1 АВТОМОБИЛЯ)
+        // Lean-to shed roof sloping from house wall toward road
+        // Dimensions: 6.0m wide x 4.0m deep (covers 1 car parallel to road)
+        // ==========================================
+        const carportGroup = new THREE.Group();
+        carportGroup.visible = true; // Активен по умолчанию
+        scene.add(carportGroup);
+
+        const CP_X0 = 1.8;
+        const CP_X1 = 7.8;
+        const CP_W = CP_X1 - CP_X0; // 6.0m
+        const CP_Z0 = 0.1;
+        const CP_Z1 = 4.1;
+        const CP_L = CP_Z1 - CP_Z0; // 4.0m
+        const CP_Y_WALL = 2.85;     // Eaves at house wall
+        const CP_Y_FRONT = 2.25;    // Eaves at front header (road side)
+
+        // 1. Paved concrete parking pad (6.4 x 4.4m)
+        const padMat = new THREE.MeshLambertMaterial({ color: 0x475569 });
+        const padMesh = new THREE.Mesh(new THREE.PlaneGeometry(CP_W + 0.4, CP_L + 0.4), padMat);
+        padMesh.rotation.x = -Math.PI / 2;
+        padMesh.position.set((CP_X0 + CP_X1)/2, 0.02, (CP_Z0 + CP_Z1)/2);
+        padMesh.receiveShadow = true;
+        carportGroup.add(padMesh);
+
+        // Paved walkway from parking pad directly to veranda steps
+        const cpWalkGeo = new THREE.PlaneGeometry(1.8, 1.8);
+        const cpWalkMesh = new THREE.Mesh(cpWalkGeo, padMat);
+        cpWalkMesh.rotation.x = -Math.PI / 2;
+        cpWalkMesh.position.set(8.2, 0.022, 1.1);
+        cpWalkMesh.receiveShadow = true;
+        carportGroup.add(cpWalkMesh);
+
+        // 2. Timber Ledger Beam on house wall
+        const wallLedger = new THREE.Mesh(new THREE.BoxGeometry(CP_W, 0.15, 0.12), woodMat);
+        wallLedger.position.set((CP_X0 + CP_X1)/2, CP_Y_WALL - 0.075, CP_Z0);
+        carportGroup.add(wallLedger);
+
+        // 3. Front Timber Support Posts (Стойки 150×150 мм - широкий заезд 5.7 м)
+        const cpPostGeo = new THREE.BoxGeometry(0.15, CP_Y_FRONT - 0.15, 0.15);
+        const cpPostX = [CP_X0 + 0.15, CP_X1 - 0.15];
+        cpPostX.forEach(px => {
+            const post = new THREE.Mesh(cpPostGeo, woodMat);
+            post.position.set(px, (CP_Y_FRONT - 0.15)/2, CP_Z1 - 0.2);
+            post.castShadow = true;
+            carportGroup.add(post);
+
+            // Diagonal struts (подкосы 45°)
+            const s = (px === cpPostX[0]) ? 0.45 : -0.45;
+            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.60, 0.08), woodMat);
+            strut.position.set(px + s/2, CP_Y_FRONT - 0.35, CP_Z1 - 0.2);
+            strut.rotation.z = s > 0 ? -Math.PI/4 : Math.PI/4;
+            carportGroup.add(strut);
+        });
+
+        // Rear support posts along house wall for freestanding structural stability
+        [CP_X0 + 0.15, CP_X1 - 0.15].forEach(px => {
+            const rPost = new THREE.Mesh(new THREE.BoxGeometry(0.15, CP_Y_WALL - 0.15, 0.15), woodMat);
+            rPost.position.set(px, (CP_Y_WALL - 0.15)/2, CP_Z0 + 0.1);
+            rPost.castShadow = true;
+            carportGroup.add(rPost);
+        });
+
+        // 4. Front Header Beam (Опорный прогон)
+        const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(CP_W + 0.2, 0.15, 0.15), woodMat);
+        frontBeam.position.set((CP_X0 + CP_X1)/2, CP_Y_FRONT - 0.075, CP_Z1 - 0.2);
+        frontBeam.castShadow = true;
+        carportGroup.add(frontBeam);
+
+        // 5. Timber Rafters (Стропила 50×180 мм, шаг 1.0 м)
+        const numRafters = 7;
+        const rafterLen = Math.sqrt(CP_L * CP_L + (CP_Y_WALL - CP_Y_FRONT) * (CP_Y_WALL - CP_Y_FRONT));
+        const rafterPitch = Math.atan2(CP_Y_WALL - CP_Y_FRONT, CP_L);
+        for (let i = 0; i < numRafters; i++) {
+            const rx = CP_X0 + (i / (numRafters - 1)) * CP_W;
+            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, rafterLen + 0.4), woodMat);
+            rafter.position.set(rx, (CP_Y_WALL + CP_Y_FRONT)/2, (CP_Z0 + CP_Z1)/2);
+            rafter.rotation.x = rafterPitch;
+            rafter.castShadow = true;
+            carportGroup.add(rafter);
+        }
+
+        // 6. Roof Covering (Односкатная кровля 6.0 x 4.0м - металлочерепица RAL 7016)
+        const cpRoofMesh = createQuadMesh(
+            [CP_X0 - 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
+            [CP_X1 + 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
+            [CP_X1 + 0.15, CP_Y_FRONT + 0.08, CP_Z1 + 0.15],
+            [CP_X0 - 0.15, CP_Y_FRONT + 0.08, CP_Z1 + 0.15],
+            roofMat
+        );
+        cpRoofMesh.castShadow = true;
+        carportGroup.add(cpRoofMesh);
+
+        // Drainage gutter along front eaves
+        const gutterMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        const gutter = new THREE.Mesh(new THREE.BoxGeometry(CP_W + 0.35, 0.1, 0.1), gutterMat);
+        gutter.position.set((CP_X0 + CP_X1)/2, CP_Y_FRONT + 0.03, CP_Z1 + 0.18);
+        carportGroup.add(gutter);
+
+        // 7. 1 REALISTIC STYLIZED 3D CAR PARKED PARALLEL TO ROAD
+        function createStylizedCar(colorHex, isSuv) {
+            const car = new THREE.Group();
+            const length = isSuv ? 4.65 : 4.55;
+            const width = isSuv ? 1.92 : 1.82;
+            const height = isSuv ? 1.62 : 1.42;
+            const clearance = isSuv ? 0.22 : 0.15;
+            const wheelR = isSuv ? 0.36 : 0.31;
+            const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.5, roughness: 0.25 });
+            const darkGlass = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.8 });
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.15 });
+
+            // Lower body
+            const chH = height * 0.44;
+            const chassis = new THREE.Mesh(new THREE.BoxGeometry(width, chH, length), bodyMat);
+            chassis.position.set(0, clearance + chH/2, 0);
+            chassis.castShadow = true;
+            car.add(chassis);
+
+            // Greenhouse / Cabin
+            const cabH = height * 0.54;
+            const cabL = isSuv ? length * 0.64 : length * 0.54;
+            const cabW = width * 0.86;
+            const cabZ = isSuv ? -0.2 : -0.28;
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(cabW, cabH, cabL), darkGlass);
+            cabin.position.set(0, clearance + chH + cabH/2 - 0.04, cabZ);
+            cabin.castShadow = true;
+            car.add(cabin);
+
+            // Roof plate
+            const carRoof = new THREE.Mesh(new THREE.BoxGeometry(cabW + 0.04, 0.05, cabL), bodyMat);
+            carRoof.position.set(0, clearance + chH + cabH - 0.02, cabZ);
+            car.add(carRoof);
+
+            // 4 Wheels
+            for (let wx of [-width/2 + 0.06, width/2 - 0.06]) {
+                for (let wz of [-length * 0.31, length * 0.31]) {
+                    const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, 0.22, 16), tireMat);
+                    tire.rotation.z = Math.PI / 2;
+                    tire.position.set(wx, wheelR, wz);
+                    tire.castShadow = true;
+                    car.add(tire);
+
+                    const rim = new THREE.Mesh(new THREE.CylinderGeometry(wheelR * 0.58, wheelR * 0.58, 0.23, 12), rimMat);
+                    rim.rotation.z = Math.PI / 2;
+                    rim.position.set(wx, wheelR, wz);
+                    car.add(rim);
+                }
+            }
+
+            // Headlights facing road (+Z)
+            const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfef08a, emissiveIntensity: 0.8 });
+            for (let lx of [-width * 0.34, width * 0.34]) {
+                const hl = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.04), lightMat);
+                hl.position.set(lx, clearance + chH * 0.72, length/2);
+                car.add(hl);
+            }
+
+            // Taillights facing house (-Z)
+            const tailMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 0.9 });
+            for (let lx of [-width * 0.36, width * 0.36]) {
+                const tl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.09, 0.04), tailMat);
+                tl.position.set(lx, clearance + chH * 0.75, -length/2);
+                car.add(tl);
+            }
+
+            return car;
+        }
+
+        // 1 Car (Modern Crossover SUV parked parallel to the road)
+        const car1 = createStylizedCar(0x1e3a8a, true); // Dark metallic blue crossover
+        car1.position.set((CP_X0 + CP_X1)/2, 0, (CP_Z0 + CP_Z1)/2);
+        car1.rotation.y = Math.PI / 2; // Развёрнут строго параллельно дороге!
+        carportGroup.add(car1);
+
+        let carportVisible = true;
+        function toggleCarport() {
+            carportVisible = !carportVisible;
+            carportGroup.visible = carportVisible;
+            document.getElementById('carport-toggle').textContent = carportVisible ? "Навес (1 авто 6×4м): Вкл" : "Навес (1 авто 6×4м): Выкл";
+        }
+
+        let windowModeIndex = 2; // 0: Trio (3 окна), 1: Лаунж (1,4м у сада), 2: Центр фасада (1,1м)
+        function toggleWindowMode() {
+            windowModeIndex = (windowModeIndex + 1) % 3;
+            updateWindowMode();
+        }
+
+        function updateWindowMode() {
+            modeTrioGroup.visible = (windowModeIndex === 0);
+            modeSingleGroup.visible = (windowModeIndex === 1);
+            modeCenterGroup.visible = (windowModeIndex === 2);
+            modeSolidHallwayGroup.visible = (windowModeIndex !== 0);
+
+            if (windowModeIndex === 1) {
+                loungeFurnitureGroup.position.z = -0.24; // соосно окну 1,4м (Z = -7,94м)
+            } else {
+                loungeFurnitureGroup.position.z = 0; // базовая ось Z = -7,70м (между окнами трио или рядом с центральным окном)
+            }
+
+            const btn = document.getElementById('win-mode-toggle');
+            if (btn) {
+                if (windowModeIndex === 0) {
+                    btn.textContent = "Окна: 1. Трио (3 шт) ⇄";
+                    btn.style.color = "#38bdf8";
+                    btn.style.borderColor = "#38bdf8";
+                } else if (windowModeIndex === 1) {
+                    btn.textContent = "Окна: 2. Лаунж (1,4м у сада) ⇄";
+                    btn.style.color = "#4ade80";
+                    btn.style.borderColor = "#4ade80";
+                } else {
+                    btn.textContent = "Окна: 3. Центр фасада (1,1м) ⇄";
+                    btn.style.color = "#f59e0b";
+                    btn.style.borderColor = "#f59e0b";
+                }
+            }
+        }
+        updateWindowMode(); // Применяем режим по умолчанию (Вариант 3: 1 окно 1,1м)
+
+        // ==========================================
+        // CAMERA PRESETS & STYLE CONTROLS
+        // ==========================================
+        // Clinker / Tile Decorative Accent Options
+        const tileOptions = [
+            { name: "Графит (В цвет кровли)", color: 0xffffff, visible: true },
+            { name: "Тёплый клинкер (Терракота)", color: 0xbf5b38, visible: true },
+            { name: "Светло-песочный сланец", color: 0xe2d8cb, visible: true },
+            { name: "Выкл (Без плитки)", color: 0xffffff, visible: false }
+        ];
+        let tileOptionIdx = 0;
+
+        function cycleTileAccent() {
+            tileOptionIdx = (tileOptionIdx + 1) % tileOptions.length;
+            const opt = tileOptions[tileOptionIdx];
+            clinkerAccentGroup.visible = opt.visible;
+            if (typeof cornerRustsGroup !== 'undefined') {
+                cornerRustsGroup.visible = opt.visible;
+            }
+            if (opt.visible) {
+                clinkerMat.color.setHex(opt.color);
+            }
+            const btn = document.getElementById('tile-accent-toggle');
+            if (btn) btn.textContent = "Плитка: " + opt.name + " ⇄";
+        }
+
+        // Wall Finish Palette (Светлые тона фасада)
+        const wallOptions = [
+            { name: "Светло-серые блоки", color: 0xffffff, bump: 0.02, useMap: true },
+            { name: "Штукатурка RAL 7035 (Светло-серая)", color: 0xe2e8f0, bump: 0.005, useMap: false },
+            { name: "Штукатурка Белая (RAL 9010)", color: 0xf8fafc, bump: 0.005, useMap: false },
+            { name: "Тёплый светло-серый (Грейж)", color: 0xe6e4dd, bump: 0.005, useMap: false }
+        ];
+        let wallOptionIdx = 0;
+
+        function cycleWallFinish() {
+            wallOptionIdx = (wallOptionIdx + 1) % wallOptions.length;
+            const opt = wallOptions[wallOptionIdx];
+            blockMat.color.setHex(opt.color);
+            blockMat.bumpScale = opt.bump;
+            blockMat.map = opt.useMap ? blockTexs.colorTex : null;
+            blockMat.needsUpdate = true;
+            const btn = document.getElementById('wall-finish-toggle');
+            if (btn) btn.textContent = "Стены: " + opt.name + " ⇄";
+        }
+
+        // Window Color Palette (Белый по умолчанию!)
+        const winColors = [
+            { name: "Белые (Классика)", hex: 0xf8fafc },
+            { name: "Графит (RAL 7016)", hex: 0x334155 },
+            { name: "Тёплый дуб / Дерево", hex: 0x78350f },
+            { name: "Светло-серый (RAL 7035)", hex: 0xd1d5db },
+            { name: "Голубые (Сканди)", hex: 0x38bdf8 }
+        ];
+        let winColorIdx = 0;
+
+        let rearCanopyVisible = true;
+        function toggleRearCanopy() {
+            rearCanopyVisible = !rearCanopyVisible;
+            rearCanopyGroup.visible = rearCanopyVisible;
+            document.getElementById('rear-roof-toggle').textContent = rearCanopyVisible ? "Крыша сзади: Навес (Вкл)" : "Крыша сзади: Без навеса (Выкл)";
+        }
+
+        function cycleWindowColor() {
+            winColorIdx = (winColorIdx + 1) % winColors.length;
+            const current = winColors[winColorIdx];
+            whiteTrimMat.color.setHex(current.hex);
+            document.getElementById('win-color-toggle').textContent = "Окна: " + current.name;
+        }
+
+        let ridgeLevel = 2; // 0: 4.6m, 1: 5.2m, 2: 5.8m (Вровень с коньком дома)
+        function cycleRidgeHeight() {
+            ridgeLevel = (ridgeLevel + 1) % 3;
+            let targetYR = 5.8;
+            let targetXI = HW / 2; // 4.25m
+            let label = "Конёк: 5,8 м (Вровень с домом!)";
+            if (ridgeLevel === 0) {
+                targetYR = 4.6;
+                targetXI = 5.8;
+                label = "Конёк: 4,6 м (Пониженный)";
+            } else if (ridgeLevel === 1) {
+                targetYR = 5.2;
+                targetXI = 5.0;
+                label = "Конёк: 5,2 м (Средний)";
+            }
+            document.getElementById('ridge-toggle').textContent = label;
+            rebuildRoof(targetYR, targetXI);
+        }
+
+        function rebuildRoof(newYR, newXI) {
+            // Remove old meshes from roofGroup
+            while(roofGroup.children.length > 0) {
+                roofGroup.remove(roofGroup.children[0]);
+            }
+            // Also rebuild house right roof triangles to stay in sync
+            buildHouseRightRoof(newYR, newXI);
+
+            // Rebuild with new YR and XI
+            const frontSlopeMesh = createQuadMesh(
+                [newXI, newYR, ZR],
+                [XO, newYR, ZR],
+                [XO, YE, ZF],
+                [XW_IN, YE, ZF],
+                roofMat
+            );
+            roofGroup.add(frontSlopeMesh);
+
+            const rearSlopeMesh = createQuadMesh(
+                [XO, newYR, ZR],
+                [newXI, newYR, ZR],
+                [XW_IN, YE, ZB],
+                [XO, YE, ZB],
+                roofMat
+            );
+            roofGroup.add(rearSlopeMesh);
+
+            const yardGable = createTriangleMesh(
+                [V_X1, YE, 0],
+                [V_X1, YE, -HL],
+                [V_X1, newYR - 0.05, ZR],
+                blockMat
+            );
+            yardGable.castShadow = true;
+            roofGroup.add(yardGable);
+            roofGroup.add(createGableWindow(newYR));
+
+            const ridgeCapGeo = new THREE.BoxGeometry(XO - newXI + 0.1, 0.08, 0.22);
+            const ridgeCap = new THREE.Mesh(ridgeCapGeo, roofMat);
+            ridgeCap.position.set((newXI + XO) / 2, newYR + 0.04, ZR);
+            roofGroup.add(ridgeCap);
+
+            const valleyFront = createValleyTube([newXI, newYR, ZR], [XW_IN, YE, ZF]);
+            roofGroup.add(valleyFront);
+
+            const valleyRear = createValleyTube([newXI, newYR, ZR], [XW_IN, YE, ZB]);
+            roofGroup.add(valleyRear);
+        }
+
+        function setCamera(view) {
+            let targetPos, targetLook;
+            if (view === 'road') {
+                targetPos = { x: 10.5, y: 7.5, z: 25.0 };
+                targetLook = { x: (HW + VW)/2, y: 2.5, z: -2.0 };
+            } else if (view === 'carport') {
+                targetPos = { x: 14.0, y: 5.5, z: 12.0 };
+                targetLook = { x: 5.0, y: 2.0, z: 1.0 };
+                if (!carportVisible) toggleCarport();
+            } else if (view === 'garden') {
+                targetPos = { x: 14.5, y: 5.5, z: -18.5 };
+                targetLook = { x: HW/2 + 2.0, y: 2.2, z: -9.5 };
+            } else if (view === 'houseSide') {
+                targetPos = { x: -14.0, y: 7.0, z: -16.0 };
+                targetLook = { x: 3.5, y: 2.5, z: -7.0 };
+            } else if (view === 'yard') {
+                targetPos = { x: 23.0, y: 7.0, z: -4.75 };
+                targetLook = { x: (HW + VW)/2, y: 2.5, z: -4.75 };
+            } else if (view === 'lounge') {
+                targetPos = { x: 14.5, y: 5.0, z: -12.5 };
+                targetLook = { x: (V_X0 + V_X1)/2, y: 1.6, z: -8.0 };
+            } else if (view === 'hallway') {
+                targetPos = { x: 14.5, y: 5.0, z: -2.5 };
+                targetLook = { x: (V_X0 + V_X1)/2, y: 1.6, z: -5.3 };
+            } else if (view === 'entrance') {
+                targetPos = { x: 7.5, y: 1.8, z: 3.5 };
+                targetLook = { x: 7.5, y: 1.6, z: -4.2 };
+            } else if (view === 'top') {
+                targetPos = { x: 4.5, y: 24.0, z: -4.75 };
+                targetLook = { x: 4.5, y: 0, z: -4.75 };
+            }
+            animateCamera(targetPos, targetLook);
+        }
+
+        function animateCamera(pos, look) {
+            const startPos = { ...camera.position };
+            const startLook = { ...controls.target };
+            let t = 0;
+            const duration = 35;
+            function step() {
+                t++;
+                const ease = t / duration;
+                camera.position.x = startPos.x + (pos.x - startPos.x) * ease;
+                camera.position.y = startPos.y + (pos.y - startPos.y) * ease;
+                camera.position.z = startPos.z + (pos.z - startPos.z) * ease;
+                controls.target.x = startLook.x + (look.x - startLook.x) * ease;
+                controls.target.y = startLook.y + (look.y - startLook.y) * ease;
+                controls.target.z = startLook.z + (look.z - startLook.z) * ease;
+                controls.update();
+                if (t < duration) requestAnimationFrame(step);
+            }
+            step();
+        }
+
+        let roofTransparent = false;
+        function toggleRoofTransparency() {
+            roofTransparent = !roofTransparent;
+            roofMat.transparent = roofTransparent;
+            roofMat.opacity = roofTransparent ? 0.35 : 1.0;
+            document.getElementById('roof-toggle').textContent = roofTransparent ? 'Сплошная крыша' : 'Прозрачность крыши';
+        }
+
+        let showDimensions = false; // off by default for clean look
+        const dimGroup = new THREE.Group();
+        dimGroup.visible = false;
+        scene.add(dimGroup);
+
+        function createDimLine(p1, p2) {
+            const points = [new THREE.Vector3(...p1), new THREE.Vector3(...p2)];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 2 }));
+            dimGroup.add(line);
+        }
+        // 7.0m setback dimension line from house facade (Z=0) to road edge (Z=7)
+        createDimLine([0.5, 0.06, 0], [0.5, 0.06, 7.0]);
+        // Veranda width 2.7m
+        createDimLine([HW, 0.06, 0.8], [HW + VW, 0.06, 0.8]);
+        // Open terrace 4.2m
+        createDimLine([HW + VW + 0.6, 0.06, 0], [HW + VW + 0.6, 0.06, -L_OPEN]);
+        // Closed veranda 5.3m
+        createDimLine([HW + VW + 0.6, 0.06, -L_OPEN], [HW + VW + 0.6, 0.06, -HL]);
+
+        function toggleDimensions() {
+            showDimensions = !showDimensions;
+            dimGroup.visible = showDimensions;
+            document.getElementById('grid-toggle').textContent = showDimensions ? 'Скрыть размеры' : 'Показать размеры';
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
