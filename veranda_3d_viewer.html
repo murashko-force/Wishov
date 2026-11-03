@@ -108,8 +108,8 @@
         <div class="legend">
             <div class="legend-item"><div class="color-dot" style="background:#15803d"></div> Границы участка 25 соток (35,26 × 72,64 м)</div>
             <div class="legend-item"><div class="color-dot" style="background:#1f242c; border: 1px solid #94a3b8;"></div> Забор, откатные ворота 5м и калитка (RAL 7016)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и опора с проводами</div>
-            <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Подземный ввод водопровода В-25пэ</div>
+            <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и трасса ЛЭП вдоль улицы</div>
+            <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Септик / канализация (2 колодца во дворе)</div>
             <div class="legend-item"><div class="color-dot" style="background:#78350f"></div> Зона отдыха с перголой, сад и огород с теплицей</div>
             <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен дома</div>
             <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
@@ -186,12 +186,13 @@
 
         // 1. Cadastral Survey Boundary Points (Точные метрические координаты из дела со смещением к левой меже)
         // Межа 1-2: 35,26 м (ул. Калинина), 2-3: 59,55 м, 3-4: 13,25 м, 4-5: 33,72 м, 5-1: 72,64 м
+        // Смещение: отступ от левого забора (Т1-Т5) до стены дома составляет 7,00 м.
         const CAD_POINTS = [
-            { id: 1, x: -5.50, z:  7.00, name: 'Т1 (ул. Калинина / С-З угол)' },
-            { id: 2, x: 29.76, z:  7.00, name: 'Т2 (ул. Калинина / С-В угол)' },
-            { id: 3, x: 32.50, z: -52.55, name: 'Т3 (Восточный уступ)' },
-            { id: 4, x: 33.50, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
-            { id: 5, x: -0.22, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
+            { id: 1, x: -7.00, z:  7.00, name: 'Т1 (ул. Калинина / С-З угол)' },
+            { id: 2, x: 28.26, z:  7.00, name: 'Т2 (ул. Калинина / С-В угол)' },
+            { id: 3, x: 31.00, z: -52.55, name: 'Т3 (Восточный уступ)' },
+            { id: 4, x: 32.00, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
+            { id: 5, x: -1.72, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
         ];
 
         // 2. Surrounding Regional Terrain (Внешний ландшафт)
@@ -247,17 +248,27 @@
             siteGroup.add(stone);
         });
 
-        // 5. Street: ул. Калинина (Асфальт под реальным углом: 4м слева, 2м справа до забора)
+        // 5. Street: ул. Калинина (Асфальт под реальным углом: 3.5м слева, 2.5м справа до забора)
         const ROAD_EDGE_Z = 7.0; // линия забора
-        // Угол наклона проезжей части относительно забора
-        const roadAngle = Math.atan2(9.0 - 11.0, 29.76 - (-5.50)); // -0.05666 rad (~ -3.25°)
+        // Слева (X = -7.00): ширина обочины 3.5м -> ближний край асфальта Z = 7.0 + 3.5 = 10.50м
+        // Справа (X = 28.26): ширина обочины 2.5м -> ближний край асфальта Z = 7.0 + 2.5 = 9.50м
+        const roadAngle = Math.atan2(9.50 - 10.50, 28.26 - (-7.00)); // -0.028354 rad (~ -1.625°)
+
+        // Функция вычисления Z ближнего края проезжей части для любого X:
+        function getRoadNearZ(x) {
+            return 10.50 + Math.tan(roadAngle) * (x - (-7.00));
+        }
+
+        const midX = 12.0;
+        const midNearZ = getRoadNearZ(midX);
+        const midCenterZ = midNearZ + 3.50; // центр проезжей части шириной 7м
 
         const roadGeo = new THREE.PlaneGeometry(160, 7.0);
         const roadMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
         road.rotation.z = roadAngle;
-        road.position.set(12.0, 0.02, 13.5);
+        road.position.set(midX, 0.02, midCenterZ);
         road.receiveShadow = true;
         siteGroup.add(road);
 
@@ -270,27 +281,27 @@
             markGroup.add(stripe);
         }
         markGroup.rotation.y = roadAngle;
-        markGroup.position.set(12.0, 0, 13.5);
+        markGroup.position.set(midX, 0, midCenterZ);
         siteGroup.add(markGroup);
 
         // Road curbs (бордюры)
         const curbMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
         const curbNear = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
         curbNear.rotation.y = roadAngle;
-        curbNear.position.set(12.0, 0.08, 10.0);
+        curbNear.position.set(midX, 0.08, midNearZ);
         siteGroup.add(curbNear);
 
         const curbFar = new THREE.Mesh(new THREE.BoxGeometry(160, 0.15, 0.18), curbMat);
         curbFar.rotation.y = roadAngle;
-        curbFar.position.set(12.0, 0.08, 17.0);
+        curbFar.position.set(midX, 0.08, midNearZ + 7.0);
         siteGroup.add(curbFar);
 
-        // Зелёная полоса (газонная обочина переменной ширины 4м -> 2м между забором и асфальтом)
+        // Зелёная полоса (газонная обочина переменной ширины 3.5м -> 2.5м между забором и асфальтом)
         const greenVergeShape = new THREE.Shape();
-        greenVergeShape.moveTo(-25.0, -7.0);
-        greenVergeShape.lineTo(55.0, -7.0);
-        greenVergeShape.lineTo(55.0, -(10.0 + Math.tan(roadAngle) * (55.0 - 12.0)));
-        greenVergeShape.lineTo(-25.0, -(10.0 + Math.tan(roadAngle) * (-25.0 - 12.0)));
+        greenVergeShape.moveTo(-35.0, -7.0);
+        greenVergeShape.lineTo(60.0, -7.0);
+        greenVergeShape.lineTo(60.0, -getRoadNearZ(60.0));
+        greenVergeShape.lineTo(-35.0, -getRoadNearZ(-35.0));
         greenVergeShape.closePath();
         const greenVergeMesh = new THREE.Mesh(new THREE.ShapeGeometry(greenVergeShape), parcelMat);
         greenVergeMesh.rotation.x = -Math.PI / 2;
@@ -299,11 +310,13 @@
         siteGroup.add(greenVergeMesh);
 
         // Мощёный въездной пандус от асфальта через зелёную зону к воротам
-        const rampGeo = new THREE.PlaneGeometry(5.8, 4.0);
+        const rampNearZ = getRoadNearZ(3.3);
+        const rampLen = rampNearZ - 7.0;
+        const rampGeo = new THREE.PlaneGeometry(5.8, rampLen);
         const rampMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
         const ramp = new THREE.Mesh(rampGeo, rampMat);
         ramp.rotation.x = -Math.PI / 2;
-        ramp.position.set(3.3, 0.022, 8.8);
+        ramp.position.set(3.3, 0.022, 7.0 + rampLen / 2);
         siteGroup.add(ramp);
 
         // 6. Architectural Front Fence along ул. Калинина (RAL 7016 Anthracite)
@@ -347,9 +360,9 @@
             }
         }
 
-        // Left street fence section: X = -5.50 to 0.8 (от левой межи до ворот)
-        createFencePlinth(-5.50, 0.8, 7.0);
-        createSlatSection(-5.50, 0.8, 7.0);
+        // Left street fence section: от левой межи до ворот
+        createFencePlinth(CAD_POINTS[0].x, 0.8, 7.0);
+        createSlatSection(CAD_POINTS[0].x, 0.8, 7.0);
 
         // Automated Sliding Gate (Откатные ворота 5,0 м: X = 0.8 to 5.8)
         const gateGroup = new THREE.Group();
@@ -399,9 +412,9 @@
         signMesh.position.set(7.6, 1.35, 7.07);
         siteGroup.add(signMesh);
 
-        // Right street fence section: X = 7.3 to 29.76 (длинная фасадная часть широкого двора)
-        createFencePlinth(7.3, 29.76, 7.0);
-        createSlatSection(7.3, 29.76, 7.0);
+        // Right street fence section: X = 7.3 до правой межи (длинная фасадная часть широкого двора)
+        createFencePlinth(7.3, CAD_POINTS[1].x, 7.0);
+        createSlatSection(7.3, CAD_POINTS[1].x, 7.0);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
@@ -471,15 +484,66 @@
         gardenPath.receiveShadow = true;
         siteGroup.add(gardenPath);
 
-        // Septic inspection covers in front lawn (согласно Google Street View фото)
-        const coverMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
-        const cover1 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
-        cover1.position.set(2.5, 0.04, 3.8);
-        siteGroup.add(cover1);
+        // 9. Двухкамерный септик и смотровые люки в восточном дворе (согласно Google Street View)
+        const septicGroup = new THREE.Group();
 
-        const cover2 = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.08, 16), coverMat);
-        cover2.position.set(2.5, 0.04, 5.2);
-        siteGroup.add(cover2);
+        // Грунтово-гравийная площадка вокруг септика (разрыхлённая земля / подсыпка)
+        const septicEarthMat = new THREE.MeshStandardMaterial({ color: 0x5a4838, roughness: 0.95 });
+        const septicEarth = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 3.2), septicEarthMat);
+        septicEarth.rotation.x = -Math.PI / 2;
+        septicEarth.position.set(18.5, 0.015, 4.0);
+        septicEarth.receiveShadow = true;
+        septicGroup.add(septicEarth);
+
+        // Бетонные оголовки колодцев и бирюзово-синие полимерные крышки (строго по фото панорамы)
+        const concreteRingMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+        const septicCoverMat = new THREE.MeshStandardMaterial({ 
+            color: 0x0284c7, 
+            roughness: 0.35, 
+            metalness: 0.1 
+        });
+
+        // Колодец 1 (первая камера септика)
+        const ring1 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.12, 24), concreteRingMat);
+        ring1.position.set(18.2, 0.06, 4.0);
+        ring1.castShadow = true;
+        septicGroup.add(ring1);
+
+        const lid1 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 24), septicCoverMat);
+        lid1.position.set(18.2, 0.13, 4.0);
+        lid1.castShadow = true;
+        septicGroup.add(lid1);
+
+        // Колодец 2 (вторая фильтрационная камера)
+        const ring2 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.12, 24), concreteRingMat);
+        ring2.position.set(19.6, 0.06, 4.0);
+        ring2.castShadow = true;
+        septicGroup.add(ring2);
+
+        const lid2 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 24), septicCoverMat);
+        lid2.position.set(19.6, 0.13, 4.0);
+        lid2.castShadow = true;
+        septicGroup.add(lid2);
+
+        // Деревянный строительный поддон рядом с люками (как зафиксировано на панораме Street View)
+        const palletGroup = new THREE.Group();
+        const palletMat = new THREE.MeshStandardMaterial({ color: 0xa8784d, roughness: 0.85 });
+        for (let bx of [-0.45, 0, 0.45]) {
+            const runner = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.2), palletMat);
+            runner.position.set(bx, 0.04, 0);
+            palletGroup.add(runner);
+        }
+        for (let bz = -0.55; bz <= 0.55; bz += 0.18) {
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.025, 0.12), palletMat);
+            slat.position.set(0, 0.09, bz);
+            palletGroup.add(slat);
+        }
+        palletGroup.position.set(16.9, 0, 3.8);
+        palletGroup.rotation.y = 0.12;
+        palletGroup.castShadow = true;
+        septicGroup.add(palletGroup);
+
+        siteGroup.add(septicGroup);
 
         // 9. Relaxation Patio / BBQ Lounge Deck with Pergola (В просторном восточном дворе X = 15 to 21, Z = -16 to -22)
         const deckMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
@@ -586,23 +650,20 @@
         ghGroup.add(ghBase);
         siteGroup.add(ghGroup);
 
-        // 12. Engineering Utilities Layer (Инженерные сети строго по зелёной зоне перед забором)
+        // 12. Engineering Utilities Layer
         // A. Охранная зона ЛЭП (код 5.2, 35 м² в С-З углу у Точки 1)
         const lezGeo = new THREE.CylinderGeometry(4.8, 4.8, 0.08, 16, 1, false, 0, Math.PI / 2);
         const lezMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.35 });
         const lezMesh = new THREE.Mesh(lezGeo, lezMat);
-        lezMesh.position.set(-5.5, 0.04, 7.5);
+        lezMesh.position.set(CAD_POINTS[0].x, 0.04, 7.5);
         lezMesh.rotation.y = -Math.PI / 2;
         infraGroup.add(lezMesh);
 
-        // Опоры ЛЭП 0,4 кВ строго на зелёной полосе перед забором (как на Google Street View фото)
+        // B. Опоры ЛЭП 0,4 кВ строго параллельно дороге в 1 м от края асфальта
         const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
-        const poleCoords = [
-            [-5.5, 9.0], // Опора 1: у западного угла на 4-метровой зелёной полосе
-            [4.5, 8.5],  // Опора 2: перед домом на зелёной полосе (как на фото панорамы!)
-            [28.0, 7.9]  // Опора 3: у восточного угла на 2-метровой полосе
-        ];
-        poleCoords.forEach(([px, pz]) => {
+        const poleXs = [CAD_POINTS[0].x, 5.0, 27.0];
+        poleXs.forEach(px => {
+            const pz = getRoadNearZ(px) - 1.0;
             const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 8.5, 8), poleMat);
             pole.position.set(px, 4.25, pz);
             pole.castShadow = true;
@@ -614,47 +675,18 @@
             infraGroup.add(crossarm);
         });
 
-        // Воздушные кабели ЛЭП по зелёной зоне вдоль ул. Калинина
+        // Воздушные кабели ЛЭП строго параллельно проезжей части в 1 м от края асфальта
         const wireMat = new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 });
+        const wireXStart = -40.0, wireXEnd = 70.0;
+        const wireZStart = getRoadNearZ(wireXStart) - 1.0;
+        const wireZEnd = getRoadNearZ(wireXEnd) - 1.0;
         for (let wy of [7.9, 8.1, 8.3]) {
-            const wirePoints = poleCoords.map(([px, pz]) => new THREE.Vector3(px, wy, pz));
-            // Продлеваем провода влево и вправо по улице
-            wirePoints.unshift(new THREE.Vector3(-30, wy, 10.4));
-            wirePoints.push(new THREE.Vector3(50, wy, 6.7));
-            const wireGeo = new THREE.BufferGeometry().setFromPoints(wirePoints);
+            const wireGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(wireXStart, wy, wireZStart),
+                new THREE.Vector3(wireXEnd, wy, wireZEnd)
+            ]);
             infraGroup.add(new THREE.Line(wireGeo, wireMat));
         }
-
-        // B. Подземный ввод водопровода В-25пэ (от уличной магистрали в коридор/санузел)
-        const waterLinePoints = [
-            new THREE.Vector3(8.5, 0.05, 10.2),
-            new THREE.Vector3(8.5, 0.05, 7.0),
-            new THREE.Vector3(8.5, 0.05, 0.5)
-        ];
-        const waterGeo = new THREE.BufferGeometry().setFromPoints(waterLinePoints);
-        const waterMat = new THREE.LineDashedMaterial({ color: 0x0284c7, dashSize: 0.6, gapSize: 0.3, linewidth: 3 });
-        const waterLine = new THREE.Line(waterGeo, waterMat);
-        waterLine.computeLineDistances();
-        infraGroup.add(waterLine);
-
-        const waterManhole = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
-        waterManhole.position.set(8.5, 0.05, 10.2);
-        infraGroup.add(waterManhole);
-
-        // C. Распределительный газопровод среднего давления Г-32пэ с.д. вдоль ул. Калинина
-        const gasPoints = [
-            new THREE.Vector3(-30, 0.05, 9.8),
-            new THREE.Vector3(50, 0.05, 6.1)
-        ];
-        const gasGeo = new THREE.BufferGeometry().setFromPoints(gasPoints);
-        const gasMat = new THREE.LineDashedMaterial({ color: 0xeab308, dashSize: 0.8, gapSize: 0.4, linewidth: 3 });
-        const gasLine = new THREE.Line(gasGeo, gasMat);
-        gasLine.computeLineDistances();
-        infraGroup.add(gasLine);
-
-        const gasPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 8), new THREE.MeshStandardMaterial({ color: 0xeab308 }));
-        gasPost.position.set(0.0, 0.7, 7.5);
-        infraGroup.add(gasPost);
 
 // (Dimensions moved to top of script)
 
