@@ -110,7 +110,7 @@
             <div class="legend-item"><div class="color-dot" style="background:#1f242c; border: 1px solid #94a3b8;"></div> Забор, откатные ворота 5м и калитка (RAL 7016)</div>
             <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и трасса ЛЭП вдоль улицы</div>
             <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Септик / канализация (2 колодца во дворе)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#9a6b43"></div> Деревянная баня (2,3×5м) и блочный сарай (5×7,5м) параллельно заборам</div>
+            <div class="legend-item"><div class="color-dot" style="background:#9a6b43"></div> Деревянная баня (2,4×5м) и блочный сарай (5×7,5м) параллельно заборам</div>
             <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен дома</div>
             <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
             <div class="legend-item"><div class="color-dot" style="background:#27272a"></div> Т-образная кровля (металлочерепица)</div>
@@ -545,7 +545,7 @@
 
         siteGroup.add(septicGroup);
 
-        // 9. Деревянная баня (2,30 × 5,00 м, односкатная кровля, строго параллельно левому забору)
+        // 9. Деревянная баня (2,40 × 5,00 м, односкатная кровля со скатом к забору, строго параллельно левому забору)
         const leftAngle = Math.atan2(CAD_POINTS[4].x - CAD_POINTS[0].x, CAD_POINTS[0].z - CAD_POINTS[4].z);
         const uL_x = Math.sin(leftAngle);
         const uL_z = -Math.cos(leftAngle);
@@ -557,49 +557,50 @@
         const fenceL_x = CAD_POINTS[0].x + (CAD_POINTS[4].x - CAD_POINTS[0].x) * tL;
         const fenceL_z = -15.50;
 
-        // Центр бани: отступ 3.0м от забора + 1.15м (половина ширины 2.3м) по нормали, и 2.5м (половина длины 5.0м) вглубь по забору
-        const bathCenterX = fenceL_x + (3.00 + 1.15) * nL_x + 2.50 * uL_x;
-        const bathCenterZ = fenceL_z + (3.00 + 1.15) * nL_z + 2.50 * uL_z;
+        // Центр бани: отступ 3.0м от забора + 1.20м (половина ширины 2.4м) по нормали, и 2.5м (половина длины 5.0м) вглубь по забору
+        const bathCenterX = fenceL_x + (3.00 + 1.20) * nL_x + 2.50 * uL_x;
+        const bathCenterZ = fenceL_z + (3.00 + 1.20) * nL_z + 2.50 * uL_z;
 
         const bathGroup = new THREE.Group();
         bathGroup.position.set(bathCenterX, 0, bathCenterZ);
         bathGroup.rotation.y = -leftAngle;
 
         // Материалы бани
-        const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x9a6b43, roughness: 0.72 });
+        const woodLogMat = new THREE.MeshStandardMaterial({ color: 0x9a6b43, roughness: 0.72, side: THREE.DoubleSide });
         const bathSocleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.85 });
         const bathRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
         const bathDoorMat = new THREE.MeshStandardMaterial({ color: 0x603813, roughness: 0.7 });
         const metalChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.85 });
 
         // Бетонный цоколь
-        const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.22, 5.00), bathSocleMat);
+        const bathSocle = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.22, 5.00), bathSocleMat);
         bathSocle.position.set(0, 0.11, 0);
         bathSocle.castShadow = true;
         bathGroup.add(bathSocle);
 
         // Стены из бруса (высота 2.4м)
-        const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.30, 2.30, 5.00), woodLogMat);
+        const bathWalls = new THREE.Mesh(new THREE.BoxGeometry(2.40, 2.30, 5.00), woodLogMat);
         bathWalls.position.set(0, 0.22 + 1.15, 0);
         bathWalls.castShadow = true;
         bathGroup.add(bathWalls);
 
-        // Односкатная кровля с уклоном в сторону двора (+X)
-        const bathRoofGeo = new THREE.BoxGeometry(2.65, 0.08, 5.35);
+        // Односкатная кровля со скатом в сторону левого забора (-X):
+        // Высокая стена со стороны двора (+X = 1.20м, Y = 2.87м), низкая со стороны забора (-X = -1.20м, Y = 2.52м)
+        const bathRoofGeo = new THREE.BoxGeometry(2.75, 0.08, 5.35);
         const bathRoof = new THREE.Mesh(bathRoofGeo, bathRoofMat);
-        const bathRoofAngle = Math.atan2(0.35, 2.30);
-        bathRoof.rotation.z = -bathRoofAngle;
+        const bathRoofAngle = Math.atan2(0.35, 2.40);
+        bathRoof.rotation.z = bathRoofAngle; // положительный поворот -> уклон вниз к забору (-X)
         bathRoof.position.set(0, 2.52 + 0.18, 0);
         bathRoof.castShadow = true;
         bathGroup.add(bathRoof);
 
-        // Треугольные зашивки односкатного фронтона с торцов
+        // Треугольные зашивки односкатного фронтона с торцов (высокая сторона со двора +X)
         for (let bz of [2.50, -2.50]) {
             const tgGeo = new THREE.BufferGeometry();
             const verts = new Float32Array([
-                -1.15, 2.52, bz,
-                 1.15, 2.52, bz,
-                -1.15, 2.52 + 0.35, bz
+                -1.20, 2.52, bz,
+                 1.20, 2.52, bz,
+                 1.20, 2.52 + 0.35, bz
             ]);
             tgGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
             tgGeo.computeVertexNormals();
@@ -613,22 +614,22 @@
         bathDoor.castShadow = true;
         bathGroup.add(bathDoor);
 
-        // Небольшое банное окошко со стороны двора (+X = 1.16)
+        // Небольшое банное окошко со стороны двора (+X = 1.21)
         const bathWinFrame = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.60, 0.60), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-        bathWinFrame.position.set(1.16, 1.6, -0.5);
+        bathWinFrame.position.set(1.21, 1.6, -0.5);
         bathGroup.add(bathWinFrame);
         const bathWinGlass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.48, 0.48), new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.1, transparent: true, opacity: 0.6 }));
-        bathWinGlass.position.set(1.165, 1.6, -0.5);
+        bathWinGlass.position.set(1.215, 1.6, -0.5);
         bathGroup.add(bathWinGlass);
 
         // Сэндвич-дымоход банной печи с дефлектором
         const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.1, 12), metalChimneyMat);
-        chimney.position.set(-0.4, 3.1, -1.2);
+        chimney.position.set(0.4, 3.1, -1.2);
         chimney.castShadow = true;
         bathGroup.add(chimney);
 
         const deflector = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.12, 12), metalChimneyMat);
-        deflector.position.set(-0.4, 3.7, -1.2);
+        deflector.position.set(0.4, 3.7, -1.2);
         bathGroup.add(deflector);
 
         siteGroup.add(bathGroup);
