@@ -477,13 +477,6 @@
         blindArea.receiveShadow = true;
         siteGroup.add(blindArea);
 
-        // Garden Pathway (from rear terrace to orchard and patio)
-        const gardenPath = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 20.0), paveMat);
-        gardenPath.rotation.x = -Math.PI / 2;
-        gardenPath.position.set(HW + VW / 2, 0.016, -19.5);
-        gardenPath.receiveShadow = true;
-        siteGroup.add(gardenPath);
-
         // 9. Двухкамерный септик и смотровые люки в восточном дворе (согласно Google Street View)
         const septicGroup = new THREE.Group();
 
@@ -1186,50 +1179,8 @@
 
         siteGroup.add(shedGroup);
 
-        // 11. Vegetable Garden & Greenhouse (Огород в южной части участка, Z = -42 to -63)
-        const gardenBedSoilMat = new THREE.MeshStandardMaterial({ color: 0x271e16, roughness: 0.95 });
-        const gardenBedGreenMat = new THREE.MeshStandardMaterial({ color: 0x2e6b27, roughness: 0.85 });
-        const gardenZoneMesh = new THREE.Mesh(new THREE.PlaneGeometry(28.0, 22.0), gardenBedSoilMat);
-        gardenZoneMesh.rotation.x = -Math.PI / 2;
-        gardenZoneMesh.position.set(16.0, 0.012, -52.5);
-        gardenZoneMesh.receiveShadow = true;
-        siteGroup.add(gardenZoneMesh);
-
-        for (let gy = 0; gy < 7; gy++) {
-            const zPos = -43.0 - gy * 2.8;
-            const bedL = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
-            bedL.position.set(8.5, 0.09, zPos);
-            bedL.castShadow = true;
-            siteGroup.add(bedL);
-            
-            const bedR = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.18, 1.2), gardenBedGreenMat);
-            bedR.position.set(21.5, 0.09, zPos);
-            bedR.castShadow = true;
-            siteGroup.add(bedR);
-        }
-
-        // Polycarbonate Arched Greenhouse (Теплица 6,0 × 3,0 м в огороде)
-        const ghGroup = new THREE.Group();
-        const ghMat = new THREE.MeshStandardMaterial({
-            color: 0x93c5fd,
-            roughness: 0.2,
-            metalness: 0.1,
-            transparent: true,
-            opacity: 0.45
-        });
-        const ghFrameMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.7 });
-        const ghGeo = new THREE.CylinderGeometry(1.6, 1.6, 6.0, 16, 1, false, 0, Math.PI);
-        const ghArch = new THREE.Mesh(ghGeo, ghMat);
-        ghArch.rotation.z = Math.PI / 2;
-        ghArch.rotation.y = Math.PI / 2;
-        ghArch.position.set(26.5, 1.0, -49.0);
-        ghArch.castShadow = true;
-        ghGroup.add(ghArch);
-
-        const ghBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.35, 6.0), ghFrameMat);
-        ghBase.position.set(26.5, 0.17, -49.0);
-        ghGroup.add(ghBase);
-        siteGroup.add(ghGroup);
+        // 11. Landscape Area (Садово-парковая ландшафтная зона в южной части участка)
+        // Подготовлено под проектирование ландшафтного дизайна (дорожки, плодовый сад, зоны отдыха, миксбордеры)
 
         // 12. Engineering Utilities Layer
         // A. Охранная зона ЛЭП (код 5.2, 35 м² в С-З углу у Точки 1)
