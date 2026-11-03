@@ -807,16 +807,16 @@
             return winGroup;
         }
 
-        // Параметры высот (строго по запросу: зашитие 1,20 м от пола плиты):
+        // Параметры высот (строго по запросу: зашитие 1,10 м от пола плиты):
         // Пол плиты: Y = 0.20 м.
-        // Верх зашития / подоконника: Y = 0.20 + 1.20 = 1.40 м.
-        // Высота сплошного зашития: 1.18 м (центр Y = 0.79 м).
+        // Верх зашития / подоконника: Y = 0.20 + 1.10 = 1.30 м.
+        // Высота сплошного зашития: 1.08 м (центр Y = 0.74 м).
         // Верхний горизонтальный ригель обвязки окон: Y = 2.28 м (низ балки Y = 2.23 м).
-        // ЕДИНАЯ СТАНДАРТНАЯ ВЫСОТА ВСЕХ МЯГКИХ ОКОН: 0.82 м (центр Y = 1.83 м).
-        const bathSillY = 1.40;
+        // ЕДИНАЯ СТАНДАРТНАЯ ВЫСОТА ВСЕХ МЯГКИХ ОКОН: 0.92 м (центр Y = 1.79 м).
+        const bathSillY = 1.30;
         const bathBeamY = 2.28;
-        const bathWinH = 0.82;
-        const bathWinCenterY = 1.83;
+        const bathWinH = 0.92;
+        const bathWinCenterY = 1.79;
 
         // --- 1. СЕВЕРНЫЙ ТОРЕЦ (Z = 2.40, ширина 2.30 м, ветрозащитный фасад со стороны дороги) ---
         // А. Центральный вертикальный брус 100×100 мм (дополнительное ребро жесткости против парусности)
@@ -830,11 +830,11 @@
         postNorthWall.position.set(1.22, 0.20 + 1.325, 2.40);
         bathGroup.add(postNorthWall);
 
-        // В. Сплошная зашивка имитацией бруса (высота 1.20 м от пола: Y = 0.20 ... 1.38 м)
-        const sidingNorth = createTimberSiding(2.28, 1.18, false, 2.35, 0.79, 2.40);
+        // В. Сплошная зашивка имитацией бруса (высота 1.10 м от пола: Y = 0.20 ... 1.28 м)
+        const sidingNorth = createTimberSiding(2.28, 1.08, false, 2.35, 0.74, 2.40);
         bathGroup.add(sidingNorth);
 
-        // Г. Подоконный брус-поручень (Y = 1.40 м)
+        // Г. Подоконный брус-поручень (Y = 1.30 м)
         const sillNorth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.05, 0.12), handrailMat);
         sillNorth.position.set(2.35, bathSillY, 2.40);
         sillNorth.castShadow = true;
@@ -880,8 +880,8 @@
         postSouthWall.position.set(1.22, 0.20 + 1.325, -2.40);
         bathGroup.add(postSouthWall);
 
-        // В. Сплошная зашивка имитацией бруса (высота 1.20 м от пола)
-        const sidingSouth = createTimberSiding(2.28, 1.18, false, 2.35, 0.79, -2.40);
+        // В. Сплошная зашивка имитацией бруса (высота 1.10 м от пола)
+        const sidingSouth = createTimberSiding(2.28, 1.08, false, 2.35, 0.74, -2.40);
         bathGroup.add(sidingSouth);
 
         // Г. Подоконный брус (Y = 1.40 м)
@@ -927,8 +927,8 @@
         postFrontMidN.castShadow = true;
         bathGroup.add(postFrontMidN);
 
-        // Сплошная зашивка имитацией бруса (высота 1.20 м от пола)
-        const sidingFrontN = createTimberSiding(2.36, 1.18, true, 3.50, 0.79, 1.20);
+        // Сплошная зашивка имитацией бруса (высота 1.10 м от пола)
+        const sidingFrontN = createTimberSiding(2.36, 1.08, true, 3.50, 0.74, 1.20);
         bathGroup.add(sidingFrontN);
 
         // Подоконный брус (Y = 1.40 м)
@@ -988,7 +988,7 @@
         bathGroup.add(softDoorGroup);
 
         // 2. Смежная глухая часть в южном пролёте (Z = -1.15 ... -2.40, ширина 1.20 м)
-        const sidingFrontS = createTimberSiding(1.20, 1.18, true, 3.50, 0.79, -1.775);
+        const sidingFrontS = createTimberSiding(1.20, 1.08, true, 3.50, 0.74, -1.775);
         bathGroup.add(sidingFrontS);
 
         const sillFrontS = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 1.22), handrailMat);
