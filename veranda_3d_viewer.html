@@ -684,10 +684,38 @@
         slabMesh.castShadow = true;
         bathGroup.add(slabMesh);
 
-        // ВАРИАНТ 3: ЛАУНЖ-ОГРАЖДЕНИЕ (1,25 м) С ПОЛНЫМ КОНТУРОМ МЯГКИХ ОКОН И МЯГКОЙ ДВЕРЬЮ ПВХ
+        // ВАРИАНТ 3: СПЛОШНАЯ ЗАШИВКА ИМИТАЦИЕЙ БРУСА (1,20 м ОТ ПОЛА), ОДИНАКОВЫЕ МЯГКИЕ ОКНА И ДВЕРЬ ПВХ
         const postMatBath = new THREE.MeshStandardMaterial({ color: 0x7c3f1d, roughness: 0.65 });
-        const slatMat = new THREE.MeshStandardMaterial({ color: 0x8a451c, roughness: 0.70 });
+        const timberSidingMat = new THREE.MeshStandardMaterial({ color: 0x964d1f, roughness: 0.70, side: THREE.DoubleSide }); // Имитация бруса в цвет стен бани
+        const grooveMat = new THREE.MeshStandardMaterial({ color: 0x5a2d10, roughness: 0.90 }); // Теневой горизонтальный паз вагонки
         const handrailMat = new THREE.MeshStandardMaterial({ color: 0x6e3514, roughness: 0.60 });
+
+        // Вспомогательная функция создания панели имитации бруса со швами
+        function createTimberSiding(width, height, isAlongZ, pX, pY, pZ) {
+            const group = new THREE.Group();
+            const thick = 0.04;
+            const mainGeo = isAlongZ
+                ? new THREE.BoxGeometry(thick, height, width)
+                : new THREE.BoxGeometry(width, height, thick);
+            const mainPanel = new THREE.Mesh(mainGeo, timberSidingMat);
+            mainPanel.castShadow = true;
+            mainPanel.receiveShadow = true;
+            group.add(mainPanel);
+
+            // Теневые русты (имитация досок шириной 14 см)
+            const numBoards = Math.floor(height / 0.14);
+            for (let i = 1; i <= numBoards; i++) {
+                const gy = -height / 2 + i * 0.14;
+                const gGeo = isAlongZ
+                    ? new THREE.BoxGeometry(thick + 0.004, 0.012, width)
+                    : new THREE.BoxGeometry(width, 0.012, thick + 0.004);
+                const groove = new THREE.Mesh(gGeo, grooveMat);
+                groove.position.y = gy;
+                group.add(groove);
+            }
+            group.position.set(pX, pY, pZ);
+            return group;
+        }
 
         // Вспомогательная функция создания мягкого окна ПВХ с армированной графитовой окантовкой и поворотными замками
         function createSoftWindow(width, height, isAlongZ, pX, pY, pZ) {
@@ -748,6 +776,17 @@
             return winGroup;
         }
 
+        // Параметры высот (строго по запросу: зашитие 1,20 м от пола плиты):
+        // Пол плиты: Y = 0.20 м.
+        // Верх зашития / подоконника: Y = 0.20 + 1.20 = 1.40 м.
+        // Высота сплошного зашития: 1.18 м (центр Y = 0.79 м).
+        // Верхний горизонтальный ригель обвязки окон: Y = 2.28 м (низ балки Y = 2.23 м).
+        // ЕДИНАЯ СТАНДАРТНАЯ ВЫСОТА ВСЕХ МЯГКИХ ОКОН: 0.82 м (центр Y = 1.83 м).
+        const bathSillY = 1.40;
+        const bathBeamY = 2.28;
+        const bathWinH = 0.82;
+        const bathWinCenterY = 1.83;
+
         // --- 1. СЕВЕРНЫЙ ТОРЕЦ (Z = 2.40, ширина 2.30 м, ветрозащитный фасад со стороны дороги) ---
         // А. Центральный вертикальный брус 100×100 мм (дополнительное ребро жесткости против парусности)
         const postNorthMid = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.38, 0.10), postMatBath);
@@ -760,26 +799,41 @@
         postNorthWall.position.set(1.22, 0.20 + 1.325, 2.40);
         bathGroup.add(postNorthWall);
 
-        // В. Поручень-подоконник лаунж-ограждения (высота 1.25 м от пола, отметка Y = 1.45 м)
+        // В. Сплошная зашивка имитацией бруса (высота 1.20 м от пола: Y = 0.20 ... 1.38 м)
+        const sidingNorth = createTimberSiding(2.28, 1.18, false, 2.35, 0.79, 2.40);
+        bathGroup.add(sidingNorth);
+
+        // Г. Подоконный брус-поручень (Y = 1.40 м)
         const sillNorth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.05, 0.12), handrailMat);
-        sillNorth.position.set(2.35, 1.45, 2.40);
+        sillNorth.position.set(2.35, bathSillY, 2.40);
         sillNorth.castShadow = true;
         bathGroup.add(sillNorth);
 
-        // Г. Жалюзийные рейки лаунж-ограждения (от пола Y = 0.20 до подоконника Y = 1.42, 13 рядов)
-        for (let i = 0; i < 13; i++) {
-            const ry = 0.28 + i * 0.088;
-            const slatN = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.045, 0.025), slatMat);
-            slatN.position.set(2.35, ry, 2.40);
-            slatN.rotation.x = 0.18; // наклон жалюзи
-            slatN.castShadow = true;
-            bathGroup.add(slatN);
-        }
+        // Д. Верхний горизонтальный ригель (балка 100×100 мм на отметке Y = 2.28 м)
+        const beamNorth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.10, 0.10), postMatBath);
+        beamNorth.position.set(2.35, bathBeamY, 2.40);
+        beamNorth.castShadow = true;
+        bathGroup.add(beamNorth);
 
-        // Д. Два раздельных мягких окна над рейками (прочные, не парусят, легко натягиваются)
-        const winN1 = createSoftWindow(1.02, 1.22, false, 1.77, 1.475 + 1.22 / 2, 2.40);
+        // Е. Сплошной треугольный фронтон под скатом стропил выше ригеля (Y = 2.28 ... 2.87 м)
+        const tgGeoNorth = new THREE.BufferGeometry();
+        const tgVertsNorth = new Float32Array([
+            1.20, 2.28, 2.40,
+            3.50, 2.28, 2.40,
+            1.20, 2.87, 2.40,
+            1.20, 2.28, 2.40,
+            1.20, 2.87, 2.40,
+            3.50, 2.28, 2.40
+        ]);
+        tgGeoNorth.setAttribute('position', new THREE.BufferAttribute(tgVertsNorth, 3));
+        tgGeoNorth.computeVertexNormals();
+        const tgMeshNorth = new THREE.Mesh(tgGeoNorth, timberSidingMat);
+        bathGroup.add(tgMeshNorth);
+
+        // Ж. ДВА АБСОЛЮТНО ОДИНАКОВЫХ МЯГКИХ ОКНА (ширина 1.02 м, высота 0.82 м)
+        const winN1 = createSoftWindow(1.02, bathWinH, false, 1.77, bathWinCenterY, 2.40);
         bathGroup.add(winN1);
-        const winN2 = createSoftWindow(1.02, 0.92, false, 2.92, 1.475 + 0.92 / 2, 2.40);
+        const winN2 = createSoftWindow(1.02, bathWinH, false, 2.92, bathWinCenterY, 2.40);
         bathGroup.add(winN2);
 
 
@@ -795,26 +849,41 @@
         postSouthWall.position.set(1.22, 0.20 + 1.325, -2.40);
         bathGroup.add(postSouthWall);
 
-        // В. Поручень-подоконник (Y = 1.45 м)
+        // В. Сплошная зашивка имитацией бруса (высота 1.20 м от пола)
+        const sidingSouth = createTimberSiding(2.28, 1.18, false, 2.35, 0.79, -2.40);
+        bathGroup.add(sidingSouth);
+
+        // Г. Подоконный брус (Y = 1.40 м)
         const sillSouth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.05, 0.12), handrailMat);
-        sillSouth.position.set(2.35, 1.45, -2.40);
+        sillSouth.position.set(2.35, bathSillY, -2.40);
         sillSouth.castShadow = true;
         bathGroup.add(sillSouth);
 
-        // Г. Жалюзийные рейки лаунж-ограждения
-        for (let i = 0; i < 13; i++) {
-            const ry = 0.28 + i * 0.088;
-            const slatS = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.045, 0.025), slatMat);
-            slatS.position.set(2.35, ry, -2.40);
-            slatS.rotation.x = -0.18;
-            slatS.castShadow = true;
-            bathGroup.add(slatS);
-        }
+        // Д. Верхний горизонтальный ригель (Y = 2.28 м)
+        const beamSouth = new THREE.Mesh(new THREE.BoxGeometry(2.30, 0.10, 0.10), postMatBath);
+        beamSouth.position.set(2.35, bathBeamY, -2.40);
+        beamSouth.castShadow = true;
+        bathGroup.add(beamSouth);
 
-        // Д. Два мягких окна в сторону сада
-        const winS1 = createSoftWindow(1.02, 1.22, false, 1.77, 1.475 + 1.22 / 2, -2.40);
+        // Е. Сплошной треугольный фронтон в сад
+        const tgGeoSouth = new THREE.BufferGeometry();
+        const tgVertsSouth = new Float32Array([
+            1.20, 2.28, -2.40,
+            1.20, 2.87, -2.40,
+            3.50, 2.28, -2.40,
+            1.20, 2.28, -2.40,
+            3.50, 2.28, -2.40,
+            1.20, 2.87, -2.40
+        ]);
+        tgGeoSouth.setAttribute('position', new THREE.BufferAttribute(tgVertsSouth, 3));
+        tgGeoSouth.computeVertexNormals();
+        const tgMeshSouth = new THREE.Mesh(tgGeoSouth, timberSidingMat);
+        bathGroup.add(tgMeshSouth);
+
+        // Ж. ДВА ОДИНАКОВЫХ МЯГКИХ ОКНА В САД (того же размера 1.02 × 0.82 м)
+        const winS1 = createSoftWindow(1.02, bathWinH, false, 1.77, bathWinCenterY, -2.40);
         bathGroup.add(winS1);
-        const winS2 = createSoftWindow(1.02, 0.92, false, 2.92, 1.475 + 0.92 / 2, -2.40);
+        const winS2 = createSoftWindow(1.02, bathWinH, false, 2.92, bathWinCenterY, -2.40);
         bathGroup.add(winS2);
 
 
@@ -827,25 +896,20 @@
         postFrontMidN.castShadow = true;
         bathGroup.add(postFrontMidN);
 
-        // Поручень-подоконник (Y = 1.45 м)
+        // Сплошная зашивка имитацией бруса (высота 1.20 м от пола)
+        const sidingFrontN = createTimberSiding(2.36, 1.18, true, 3.50, 0.79, 1.20);
+        bathGroup.add(sidingFrontN);
+
+        // Подоконный брус (Y = 1.40 м)
         const sillFrontN = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 2.38), handrailMat);
-        sillFrontN.position.set(3.50, 1.45, 1.20);
+        sillFrontN.position.set(3.50, bathSillY, 1.20);
         sillFrontN.castShadow = true;
         bathGroup.add(sillFrontN);
 
-        // Жалюзийные рейки лаунж-ограждения
-        for (let i = 0; i < 13; i++) {
-            const ry = 0.28 + i * 0.088;
-            const slatFN = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.045, 2.36), slatMat);
-            slatFN.position.set(3.50, ry, 1.20);
-            slatFN.castShadow = true;
-            bathGroup.add(slatFN);
-        }
-
-        // Два мягких окна фасада над рейками (высота 0.78 м)
-        const winFN1 = createSoftWindow(1.05, 0.78, true, 3.50, 1.475 + 0.39, 0.60);
+        // Два мягких окна фасада ТОГО ЖЕ ЕДИНОГО РАЗМЕРА (высота 0.82 м)
+        const winFN1 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, 0.60);
         bathGroup.add(winFN1);
-        const winFN2 = createSoftWindow(1.05, 0.78, true, 3.50, 1.475 + 0.39, 1.80);
+        const winFN2 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, 1.80);
         bathGroup.add(winFN2);
 
 
@@ -892,21 +956,16 @@
         softDoorGroup.position.set(3.50, 0.20 + 1.03, -0.575);
         bathGroup.add(softDoorGroup);
 
-        // 2. Смежное окно в южном пролёте (Z = -1.15 ... -2.40, ширина 1.20 м)
+        // 2. Смежная глухая часть в южном пролёте (Z = -1.15 ... -2.40, ширина 1.20 м)
+        const sidingFrontS = createTimberSiding(1.20, 1.18, true, 3.50, 0.79, -1.775);
+        bathGroup.add(sidingFrontS);
+
         const sillFrontS = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 1.22), handrailMat);
-        sillFrontS.position.set(3.50, 1.45, -1.775);
+        sillFrontS.position.set(3.50, bathSillY, -1.775);
         sillFrontS.castShadow = true;
         bathGroup.add(sillFrontS);
 
-        for (let i = 0; i < 13; i++) {
-            const ry = 0.28 + i * 0.088;
-            const slatFS = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.045, 1.20), slatMat);
-            slatFS.position.set(3.50, ry, -1.775);
-            slatFS.castShadow = true;
-            bathGroup.add(slatFS);
-        }
-
-        const winFS = createSoftWindow(1.16, 0.78, true, 3.50, 1.475 + 0.39, -1.775);
+        const winFS = createSoftWindow(1.15, bathWinH, true, 3.50, bathWinCenterY, -1.775);
         bathGroup.add(winFS);
 
         // 3. Монолитные ступени входа прямо перед мягкой дверью
