@@ -155,6 +155,10 @@
         controls.target.set(5.5, 2.2, -4.5);
         controls.update();
         controls.maxPolarAngle = Math.PI / 2 - 0.02;
+        window.camera = camera;
+        window.controls = controls;
+        window.renderer = renderer;
+        window.scene = scene;
 
         // Lighting
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x445544, 0.6);
@@ -799,7 +803,7 @@
         // А. ПЛАВНАЯ ПОДЪЕЗДНАЯ ДОРОГА ПОД НАВЕС С УЛИЦЫ КАЛИНИНА (ПО ЧЕРТЁЖУ ЗАКАЗЧИКА)
         // Широкая дуговая траектория заезда: начинается у левого межевого знака Т1 (X = -6.80)
         // и плавно по радиусу заходит под навес для авто (1.60...7.80)
-        const paveMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75 });
+        const paveMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75, side: THREE.DoubleSide });
         
         // 1. Дуговой заезд и парковочная площадка под навесом
         const drivewayShape = new THREE.Shape();
@@ -873,11 +877,11 @@
         // 5. МОЩЁНАЯ ДОРОЖКА ОТ ДИАГОНАЛЬНОЙ КАЛИТКИ К СТУПЕНЯМ КРЫЛЬЦА ВЕРАНДЫ
         const walkShape = new THREE.Shape();
         walkShape.moveTo(7.90, -6.00);
-        walkShape.lineTo(8.80, -6.90);
-        walkShape.lineTo(11.30, -3.60);
-        walkShape.lineTo(11.30, -2.60);
-        walkShape.lineTo(9.40, -2.60);
-        walkShape.lineTo(7.90, -4.80);
+        walkShape.bezierCurveTo(8.00, -4.20, 8.60, -2.50, 9.50, -1.15); // левый край к нижней ступени (Z = 1.15)
+        walkShape.lineTo(11.20, -1.15); // площадка перед ступенями крыльца (ширина 1.70м, охватывает ступени 9.65..11.05)
+        walkShape.bezierCurveTo(11.35, -2.40, 10.60, -4.50, 9.60, -6.00); // правый плавный контур
+        walkShape.lineTo(8.80, -6.90); // правый край порога диагональной калитки
+        walkShape.lineTo(7.90, -6.00); // замыкание по линии порога калитки
         walkShape.closePath();
         const walkPorch = new THREE.Mesh(new THREE.ShapeGeometry(walkShape), paveMat);
         walkPorch.rotation.x = -Math.PI / 2;
@@ -2671,50 +2675,23 @@
         sideTerraceBeam.castShadow = true;
         verandaGroup.add(sideTerraceBeam);
 
-        // Ограждения (перила) открытой террасы
-        const railHeight = 0.90;
-        // Переднее защитное ограждение слева от ступеней (между стеной дома X=6.20 и началом ступеней X=7.35)
-        const frontRailLen = 1.15;
-        const frontRail1 = new THREE.Mesh(new THREE.BoxGeometry(frontRailLen, 0.06, 0.08), woodMat);
-        frontRail1.position.set(V_X0 + frontRailLen / 2, SOCLE + railHeight, -0.15);
-        verandaGroup.add(frontRail1);
-
-        for (let h of [0.28, 0.50, 0.72]) {
-            const slat = new THREE.Mesh(new THREE.BoxGeometry(frontRailLen, 0.04, 0.04), woodMat);
-            slat.position.set(V_X0 + frontRailLen / 2, SOCLE + h, -0.15);
-            verandaGroup.add(slat);
-        }
-
-        // Дворовые секции ограждения в пролётах между столбами 1-2 и 2-3 (пролёт 1.65 м)
-        const spanLen = 1.65;
-        const spanCentersZ = [-1.125, -3.075];
-        spanCentersZ.forEach(cz => {
-            // Верхний поручень из дерева
-            const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, spanLen), woodMat);
-            handrail.position.set(terracePillarX, SOCLE + railHeight, cz);
-            handrail.castShadow = true;
-            verandaGroup.add(handrail);
-
-            // Нижний аккуратный отлив / цокольная планка RAL 7016
-            const curb = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, spanLen), fenceCapMat);
-            curb.position.set(terracePillarX, SOCLE + 0.04, cz);
-            verandaGroup.add(curb);
-
-            // Горизонтальные ламели ограждения
-            for (let h of [0.28, 0.48, 0.68]) {
-                const slat = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, spanLen), woodMat);
-                slat.position.set(terracePillarX, SOCLE + h, cz);
-                slat.castShadow = true;
-                verandaGroup.add(slat);
-            }
-        });
-
-        // Concrete entrance steps from slab to road
+        // 1. Парадные бетонные ступени входа с террасы к дорожке (Z > 0)
         const stepWidth = 1.4;
         const stepMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
         for (let s = 1; s <= 3; s++) {
             const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.13, 0.33), stepMat);
             stepMesh.position.set(V_X0 + 1.85, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
+            stepMesh.castShadow = true;
+            stepMesh.receiveShadow = true;
+            verandaGroup.add(stepMesh);
+        }
+
+        // 2. Дворовые бетонные ступени со стороны террасы в сад/на газон (X > V_X1 = 8.90м)
+        // Расположены в первом пролёте между столбами 1 и 2 (Z = -1.125м)
+        const sideStepZ = -1.125;
+        for (let s = 1; s <= 3; s++) {
+            const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.13, stepWidth), stepMat);
+            stepMesh.position.set(V_X1 + s * 0.30 - 0.14, SOCLE - s * 0.12 + 0.01, sideStepZ);
             stepMesh.castShadow = true;
             stepMesh.receiveShadow = true;
             verandaGroup.add(stepMesh);
