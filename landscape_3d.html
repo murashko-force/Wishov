@@ -58,9 +58,10 @@
                 <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
                 <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня и аллея</button>
                 <button onclick="setCamera('siteBBQ')" style="background: #b91c1c; font-weight: 600; padding: 6px 8px;">🔥 Беседка BBQ</button>
+                <button onclick="setCamera('sitePlayground')" style="background: #d97706; font-weight: 600; padding: 6px 8px;">🧸 Детская площадка</button>
                 <button onclick="setCamera('siteOrchard')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🍎 Плодовый сад</button>
                 <button onclick="setCamera('siteGreenhouse')" style="background: #0284c7; font-weight: 600; padding: 6px 8px;">🌱 Огород и теплица</button>
-                <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
+                <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px; grid-column: span 2;">🚗 Въезд (ул. Калинина)</button>
             </div>
             <div style="display: flex; gap: 6px; margin-top: 6px;">
                 <button class="secondary" id="landscape-toggle" onclick="toggleLandscape()" style="flex:1; background: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e; font-weight: 600; color: #86efac; padding: 5px 8px; font-size: 11px;">Ландшафт: Вкл ⇄</button>
@@ -75,6 +76,7 @@
             <div class="spec-box"><span>Глубина участка</span><strong>72,64 м (Межа)</strong></div>
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
             <div class="spec-box"><span>Беседка BBQ</span><strong>4,6 × 4,2 м (с крышей)</strong></div>
+            <div class="spec-box"><span>Детская площадка</span><strong>5,6 × 4,6 м (горка, качели, песочница)</strong></div>
             <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
             <div class="spec-box"><span>Плодовый сад</span><strong>8 деревьев + шпалеры</strong></div>
             <div class="spec-box"><span>Грядки эко-огорода</span><strong>6 приподнятых коробов</strong></div>
@@ -2219,7 +2221,450 @@
 
         landscapeGroup.add(bbqPavilionGrp);
 
-        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -23.10 ... -46.0)
+        // 5. ДЕТСКАЯ ИГРОВАЯ ПЛОЩАДКА И СПОРТИВНО-ИГРОВОЙ КОМПЛЕКС (Z = -13.9 ... -18.5 м, X = 2.4 ... 8.0 м)
+        // Расположена на солнечной поляне между домом и баней в прямой видимости с террасы, из бани и беседки BBQ
+        const pgGroup = new THREE.Group();
+
+        // Материалы игровой площадки
+        const pgWoodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.65 }); // Тёплая лиственница
+        const pgWoodDarkMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.75 }); // Тёмный брус опор
+        const pgRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55, side: THREE.DoubleSide }); // В цвет кровли дома
+        const pgSandMat = new THREE.MeshStandardMaterial({ color: 0xdfbb85, roughness: 0.95 }); // Кварцевый чистый песок
+        const pgSlideMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.35, metalness: 0.1, side: THREE.DoubleSide }); // Яркий бирюзовый скат
+        const pgRedMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 }); // Качели красные
+        const pgBlueMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 }); // Гнездо синее
+        const pgYellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 }); // Солнечный жёлтый
+        const pgGreenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.5 }); // Сочный зелёный
+        const pgSteelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.3 }); // Оцинкованная сталь
+
+        const pgW = 5.60; // ширина площадки по X
+        const pgD = 4.60; // глубина площадки по Z
+        const pgCX = 5.20; // центр площадки по X
+        const pgCZ = -16.20; // центр площадки по Z
+
+        // А. Травмобезопасное песчаное основание с деревянным бордюром
+        const pgBaseGeo = new THREE.BoxGeometry(pgW, 0.04, pgD);
+        const pgBaseMesh = new THREE.Mesh(pgBaseGeo, pgSandMat);
+        pgBaseMesh.position.set(pgCX, 0.02, pgCZ);
+        pgBaseMesh.receiveShadow = true;
+        pgGroup.add(pgBaseMesh);
+
+        // Деревянный сглаженный бордюр по периметру площадки (брус 120х80 мм)
+        const pgBorderH = 0.08;
+        const pgBorderW = 0.12;
+        // Северный и южный бордюры
+        const pgBorderNorth = new THREE.Mesh(new THREE.BoxGeometry(pgW + pgBorderW * 2, pgBorderH, pgBorderW), pgWoodDarkMat);
+        pgBorderNorth.position.set(pgCX, pgBorderH / 2 + 0.01, pgCZ + pgD / 2 + pgBorderW / 2);
+        pgBorderNorth.receiveShadow = true;
+        pgGroup.add(pgBorderNorth);
+
+        const pgBorderSouth = new THREE.Mesh(new THREE.BoxGeometry(pgW + pgBorderW * 2, pgBorderH, pgBorderW), pgWoodDarkMat);
+        pgBorderSouth.position.set(pgCX, pgBorderH / 2 + 0.01, pgCZ - pgD / 2 - pgBorderW / 2);
+        pgBorderSouth.receiveShadow = true;
+        pgGroup.add(pgBorderSouth);
+
+        // Западный и восточный бордюры
+        const pgBorderWest = new THREE.Mesh(new THREE.BoxGeometry(pgBorderW, pgBorderH, pgD), pgWoodDarkMat);
+        pgBorderWest.position.set(pgCX - pgW / 2 - pgBorderW / 2, pgBorderH / 2 + 0.01, pgCZ);
+        pgBorderWest.receiveShadow = true;
+        pgGroup.add(pgBorderWest);
+
+        const pgBorderEast = new THREE.Mesh(new THREE.BoxGeometry(pgBorderW, pgBorderH, pgD), pgWoodDarkMat);
+        pgBorderEast.position.set(pgCX + pgW / 2 + pgBorderW / 2, pgBorderH / 2 + 0.01, pgCZ);
+        pgBorderEast.receiveShadow = true;
+        pgGroup.add(pgBorderEast);
+
+        // Пошаговые каменные плиты от дорожки задней террасы к площадке (X = 8.2 ... 9.6, Z = -15.5)
+        for (let sx = 8.35; sx <= 9.45; sx += 0.55) {
+            const stepStone = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.03, 0.42), patioStoneMat);
+            stepStone.position.set(sx, 0.015, -15.50);
+            stepStone.receiveShadow = true;
+            pgGroup.add(stepStone);
+        }
+
+        // Б. Двухъярусная игровая башня с горкой, лесенкой и скалодромом
+        const towerCX = 3.60;
+        const towerCZ = -16.80;
+        const towerW = 1.25;
+        const towerD = 1.25;
+        const towerFloorY = 1.20;
+        const towerPostH = 2.70;
+
+        // 4 угловых несущих бруса башни 90х90 мм
+        const towerPostGeo = new THREE.BoxGeometry(0.09, towerPostH, 0.09);
+        const postOffsets = [
+            [-towerW/2 + 0.045, -towerD/2 + 0.045],
+            [ towerW/2 - 0.045, -towerD/2 + 0.045],
+            [-towerW/2 + 0.045,  towerD/2 - 0.045],
+            [ towerW/2 - 0.045,  towerD/2 - 0.045]
+        ];
+        postOffsets.forEach(po => {
+            const post = new THREE.Mesh(towerPostGeo, pgWoodDarkMat);
+            post.position.set(towerCX + po[0], towerPostH / 2, towerCZ + po[1]);
+            post.castShadow = true;
+            pgGroup.add(post);
+        });
+
+        // Настил пола платформы
+        const towerFloor = new THREE.Mesh(new THREE.BoxGeometry(towerW, 0.05, towerD), pgWoodMat);
+        towerFloor.position.set(towerCX, towerFloorY - 0.025, towerCZ);
+        towerFloor.castShadow = true;
+        towerFloor.receiveShadow = true;
+        pgGroup.add(towerFloor);
+
+        // Перила и ограждение платформы (высота 0.75 м над полом)
+        const railTopGeoX = new THREE.BoxGeometry(towerW, 0.05, 0.06);
+        const railTopGeoZ = new THREE.BoxGeometry(0.06, 0.05, towerD);
+
+        // Северные перила (задние)
+        const railNorth = new THREE.Mesh(railTopGeoX, pgWoodMat);
+        railNorth.position.set(towerCX, towerFloorY + 0.72, towerCZ - towerD/2 + 0.045);
+        pgGroup.add(railNorth);
+        for (let bx = -towerW/2 + 0.20; bx <= towerW/2 - 0.20; bx += 0.22) {
+            const bal = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.70, 0.02), pgWoodMat);
+            bal.position.set(towerCX + bx, towerFloorY + 0.35, towerCZ - towerD/2 + 0.045);
+            pgGroup.add(bal);
+        }
+
+        // Восточные перила (правые) со стороны качелей
+        const railEast = new THREE.Mesh(railTopGeoZ, pgWoodMat);
+        railEast.position.set(towerCX + towerW/2 - 0.045, towerFloorY + 0.72, towerCZ);
+        pgGroup.add(railEast);
+        for (let bz = -towerD/2 + 0.20; bz <= towerD/2 - 0.20; bz += 0.22) {
+            const bal = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.70, 0.04), pgWoodMat);
+            bal.position.set(towerCX + towerW/2 - 0.045, towerFloorY + 0.35, towerCZ + bz);
+            pgGroup.add(bal);
+        }
+
+        // Западные перила (над скалодромом - оставлен проём для захода)
+        const railWestL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.45), pgWoodMat);
+        railWestL.position.set(towerCX - towerW/2 + 0.045, towerFloorY + 0.72, towerCZ - 0.40);
+        pgGroup.add(railWestL);
+
+        // Передние перила (южные) с проёмом для ската горки по центру
+        const railSouthL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 0.06), pgWoodMat);
+        railSouthL.position.set(towerCX - towerW/2 + 0.175, towerFloorY + 0.72, towerCZ + towerD/2 - 0.045);
+        pgGroup.add(railSouthL);
+        const railSouthR = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 0.06), pgWoodMat);
+        railSouthR.position.set(towerCX + towerW/2 - 0.175, towerFloorY + 0.72, towerCZ + towerD/2 - 0.045);
+        pgGroup.add(railSouthR);
+
+        // Двускатная крыша домика башни
+        const roofRidgeY = 3.10;
+        const roofPlateY = towerPostH;
+        const roofDY = roofRidgeY - roofPlateY; // 0.40 м
+        const roofDX = towerW / 2; // 0.625 м
+        const roofAlpha = Math.atan2(roofDY, roofDX);
+        const roofSlopeW = Math.sqrt(roofDY * roofDY + roofDX * roofDX) + 0.12; // 0.86 м
+        const roofLen = towerD + 0.30;
+
+        // Левый скат (наклон на запад)
+        const roofSlopeL = new THREE.Mesh(new THREE.BoxGeometry(roofSlopeW, 0.035, roofLen), pgRoofMat);
+        roofSlopeL.position.set(towerCX - 0.33, (roofRidgeY + roofPlateY) / 2, towerCZ);
+        roofSlopeL.rotation.z = roofAlpha;
+        roofSlopeL.castShadow = true;
+        pgGroup.add(roofSlopeL);
+
+        // Правый скат (наклон на восток)
+        const roofSlopeR = new THREE.Mesh(new THREE.BoxGeometry(roofSlopeW, 0.035, roofLen), pgRoofMat);
+        roofSlopeR.position.set(towerCX + 0.33, (roofRidgeY + roofPlateY) / 2, towerCZ);
+        roofSlopeR.rotation.z = -roofAlpha;
+        roofSlopeR.castShadow = true;
+        pgGroup.add(roofSlopeR);
+
+        // Коньковая планка
+        const roofRidge = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, roofLen + 0.04), pgRoofMat);
+        roofRidge.position.set(towerCX, roofRidgeY + 0.02, towerCZ);
+        pgGroup.add(roofRidge);
+
+        // Треугольные фронтоны башни
+        [-towerD/2 - 0.02, towerD/2 + 0.02].forEach(fz => {
+            const triShape = new THREE.Shape();
+            triShape.moveTo(-towerW/2, roofPlateY);
+            triShape.lineTo(0, roofRidgeY);
+            triShape.lineTo(towerW/2, roofPlateY);
+            triShape.closePath();
+            const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), pgWoodMat);
+            triMesh.position.set(towerCX, 0, towerCZ + fz);
+            if (fz < 0) triMesh.rotation.y = Math.PI;
+            pgGroup.add(triMesh);
+        });
+
+        // 1. Пластиковая горка-скат (Wave Slide, cyan)
+        const slideStartX = towerCX;
+        const slideStartZ = towerCZ + towerD/2;
+        const slideLen = 2.15;
+        const slideDrop = towerFloorY - 0.15;
+        const slideAngle = Math.atan2(slideDrop, slideLen);
+        const slideDiagLen = Math.sqrt(slideLen * slideLen + slideDrop * slideDrop);
+
+        // Наклонный желоб горки
+        const slideBed = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.04, slideDiagLen), pgSlideMat);
+        slideBed.position.set(slideStartX, towerFloorY - slideDrop / 2, slideStartZ + slideLen / 2);
+        slideBed.rotation.x = slideAngle;
+        slideBed.castShadow = true;
+        pgGroup.add(slideBed);
+
+        // Бортики безопасности горки (левый и правый)
+        [-0.26, 0.26].forEach(bx => {
+            const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, slideDiagLen), pgSlideMat);
+            sideRail.position.set(slideStartX + bx, towerFloorY - slideDrop / 2 + 0.07, slideStartZ + slideLen / 2);
+            sideRail.rotation.x = slideAngle;
+            sideRail.castShadow = true;
+            pgGroup.add(sideRail);
+        });
+
+        // Нижняя пологая зона торможения горки
+        const slideRunout = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.04, 0.40), pgSlideMat);
+        slideRunout.position.set(slideStartX, 0.15, slideStartZ + slideLen + 0.20);
+        pgGroup.add(slideRunout);
+
+        // 2. Деревянная лесенка на башню (с северной стороны)
+        const ladZStart = towerCZ - towerD/2;
+        const ladLenZ = 0.65;
+        const ladAngle = Math.atan2(towerFloorY, ladLenZ);
+        const ladDiag = Math.sqrt(ladLenZ * ladLenZ + towerFloorY * towerFloorY);
+        [-0.26, 0.26].forEach(lx => {
+            const ladStringer = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.10, ladDiag), pgWoodMat);
+            ladStringer.position.set(towerCX + lx, towerFloorY / 2, ladZStart - ladLenZ / 2);
+            ladStringer.rotation.x = -ladAngle;
+            ladStringer.castShadow = true;
+            pgGroup.add(ladStringer);
+        });
+        for (let i = 1; i <= 4; i++) {
+            const t = i / 5;
+            const stepY = towerFloorY * t;
+            const stepZ = ladZStart - ladLenZ * (1 - t);
+            const rStep = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.03, 0.10), pgWoodDarkMat);
+            rStep.position.set(towerCX, stepY, stepZ);
+            rStep.castShadow = true;
+            pgGroup.add(rStep);
+        }
+
+        // 3. Скалодромный щит (с западной стороны башни)
+        const wallXStart = towerCX - towerW/2;
+        const wallLenX = 0.85;
+        const wallAngle = Math.atan2(towerFloorY, wallLenX);
+        const wallDiag = Math.sqrt(wallLenX * wallLenX + towerFloorY * towerFloorY);
+        const wallBoard = new THREE.Mesh(new THREE.BoxGeometry(wallDiag, 0.04, 0.85), pgWoodMat);
+        wallBoard.position.set(wallXStart - wallLenX / 2, towerFloorY / 2, towerCZ);
+        wallBoard.rotation.z = wallAngle;
+        wallBoard.castShadow = true;
+        pgGroup.add(wallBoard);
+
+        // Разноцветные зацепы для лазания
+        const gripColors = [pgRedMat, pgYellowMat, pgGreenMat, pgBlueMat];
+        const gripOffsets = [
+            [-0.22, 0.28, -0.25], [-0.45, 0.55, 0.18], [-0.65, 0.82, -0.15],
+            [-0.30, 0.40, 0.22],  [-0.55, 0.70, -0.28], [-0.75, 0.95, 0.12]
+        ];
+        gripOffsets.forEach((go, gi) => {
+            const grip = new THREE.Mesh(new THREE.DodecahedronGeometry(0.045, 0), gripColors[gi % gripColors.length]);
+            grip.position.set(wallXStart + go[0], go[1], towerCZ + go[2]);
+            grip.castShadow = true;
+            pgGroup.add(grip);
+        });
+
+        // Канат с узлами
+        const ropeMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.9 });
+        const climbRope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, wallDiag + 0.10, 6), ropeMat);
+        climbRope.position.set(wallXStart - wallLenX / 2, towerFloorY / 2 + 0.06, towerCZ);
+        climbRope.rotation.z = wallAngle;
+        pgGroup.add(climbRope);
+
+        // В. Качельный модуль (Верхняя балка + А-образная опора + 2 качелей)
+        const swingBeamLen = 3.30;
+        const swingBeamY = 2.30;
+        const swingA_X = towerCX + towerW/2 + swingBeamLen - 0.10; // X = 7.42
+        const swingZ = towerCZ;
+
+        // Горизонтальная несущая балка качелей (брус 100х120 мм)
+        const swingBeam = new THREE.Mesh(new THREE.BoxGeometry(swingBeamLen, 0.12, 0.10), pgWoodDarkMat);
+        swingBeam.position.set(towerCX + towerW/2 + swingBeamLen / 2 - 0.05, swingBeamY, swingZ);
+        swingBeam.castShadow = true;
+        pgGroup.add(swingBeam);
+
+        // А-образная крайняя опора (2 наклонные ноги 90х90 мм)
+        const aSpreadZ = 1.60;
+        const aLegLen = Math.sqrt(swingBeamY * swingBeamY + (aSpreadZ/2) * (aSpreadZ/2));
+        const aLegAngle = Math.atan2(aSpreadZ/2, swingBeamY);
+
+        const aLegNorth = new THREE.Mesh(new THREE.BoxGeometry(0.09, aLegLen, 0.09), pgWoodDarkMat);
+        aLegNorth.position.set(swingA_X, swingBeamY / 2, swingZ - aSpreadZ / 4);
+        aLegNorth.rotation.x = aLegAngle;
+        aLegNorth.castShadow = true;
+        pgGroup.add(aLegNorth);
+
+        const aLegSouth = new THREE.Mesh(new THREE.BoxGeometry(0.09, aLegLen, 0.09), pgWoodDarkMat);
+        aLegSouth.position.set(swingA_X, swingBeamY / 2, swingZ + aSpreadZ / 4);
+        aLegSouth.rotation.x = -aLegAngle;
+        aLegSouth.castShadow = true;
+        pgGroup.add(aLegSouth);
+
+        // Поперечная перемычка А-опоры
+        const aTie = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.08, aSpreadZ * 0.55), pgWoodDarkMat);
+        aTie.position.set(swingA_X, 0.95, swingZ);
+        pgGroup.add(aTie);
+
+        // 1. Классические качели (подвес на стальных цепях, красное сиденье)
+        const swing1_X = towerCX + 1.65; // X = 5.25
+        const chainH = swingBeamY - 0.50; // 1.80 м
+        [-0.22, 0.22].forEach(cx => {
+            const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, chainH, 6), pgSteelMat);
+            chain.position.set(swing1_X + cx, swingBeamY - chainH / 2, swingZ);
+            pgGroup.add(chain);
+        });
+        const swingSeat = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.035, 0.22), pgRedMat);
+        swingSeat.position.set(swing1_X, 0.48, swingZ);
+        swingSeat.castShadow = true;
+        pgGroup.add(swingSeat);
+
+        // 2. Подвесные качели-гнездо («Паутинка», бирюзово-синий обруч Ø0.90 м)
+        const swing2_X = towerCX + 2.65; // X = 6.25
+        const nestR = 0.42;
+        const nestRing = new THREE.Mesh(new THREE.TorusGeometry(nestR, 0.035, 8, 24), pgBlueMat);
+        nestRing.rotation.x = Math.PI / 2;
+        nestRing.position.set(swing2_X, 0.48, swingZ);
+        nestRing.castShadow = true;
+        pgGroup.add(nestRing);
+
+        const nestMeshInner = new THREE.Mesh(new THREE.CircleGeometry(nestR - 0.02, 16), new THREE.MeshStandardMaterial({
+            color: 0x1e293b, roughness: 0.9, wireframe: true
+        }));
+        nestMeshInner.rotation.x = -Math.PI / 2;
+        nestMeshInner.position.set(swing2_X, 0.48, swingZ);
+        pgGroup.add(nestMeshInner);
+
+        // 4 троса подвеса гнезда к балке
+        for (let na = 0; na < Math.PI * 2; na += Math.PI / 2) {
+            const rx = Math.cos(na) * nestR;
+            const rz = Math.sin(na) * nestR;
+            const topCX = swing2_X + (na === 0 || na === Math.PI ? rx * 0.3 : 0);
+            const nestRopeGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(swing2_X + rx, 0.48, swingZ + rz),
+                new THREE.Vector3(topCX, swingBeamY, swingZ)
+            ]);
+            pgGroup.add(new THREE.Line(nestRopeGeo, new THREE.LineBasicMaterial({ color: 0x38bdf8 })));
+        }
+
+        // Г. Песочница с широкими бортиками-сиденьями (1.40 × 1.40 м)
+        const sbCX = 4.30;
+        const sbCZ = -14.60;
+        const sbW = 1.40;
+        const sbH = 0.24;
+
+        // 4 деревянных борта
+        const sbSideX = new THREE.Mesh(new THREE.BoxGeometry(sbW, sbH, 0.04), pgWoodMat);
+        sbSideX.position.set(sbCX, sbH / 2, sbCZ - sbW / 2 + 0.02);
+        sbSideX.castShadow = true;
+        pgGroup.add(sbSideX);
+
+        const sbSideX2 = new THREE.Mesh(new THREE.BoxGeometry(sbW, sbH, 0.04), pgWoodMat);
+        sbSideX2.position.set(sbCX, sbH / 2, sbCZ + sbW / 2 - 0.02);
+        sbSideX2.castShadow = true;
+        pgGroup.add(sbSideX2);
+
+        const sbSideZ = new THREE.Mesh(new THREE.BoxGeometry(0.04, sbH, sbW - 0.08), pgWoodMat);
+        sbSideZ.position.set(sbCX - sbW / 2 + 0.02, sbH / 2, sbCZ);
+        sbSideZ.castShadow = true;
+        pgGroup.add(sbSideZ);
+
+        const sbSideZ2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, sbH, sbW - 0.08), pgWoodMat);
+        sbSideZ2.position.set(sbCX + sbW / 2 - 0.02, sbH / 2, sbCZ);
+        sbSideZ2.castShadow = true;
+        pgGroup.add(sbSideZ2);
+
+        // 4 угловых треугольных сиденья
+        [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(corner => {
+            const seatShape = new THREE.Shape();
+            seatShape.moveTo(0, 0);
+            seatShape.lineTo(0.35 * corner[0], 0);
+            seatShape.lineTo(0, 0.35 * corner[1]);
+            seatShape.closePath();
+            const cornerSeat = new THREE.Mesh(new THREE.ShapeGeometry(seatShape), pgWoodDarkMat);
+            cornerSeat.rotation.x = -Math.PI / 2;
+            cornerSeat.position.set(sbCX + (sbW / 2 - 0.02) * corner[0], sbH + 0.005, sbCZ + (sbW / 2 - 0.02) * corner[1]);
+            pgGroup.add(cornerSeat);
+        });
+
+        // Песок внутри песочницы
+        const sbSand = new THREE.Mesh(new THREE.BoxGeometry(sbW - 0.08, 0.16, sbW - 0.08), pgSandMat);
+        sbSand.position.set(sbCX, 0.09, sbCZ);
+        pgGroup.add(sbSand);
+
+        // Игрушки в песочнице (ведёрко и совочек)
+        const bucket = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.12, 10), pgRedMat);
+        bucket.position.set(sbCX - 0.25, 0.22, sbCZ + 0.15);
+        bucket.castShadow = true;
+        pgGroup.add(bucket);
+
+        const spade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.16), pgYellowMat);
+        spade.position.set(sbCX - 0.12, 0.18, sbCZ + 0.20);
+        spade.rotation.y = 0.4;
+        pgGroup.add(spade);
+
+        // Д. Пружинная качалка «Лошадка / Мотоцикл»
+        const springX = 6.40;
+        const springZ = -14.60;
+        const springCoil = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.38, 10), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.8 }));
+        springCoil.position.set(springX, 0.20, springZ);
+        springCoil.castShadow = true;
+        pgGroup.add(springCoil);
+
+        const horseBody = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.65), pgYellowMat);
+        horseBody.position.set(springX, 0.52, springZ);
+        horseBody.castShadow = true;
+        pgGroup.add(horseBody);
+
+        const horseHead = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 0.18), pgYellowMat);
+        horseHead.position.set(springX, 0.72, springZ + 0.25);
+        pgGroup.add(horseHead);
+
+        const horseHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.34, 8), pgSteelMat);
+        horseHandle.rotation.z = Math.PI / 2;
+        horseHandle.position.set(springX, 0.76, springZ + 0.22);
+        pgGroup.add(horseHandle);
+
+        const horseSeat = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.04, 0.28), pgRedMat);
+        horseSeat.position.set(springX, 0.67, springZ - 0.05);
+        pgGroup.add(horseSeat);
+
+        const horseFoot = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 8), pgSteelMat);
+        horseFoot.rotation.z = Math.PI / 2;
+        horseFoot.position.set(springX, 0.38, springZ + 0.15);
+        pgGroup.add(horseFoot);
+
+        // Е. Зона отдыха для родителей: парковая деревянная скамейка
+        const benchX = 7.70;
+        const benchZ = -15.40;
+        const benchGrp = new THREE.Group();
+        [-0.55, 0.55].forEach(bx => {
+            const legF = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.04), bollardBodyMat);
+            legF.position.set(bx, 0.21, 0.16);
+            benchGrp.add(legF);
+            const legB = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.82, 0.04), bollardBodyMat);
+            legB.position.set(bx, 0.41, -0.16);
+            benchGrp.add(legB);
+        });
+        for (let rz = -0.12; rz <= 0.16; rz += 0.07) {
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.025, 0.055), pgWoodMat);
+            slat.position.set(0, 0.43, rz);
+            slat.castShadow = true;
+            benchGrp.add(slat);
+        }
+        for (let ry = 0.56; ry <= 0.78; ry += 0.08) {
+            const slatB = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.06, 0.025), pgWoodMat);
+            slatB.position.set(0, ry, -0.16);
+            slatB.castShadow = true;
+            benchGrp.add(slatB);
+        }
+        benchGrp.position.set(benchX, 0, benchZ);
+        benchGrp.rotation.y = -Math.PI / 2; // лицом к детской площадке
+        pgGroup.add(benchGrp);
+
+        landscapeGroup.add(pgGroup);
+
+        // 6. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -23.10 ... -46.0)
         // Отходит от поперечной аллеи на юг через плодовый сад к тепличной площади
         const gardenWalkW = 1.20;
         const gardenWalkLen = 46.00 - 23.10; // 22.90 м
@@ -2230,7 +2675,7 @@
         gardenWalk.receiveShadow = true;
         landscapeGroup.add(gardenWalk);
 
-        // 6. ДЕКОРАТИВНОЕ ОЗЕЛЕНЕНИЕ И МИКСБОРДЕРЫ
+        // 7. ДЕКОРАТИВНОЕ ОЗЕЛЕНЕНИЕ И МИКСБОРДЕРЫ
         // А. Парадный миксбордер вдоль уличного забора (X = 9.5 ... 22.5, Z = 6.2)
         const streetMulch = new THREE.Mesh(new THREE.PlaneGeometry(13.0, 0.90), barkMulchMat);
         streetMulch.rotation.x = -Math.PI / 2;
@@ -2347,12 +2792,13 @@
 
         landscapeGroup.add(gardenZone);
 
-        // 9. ПАРКОВОЕ ОСВЕЩЕНИЕ (14 ЛАНДШАФТНЫХ БОЛЛАРДОВ С ТЁПЛЫМ СВЕТОМ)
+        // 10. ПАРКОВОЕ ОСВЕЩЕНИЕ (15 ЛАНДШАФТНЫХ БОЛЛАРДОВ С ТЁПЛЫМ СВЕТОМ)
         const bollardPositions = [
             [8.3, 4.0], [9.1, 1.8],         // у калитки и дорожки к дому
             [9.1, -17.5], [10.6, -17.5],     // у дорожки от террасы к аллее
             [0.5, -21.8],                    // у ступеней террасы бани
             [13.0, -21.8], [13.0, -23.2],    // у входа в беседку-барбекю
+            [7.8, -14.2],                    // у детской площадки и скамейки отдыха
             [13.0, -28.0], [14.6, -34.0], [13.0, -39.0], // вдоль садовой аллеи
             [18.2, -7.5],                    // у площадки перед сараем
             [15.0, -41.0], [20.0, -41.0]     // у тепличного огорода
@@ -4891,6 +5337,9 @@
             } else if (view === 'siteBBQ') {
                 targetPos = { x: 23.5, y: 6.0, z: -16.0 };
                 targetLook = { x: 16.1, y: 2.0, z: -22.5 };
+            } else if (view === 'sitePlayground') {
+                targetPos = { x: 8.8, y: 3.8, z: -12.4 };
+                targetLook = { x: 5.2, y: 1.3, z: -16.2 };
             } else if (view === 'siteOrchard') {
                 targetPos = { x: 26.0, y: 10.5, z: -20.0 };
                 targetLook = { x: 15.0, y: 2.0, z: -32.0 };
