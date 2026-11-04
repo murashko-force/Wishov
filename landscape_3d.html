@@ -195,15 +195,15 @@
         scene.add(siteGroup);
         scene.add(infraGroup);
 
-        // 1. Cadastral Survey Boundary Points (Точные метрические координаты из дела со смещением к левой меже)
+        // 1. Cadastral Survey Boundary Points (Точные метрические координаты с привязкой по натурным замерам заказчика)
         // Межа 1-2: 35,26 м (ул. Калинина), 2-3: 59,55 м, 3-4: 13,25 м, 4-5: 33,72 м, 5-1: 72,64 м
-        // Смещение: отступ от левого забора (Т1-Т5) до стены дома составляет 7,00 м.
+        // Натурные замеры: отступ дома до фасадного забора = 7,00 м; до левого забора: фасадный угол = 7,18 м, задний угол = 7,55 м
         const CAD_POINTS = [
-            { id: 1, x: -7.00, z:  7.00, name: 'Т1 (ул. Калинина / С-З угол)' },
-            { id: 2, x: 28.26, z:  7.00, name: 'Т2 (ул. Калинина / С-В угол)' },
+            { id: 1, x: -6.91, z:  7.00, name: 'Т1 (ул. Калинина / С-З угол)' },
+            { id: 2, x: 28.35, z:  7.00, name: 'Т2 (ул. Калинина / С-В угол)' },
             { id: 3, x: 31.00, z: -52.55, name: 'Т3 (Восточный уступ)' },
             { id: 4, x: 32.00, z: -65.75, name: 'Т4 (Ю-В угол сада)' },
-            { id: 5, x: -1.72, z: -65.75, name: 'Т5 (Ю-З угол огорода)' }
+            { id: 5, x: -9.73, z: -65.59, name: 'Т5 (Ю-З угол огорода)' }
         ];
 
         // 2. Surrounding Regional Terrain (Внешний ландшафт)
@@ -886,9 +886,9 @@
         createModularPillar(27.00, 7.00, 1.75, 0.30);
         createSwingGate(23.05, 7.00, 26.95, 7.00, 1.70);
 
-        // Правый край забора до восточной межи (Point 2, X = 28.26):
-        createModularPillar(28.26, 7.00, 1.75, 0.30);
-        createPicketSection(27.15, 7.00, 28.11, 7.00, 1.70, 0.18);
+        // Правый край забора до восточной межи (Point 2, X = 28.35):
+        createModularPillar(28.35, 7.00, 1.75, 0.30);
+        createPicketSection(27.15, 7.00, 28.20, 7.00, 1.70, 0.18);
 
         // Подъездной мощёный фартук от дороги к воротам 1:
         const gateApronShape = new THREE.Shape();
@@ -950,9 +950,9 @@
         createSteelPost(-4.90, -9.50, 1.75, 0.10);
         createSwingGate(-4.85, -9.50, -0.95, -9.50, 1.65);
 
-        // Секция от ворот до межевого забора (X = -4.90 ... -5.80)
-        createSteelPost(-5.80, -9.50, 1.70, 0.08);
-        createLightPicketSection(-4.95, -9.50, -5.76, -9.50, 1.65, 0.12);
+        // Секция от ворот до левого межевого забора (X = -4.90 ... -7.55 м по натурному замеру)
+        createSteelPost(-7.55, -9.50, 1.70, 0.08);
+        createLightPicketSection(-4.95, -9.50, -7.50, -9.50, 1.65, 0.12);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
@@ -1047,10 +1047,10 @@
         const nL_x = Math.cos(bathRotAngle);
         const nL_z = Math.sin(bathRotAngle);
 
-        // Точка на заборе в створе передней стены бани (6м от задней стены дома: Z = -15.50м)
-        const tL = (-15.50 - CAD_POINTS[0].z) / (CAD_POINTS[4].z - CAD_POINTS[0].z);
+        // Точка на заборе в створе передней стены бани (ровно 10,0 м от задней стены дома: Z = -19.50м)
+        const tL = (-19.50 - CAD_POINTS[0].z) / (CAD_POINTS[4].z - CAD_POINTS[0].z);
         const fenceL_x = CAD_POINTS[0].x + (CAD_POINTS[4].x - CAD_POINTS[0].x) * tL;
-        const fenceL_z = -15.50;
+        const fenceL_z = -19.50;
 
         // Центр основного объёма бани: гарантированный отступ не менее 3.0м от забора в узком месте (задний угол)
         const bathCenterX = fenceL_x + (3.19 + 1.20) * nL_x + 2.50 * uL_x;
@@ -1985,34 +1985,34 @@
         landscapeGroup.add(yardWalkMesh);
 
         // 3. ДОРОЖНО-ТРОПИНОЧНАЯ СЕТЬ (Т-ОБРАЗНАЯ СИСТЕМА «ДОМ ⇄ БАНЯ ⇄ БАРБЕКЮ»)
-        // А. Прямая поперечная аллея «Баня ⇄ Беседка барбекю» (Z = -18.28 м)
-        // Идёт строго по прямой от ступеней бани (X = 2.80) до входа в крытую беседку барбекю (X = 13.80)
+        // А. Прямая поперечная аллея «Баня ⇄ Беседка барбекю» (Z = -22.50 м)
+        // Идёт строго по прямой от ступеней бани (X = 0.20) до входа в крытую беседку барбекю (X = 13.80)
         const crossWalkW = 1.20;
-        const crossWalkLen = 13.80 - 2.80; // 11.00 м
+        const crossWalkLen = 13.80 - 0.20; // 13.60 м
         const crossWalkGeo = new THREE.PlaneGeometry(crossWalkLen, crossWalkW);
         const crossWalk = new THREE.Mesh(crossWalkGeo, paveMat);
         crossWalk.rotation.x = -Math.PI / 2;
-        crossWalk.position.set((2.80 + 13.80) / 2, 0.018, -18.28);
+        crossWalk.position.set((0.20 + 13.80) / 2, 0.018, -22.50);
         crossWalk.receiveShadow = true;
         landscapeGroup.add(crossWalk);
 
         // Б. Прямой пешеходный спуск от садовых ступеней задней террасы веранды (X = 9.85 м) к поперечной аллее
-        // Начинается от ступеней террасы (Z = -12.30) и стыкуется с аллеей (Z = -18.28)
-        const houseLinkLen = 18.28 - 12.30; // 5.98 м
+        // Начинается от ступеней террасы (Z = -12.30) и стыкуется с аллеей (Z = -22.50)
+        const houseLinkLen = 22.50 - 12.30; // 10.20 м (ровно 10 м по натурному замеру!)
         const houseLinkGeo = new THREE.PlaneGeometry(crossWalkW, houseLinkLen);
         const houseLinkWalk = new THREE.Mesh(houseLinkGeo, paveMat);
         houseLinkWalk.rotation.x = -Math.PI / 2;
-        houseLinkWalk.position.set(9.85, 0.017, (-12.30 - 18.28) / 2);
+        houseLinkWalk.position.set(9.85, 0.017, (-12.30 - 22.50) / 2);
         houseLinkWalk.receiveShadow = true;
         landscapeGroup.add(houseLinkWalk);
 
-        // 4. КРЫТАЯ ВСЕПОГОДНАЯ БЕСЕДКА-БАРБЕКЮ (Z = -18.5 ... -22.7 м, X = 13.8 ... 18.4 м)
-        // Расположена на одном уровне с баней в глубине двора, южнее сарая. Проезд к сараю полностью свободен!
+        // 4. КРЫТАЯ ВСЕПОГОДНАЯ БЕСЕДКА-БАРБЕКЮ (Z = -20.4 ... -24.6 м, X = 13.8 ... 18.4 м)
+        // Расположена на одном уровне с баней в глубине двора (ровно 10м от дома, южнее сарая).
         const bbqPavilionGrp = new THREE.Group();
         const pavW = 4.60; // ширина по оси X
         const pavD = 4.20; // глубина по оси Z
         const pavCenterX = 16.10;
-        const pavCenterZ = -20.60;
+        const pavCenterZ = -22.50;
         const pavFloorH = 0.06;
 
         // Мощёный стилобат-основание
@@ -2021,9 +2021,9 @@
         pavFloor.receiveShadow = true;
         bbqPavilionGrp.add(pavFloor);
 
-        // Входная ступень перед входом (стыкуется с поперечной аллеей)
-        const pavStep = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.035, 0.40), patioStoneMat);
-        pavStep.position.set(pavCenterX - 0.90, 0.02, pavCenterZ + pavD / 2 + 0.20);
+        // Входная ступень перед входом (стыкуется с поперечной аллеей с западной стороны)
+        const pavStep = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.035, 1.60), patioStoneMat);
+        pavStep.position.set(pavCenterX - pavW / 2 - 0.175, 0.02, pavCenterZ);
         pavStep.receiveShadow = true;
         bbqPavilionGrp.add(pavStep);
 
@@ -2219,14 +2219,14 @@
 
         landscapeGroup.add(bbqPavilionGrp);
 
-        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -18.88 ... -46.0)
+        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -23.10 ... -46.0)
         // Отходит от поперечной аллеи на юг через плодовый сад к тепличной площади
         const gardenWalkW = 1.20;
-        const gardenWalkLen = 46.00 - 18.88; // 27.12 м
+        const gardenWalkLen = 46.00 - 23.10; // 22.90 м
         const gardenWalkGeo = new THREE.PlaneGeometry(gardenWalkW, gardenWalkLen);
         const gardenWalk = new THREE.Mesh(gardenWalkGeo, gravelMat);
         gardenWalk.rotation.x = -Math.PI / 2;
-        gardenWalk.position.set(13.80, 0.015, (-18.88 - 46.00) / 2);
+        gardenWalk.position.set(13.80, 0.015, (-23.10 - 46.00) / 2);
         gardenWalk.receiveShadow = true;
         landscapeGroup.add(gardenWalk);
 
@@ -2259,28 +2259,28 @@
             createThuja(27.8, z, 2.5, 0.55);
         }
 
-        // 7. ПЛОДОВЫЙ САД (ORCHARD, Z = -23.0 ... -35.0)
+        // 7. ПЛОДОВЫЙ САД (ORCHARD, Z = -26.0 ... -38.0)
         // 8 плодовых деревьев в 2 ряда в шахматном порядке
         const orchardTrees = [
-            // Ряд 1 (Z = -24.5)
-            { x: 5.5, z: -24.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
-            { x: 10.5, z: -24.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
-            { x: 19.5, z: -24.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
-            { x: 24.5, z: -24.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
-            // Ряд 2 (Z = -32.5)
-            { x: 6.5, z: -32.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
-            { x: 11.5, z: -32.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
-            { x: 18.5, z: -32.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
-            { x: 23.5, z: -32.5, h: 1.3, r: 1.4, mat: foliageGreen1 }
+            // Ряд 1 (Z = -28.0)
+            { x: 5.5, z: -28.0, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 10.5, z: -28.0, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 19.5, z: -28.0, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 24.5, z: -28.0, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            // Ряд 2 (Z = -35.5)
+            { x: 6.5, z: -35.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 11.5, z: -35.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 18.5, z: -35.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 23.5, z: -35.5, h: 1.3, r: 1.4, mat: foliageGreen1 }
         ];
         orchardTrees.forEach(t => createFruitTree(t.x, t.z, t.h, t.r, t.mat));
 
-        // Ягодные кустарники (малина, смородина) вдоль шпалер (Z = -20.5)
+        // Ягодные кустарники (малина, смородина) вдоль шпалер (Z = -25.5)
         for (let x = 4.5; x <= 10.5; x += 1.5) {
-            createShrub(x, -20.5, 0.45, foliageGreen2);
+            createShrub(x, -25.5, 0.45, foliageGreen2);
         }
         for (let x = 19.0; x <= 25.0; x += 1.5) {
-            createShrub(x, -20.5, 0.45, foliageGreen2);
+            createShrub(x, -25.5, 0.45, foliageGreen2);
         }
 
         // 8. ЭКО-ОГОРОД И ТЕПЛИЦА (KITCHEN GARDEN & GREENHOUSE, Z = -39.0 ... -52.0)
@@ -2350,12 +2350,12 @@
         // 9. ПАРКОВОЕ ОСВЕЩЕНИЕ (14 ЛАНДШАФТНЫХ БОЛЛАРДОВ С ТЁПЛЫМ СВЕТОМ)
         const bollardPositions = [
             [8.3, 4.0], [9.1, 1.8],         // у калитки и дорожки к дому
-            [9.1, -15.0], [10.6, -15.0],     // у дорожки от террасы к аллее
-            [3.2, -17.4],                    // у ступеней террасы бани
-            [13.0, -17.4], [13.0, -19.2],    // у входа в беседку-барбекю
-            [13.0, -25.0], [14.6, -31.0], [13.0, -37.0], // вдоль садовой аллеи
+            [9.1, -17.5], [10.6, -17.5],     // у дорожки от террасы к аллее
+            [0.5, -21.8],                    // у ступеней террасы бани
+            [13.0, -21.8], [13.0, -23.2],    // у входа в беседку-барбекю
+            [13.0, -28.0], [14.6, -34.0], [13.0, -39.0], // вдоль садовой аллеи
             [18.2, -7.5],                    // у площадки перед сараем
-            [15.0, -40.0], [20.0, -41.0]     // у тепличного огорода
+            [15.0, -41.0], [20.0, -41.0]     // у тепличного огорода
         ];
         bollardPositions.forEach(bp => createBollard(bp[0], bp[1]));
 
@@ -4889,11 +4889,11 @@
                 targetPos = { x: 5.0, y: 3.6, z: 22.0 };
                 targetLook = { x: 5.0, y: 2.2, z: 1.0 };
             } else if (view === 'siteBBQ') {
-                targetPos = { x: 23.5, y: 6.0, z: -14.0 };
-                targetLook = { x: 16.1, y: 2.0, z: -20.6 };
+                targetPos = { x: 23.5, y: 6.0, z: -16.0 };
+                targetLook = { x: 16.1, y: 2.0, z: -22.5 };
             } else if (view === 'siteOrchard') {
-                targetPos = { x: 26.0, y: 10.5, z: -18.0 };
-                targetLook = { x: 15.0, y: 2.0, z: -30.0 };
+                targetPos = { x: 26.0, y: 10.5, z: -20.0 };
+                targetLook = { x: 15.0, y: 2.0, z: -32.0 };
             } else if (view === 'siteGreenhouse') {
                 targetPos = { x: 26.0, y: 8.5, z: -35.0 };
                 targetLook = { x: 15.0, y: 1.5, z: -46.0 };
@@ -4901,8 +4901,8 @@
                 targetPos = { x: 16.0, y: 6.5, z: -25.0 };
                 targetLook = { x: 8.0, y: 2.2, z: -9.5 };
             } else if (view === 'siteBath') {
-                targetPos = { x: 9.85, y: 6.5, z: -10.0 };
-                targetLook = { x: 8.5, y: 1.0, z: -18.3 };
+                targetPos = { x: 9.85, y: 7.0, z: -11.0 };
+                targetLook = { x: 7.0, y: 1.0, z: -22.5 };
             } else if (view === 'siteFarRear') {
                 targetPos = { x: 15.0, y: 12.0, z: -76.0 };
                 targetLook = { x: 10.0, y: 3.5, z: -20.0 };
