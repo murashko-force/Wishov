@@ -56,8 +56,8 @@
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
-                <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня с лаунжем</button>
-                <button onclick="setCamera('siteBBQ')" style="background: #b91c1c; font-weight: 600; padding: 6px 8px;">🔥 BBQ & Патио</button>
+                <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня и аллея</button>
+                <button onclick="setCamera('siteBBQ')" style="background: #b91c1c; font-weight: 600; padding: 6px 8px;">🔥 Беседка BBQ</button>
                 <button onclick="setCamera('siteOrchard')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🍎 Плодовый сад</button>
                 <button onclick="setCamera('siteGreenhouse')" style="background: #0284c7; font-weight: 600; padding: 6px 8px;">🌱 Огород и теплица</button>
                 <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
@@ -74,7 +74,7 @@
             <div class="spec-box"><span>Фасад по улице</span><strong>35,26 м (ул. Калинина)</strong></div>
             <div class="spec-box"><span>Глубина участка</span><strong>72,64 м (Межа)</strong></div>
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
-            <div class="spec-box"><span>Патио / Барбекю</span><strong>5,0 × 5,0 м (пергола)</strong></div>
+            <div class="spec-box"><span>Беседка BBQ</span><strong>4,6 × 4,2 м (с крышей)</strong></div>
             <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
             <div class="spec-box"><span>Плодовый сад</span><strong>8 деревьев + шпалеры</strong></div>
             <div class="spec-box"><span>Грядки эко-огорода</span><strong>6 приподнятых коробов</strong></div>
@@ -1865,6 +1865,7 @@
         const gardenSoilMat = new THREE.MeshStandardMaterial({ color: 0x271c14, roughness: 0.95 });
         const veggieGreenMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.85 });
         const polycarbMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.15, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+        const pavRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide });
         const galvSteelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
         const bollardBodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
         const bollardLightMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfde047, emissiveIntensity: 0.8 });
@@ -1983,77 +1984,179 @@
         yardWalkMesh.receiveShadow = true;
         landscapeGroup.add(yardWalkMesh);
 
-        // 3. ПОШАГОВАЯ САДОВАЯ ТРОПИНКА К БАНЕ («STEPPING STONES»)
-        // Каменные плиты от задней террасы дома (Z = -9.5) к террасе бани (X = 1.4, Z = -15.5)
-        const steppingStoneGeo = new THREE.BoxGeometry(0.65, 0.03, 0.45);
-        const bathPathPoints = [
-            [8.8, -10.2], [7.6, -11.0], [6.4, -11.9], [5.2, -12.8],
-            [4.0, -13.7], [2.8, -14.6], [1.8, -15.5]
+        // 3. ДОРОЖНО-ТРОПИНОЧНАЯ СЕТЬ (Т-ОБРАЗНАЯ СИСТЕМА «ДОМ ⇄ БАНЯ ⇄ БАРБЕКЮ»)
+        // А. Прямая поперечная аллея «Баня ⇄ Беседка барбекю» (Z = -18.28 м)
+        // Идёт строго по прямой от ступеней бани (X = 2.80) до входа в крытую беседку барбекю (X = 13.80)
+        const crossWalkW = 1.20;
+        const crossWalkLen = 13.80 - 2.80; // 11.00 м
+        const crossWalkGeo = new THREE.PlaneGeometry(crossWalkLen, crossWalkW);
+        const crossWalk = new THREE.Mesh(crossWalkGeo, paveMat);
+        crossWalk.rotation.x = -Math.PI / 2;
+        crossWalk.position.set((2.80 + 13.80) / 2, 0.018, -18.28);
+        crossWalk.receiveShadow = true;
+        landscapeGroup.add(crossWalk);
+
+        // Б. Прямой пешеходный спуск от садовых ступеней задней террасы веранды (X = 9.85 м) к поперечной аллее
+        // Начинается от ступеней террасы (Z = -12.30) и стыкуется с аллеей (Z = -18.28)
+        const houseLinkLen = 18.28 - 12.30; // 5.98 м
+        const houseLinkGeo = new THREE.PlaneGeometry(crossWalkW, houseLinkLen);
+        const houseLinkWalk = new THREE.Mesh(houseLinkGeo, paveMat);
+        houseLinkWalk.rotation.x = -Math.PI / 2;
+        houseLinkWalk.position.set(9.85, 0.017, (-12.30 - 18.28) / 2);
+        houseLinkWalk.receiveShadow = true;
+        landscapeGroup.add(houseLinkWalk);
+
+        // 4. КРЫТАЯ ВСЕПОГОДНАЯ БЕСЕДКА-БАРБЕКЮ (Z = -18.5 ... -22.7 м, X = 13.8 ... 18.4 м)
+        // Расположена на одном уровне с баней в глубине двора, южнее сарая. Проезд к сараю полностью свободен!
+        const bbqPavilionGrp = new THREE.Group();
+        const pavW = 4.60; // ширина по оси X
+        const pavD = 4.20; // глубина по оси Z
+        const pavCenterX = 16.10;
+        const pavCenterZ = -20.60;
+        const pavFloorH = 0.06;
+
+        // Мощёный стилобат-основание
+        const pavFloor = new THREE.Mesh(new THREE.BoxGeometry(pavW, pavFloorH, pavD), patioStoneMat);
+        pavFloor.position.set(pavCenterX, pavFloorH / 2 + 0.01, pavCenterZ);
+        pavFloor.receiveShadow = true;
+        bbqPavilionGrp.add(pavFloor);
+
+        // Входная ступень перед входом (стыкуется с поперечной аллеей)
+        const pavStep = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.035, 0.40), patioStoneMat);
+        pavStep.position.set(pavCenterX - 0.90, 0.02, pavCenterZ + pavD / 2 + 0.20);
+        pavStep.receiveShadow = true;
+        bbqPavilionGrp.add(pavStep);
+
+        // Несущие деревянные стойки (брус 140×140 мм, высота 2.35 м, тёмный дуб)
+        const postH = 2.35;
+        const postPositions = [
+            [-pavW / 2 + 0.12, -pavD / 2 + 0.12], // задний левый
+            [ pavW / 2 - 0.12, -pavD / 2 + 0.12], // задний правый
+            [-pavW / 2 + 0.12,  pavD / 2 - 0.12], // передний левый
+            [ pavW / 2 - 0.12,  pavD / 2 - 0.12], // передний правый
+            [-pavW / 2 + 0.12,  0.00],            // боковой левый
+            [ pavW / 2 - 0.12,  0.00]             // боковой правый
         ];
-        bathPathPoints.forEach((pt, idx) => {
-            const stone = new THREE.Mesh(steppingStoneGeo, patioStoneMat);
-            stone.position.set(pt[0], 0.02, pt[1]);
-            stone.rotation.y = 0.35 + (idx % 2) * 0.15;
-            stone.receiveShadow = true;
-            landscapeGroup.add(stone);
-        });
-
-        // 4. ЗОНА ПАТИО / БАРБЕКЮ И КОСТРОВИЩЕ (X = 12.5 ... 17.5, Z = -10.5 ... -15.5)
-        const patioGrp = new THREE.Group();
-        // Мощёное основание патио (5,0 х 5,0 м)
-        const patioFloor = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.04, 5.0), patioStoneMat);
-        patioFloor.position.set(15.0, 0.02, -13.0);
-        patioFloor.receiveShadow = true;
-        patioGrp.add(patioFloor);
-
-        // Деревянная пергола (4 стойки 150х150 мм + балки + 6 поперечных ламелей)
-        const pergH = 2.40;
-        const pergPosts = [[12.7, -10.7], [17.3, -10.7], [12.7, -15.3], [17.3, -15.3]];
-        pergPosts.forEach(pos => {
-            const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, pergH, 0.14), pergolaWoodMat);
-            post.position.set(pos[0], pergH / 2 + 0.04, pos[1]);
+        postPositions.forEach(pt => {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, postH, 0.14), pergolaWoodMat);
+            post.position.set(pavCenterX + pt[0], pavFloorH + postH / 2, pavCenterZ + pt[1]);
             post.castShadow = true;
-            patioGrp.add(post);
+            bbqPavilionGrp.add(post);
+
+            // Металлический анкерный башмак в полу
+            const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), galvSteelMat);
+            shoe.position.set(pavCenterX + pt[0], pavFloorH + 0.025, pavCenterZ + pt[1]);
+            bbqPavilionGrp.add(shoe);
         });
-        // Продольные балки
-        for (let x of [12.7, 17.3]) {
-            const beam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 4.8), pergolaWoodMat);
-            beam.position.set(x, pergH + 0.09, -13.0);
-            beam.castShadow = true;
-            patioGrp.add(beam);
+
+        // Верхний мауэрлат / обвязочные балки
+        const beamY = pavFloorH + postH + 0.07;
+        const beamL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, pavD + 0.10), pergolaWoodMat);
+        beamL.position.set(pavCenterX - pavW / 2 + 0.12, beamY, pavCenterZ);
+        beamL.castShadow = true;
+        bbqPavilionGrp.add(beamL);
+
+        const beamR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, pavD + 0.10), pergolaWoodMat);
+        beamR.position.set(pavCenterX + pavW / 2 - 0.12, beamY, pavCenterZ);
+        beamR.castShadow = true;
+        bbqPavilionGrp.add(beamR);
+
+        const beamFront = new THREE.Mesh(new THREE.BoxGeometry(pavW + 0.10, 0.16, 0.14), pergolaWoodMat);
+        beamFront.position.set(pavCenterX, beamY, pavCenterZ + pavD / 2 - 0.12);
+        beamFront.castShadow = true;
+        bbqPavilionGrp.add(beamFront);
+
+        const beamBack = new THREE.Mesh(new THREE.BoxGeometry(pavW + 0.10, 0.16, 0.14), pergolaWoodMat);
+        beamBack.position.set(pavCenterX, beamY, pavCenterZ - pavD / 2 + 0.12);
+        beamBack.castShadow = true;
+        bbqPavilionGrp.add(beamBack);
+
+        // Деревянный парапет / перила по задней и боковым сторонам (высота 0.90 м)
+        const railH = 0.90;
+        // Задняя сторона
+        const backRailTop = new THREE.Mesh(new THREE.BoxGeometry(pavW - 0.24, 0.06, 0.10), pergolaWoodMat);
+        backRailTop.position.set(pavCenterX, pavFloorH + railH, pavCenterZ - pavD / 2 + 0.12);
+        bbqPavilionGrp.add(backRailTop);
+        for (let bx = -pavW / 2 + 0.45; bx <= pavW / 2 - 0.45; bx += 0.40) {
+            const baluster = new THREE.Mesh(new THREE.BoxGeometry(0.04, railH - 0.06, 0.04), pergolaWoodMat);
+            baluster.position.set(pavCenterX + bx, pavFloorH + (railH - 0.06) / 2, pavCenterZ - pavD / 2 + 0.12);
+            bbqPavilionGrp.add(baluster);
         }
-        // Поперечные ламели жалюзи
-        for (let z = -15.1; z <= -10.9; z += 0.8) {
-            const louver = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.12, 0.06), pergolaWoodMat);
-            louver.position.set(15.0, pergH + 0.21, z);
-            louver.castShadow = true;
-            patioGrp.add(louver);
+        // Левая сторона
+        const leftRailTop = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, pavD - 0.24), pergolaWoodMat);
+        leftRailTop.position.set(pavCenterX - pavW / 2 + 0.12, pavFloorH + railH, pavCenterZ);
+        bbqPavilionGrp.add(leftRailTop);
+        for (let bz = -pavD / 2 + 0.45; bz <= pavD / 2 - 0.45; bz += 0.40) {
+            const baluster = new THREE.Mesh(new THREE.BoxGeometry(0.04, railH - 0.06, 0.04), pergolaWoodMat);
+            baluster.position.set(pavCenterX - pavW / 2 + 0.12, pavFloorH + (railH - 0.06) / 2, pavCenterZ + bz);
+            bbqPavilionGrp.add(baluster);
+        }
+        // Правая сторона
+        const rightRailTop = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, pavD - 0.24), pergolaWoodMat);
+        rightRailTop.position.set(pavCenterX + pavW / 2 - 0.12, pavFloorH + railH, pavCenterZ);
+        bbqPavilionGrp.add(rightRailTop);
+        for (let bz = -pavD / 2 + 0.45; bz <= pavD / 2 - 0.45; bz += 0.40) {
+            const baluster = new THREE.Mesh(new THREE.BoxGeometry(0.04, railH - 0.06, 0.04), pergolaWoodMat);
+            baluster.position.set(pavCenterX + pavW / 2 - 0.12, pavFloorH + (railH - 0.06) / 2, pavCenterZ + bz);
+            bbqPavilionGrp.add(baluster);
         }
 
-        // Обеденный стол и 2 скамьи под перголой
-        const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.06, 0.90), pergolaWoodMat);
-        tableTop.position.set(15.0, 0.75, -12.5);
-        tableTop.castShadow = true;
-        patioGrp.add(tableTop);
-        for (let dx of [-0.80, 0.80]) {
-            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.72, 0.70), pergolaWoodMat);
-            leg.position.set(15.0 + dx, 0.36, -12.5);
-            patioGrp.add(leg);
-        }
-        // Скамьи
-        for (let dz of [-0.65, 0.65]) {
-            const bench = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.05, 0.35), pergolaWoodMat);
-            bench.position.set(15.0, 0.45, -12.5 + dz);
-            bench.castShadow = true;
-            patioGrp.add(bench);
-            for (let dx of [-0.75, 0.75]) {
-                const bLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.28), pergolaWoodMat);
-                bLeg.position.set(15.0 + dx, 0.21, -12.5 + dz);
-                patioGrp.add(bLeg);
-            }
-        }
+        // КАПИТАЛЬНАЯ ЧЕТЫРЁХСКАТНАЯ ШАТРОВАЯ КРОВЛЯ (МЕТАЛЛОЧЕРЕПИЦА ГРАФИТ RAL 7016)
+        const roofW = pavW + 0.60; // 5.20 м (свес 30 см)
+        const roofD = pavD + 0.60; // 4.80 м
+        const ridgeL = 1.00;       // длина конька
+        const eavesY = beamY + 0.08;
+        const ridgeY = eavesY + 1.05; // высота конька 3.55 м
 
-        // Стационарная кирпичная барбекю-печь / гриль (графитовый клинкер RAL 7016)
+        const v0 = [-roofW / 2, eavesY, -roofD / 2];
+        const v1 = [ roofW / 2, eavesY, -roofD / 2];
+        const v2 = [ roofW / 2, eavesY,  roofD / 2];
+        const v3 = [-roofW / 2, eavesY,  roofD / 2];
+        const r0 = [-ridgeL / 2, ridgeY, 0];
+        const r1 = [ ridgeL / 2, ridgeY, 0];
+
+        const roofVerts = [
+            // Передний скат (к дому, Z > 0)
+            ...v3, ...r1, ...r0,
+            ...v3, ...v2, ...r1,
+            // Задний скат (в сад, Z < 0)
+            ...v0, ...r0, ...r1,
+            ...v0, ...r1, ...v1,
+            // Левый вальмовый скат (к бане)
+            ...v0, ...v3, ...r0,
+            // Правый вальмовый скат
+            ...v1, ...r1, ...v2
+        ];
+        const hippedGeo = new THREE.BufferGeometry();
+        hippedGeo.setAttribute('position', new THREE.Float32BufferAttribute(roofVerts, 3));
+        hippedGeo.computeVertexNormals();
+
+        const pavilionRoofMesh = new THREE.Mesh(hippedGeo, pavRoofMat);
+        pavilionRoofMesh.position.set(pavCenterX, 0, pavCenterZ);
+        pavilionRoofMesh.castShadow = true;
+        pavilionRoofMesh.receiveShadow = true;
+        bbqPavilionGrp.add(pavilionRoofMesh);
+
+        // Коньковая планка
+        const pavRidgeCap = new THREE.Mesh(new THREE.BoxGeometry(ridgeL + 0.20, 0.06, 0.16), pavRoofMat);
+        pavRidgeCap.position.set(pavCenterX, ridgeY + 0.03, pavCenterZ);
+        bbqPavilionGrp.add(pavRidgeCap);
+
+        // Лобовые планки карниза по периметру крыши
+        const fasciaFront = new THREE.Mesh(new THREE.BoxGeometry(roofW + 0.04, 0.12, 0.04), pavRoofMat);
+        fasciaFront.position.set(pavCenterX, eavesY - 0.04, pavCenterZ + roofD / 2);
+        bbqPavilionGrp.add(fasciaFront);
+        const fasciaBack = new THREE.Mesh(new THREE.BoxGeometry(roofW + 0.04, 0.12, 0.04), pavRoofMat);
+        fasciaBack.position.set(pavCenterX, eavesY - 0.04, pavCenterZ - roofD / 2);
+        bbqPavilionGrp.add(fasciaBack);
+        const fasciaLeft = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, roofD + 0.04), pavRoofMat);
+        fasciaLeft.position.set(pavCenterX - roofW / 2, eavesY - 0.04, pavCenterZ);
+        bbqPavilionGrp.add(fasciaLeft);
+        const fasciaRight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, roofD + 0.04), pavRoofMat);
+        fasciaRight.position.set(pavCenterX + roofW / 2, eavesY - 0.04, pavCenterZ);
+        bbqPavilionGrp.add(fasciaRight);
+
+        // СТАЦИОНАРНЫЙ МАНГАЛЬНО-ПЕЧНОЙ КОМПЛЕКС (У ПРАВОЙ СТЕНЫ ВНУТРИ БЕСЕДКИ)
         const bbqStation = new THREE.Group();
         const bbqBase = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.85, 0.70), bbqBrickMat);
         bbqBase.position.set(0, 0.425, 0);
@@ -2066,34 +2169,64 @@
         const bbqHearth = new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.75, 0.65), bbqBrickMat);
         bbqHearth.position.set(-0.35, 1.305, 0);
         bbqStation.add(bbqHearth);
-        const bbqChimney = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.90, 0.45), bbqBrickMat);
-        bbqChimney.position.set(-0.35, 2.13, 0);
+        // Дымоход, проходящий сквозь крышу
+        const bbqChimneyH = 1.95;
+        const bbqChimney = new THREE.Mesh(new THREE.BoxGeometry(0.48, bbqChimneyH, 0.48), bbqBrickMat);
+        bbqChimney.position.set(-0.35, 1.68 + bbqChimneyH / 2, 0);
+        bbqChimney.castShadow = true;
         bbqStation.add(bbqChimney);
-        bbqStation.position.set(13.6, 0.04, -14.9);
-        patioGrp.add(bbqStation);
+        // Дефлектор-колпак на трубе
+        const chimneyCap = new THREE.Mesh(new THREE.BoxGeometry(0.60, 0.08, 0.60), fenceCapMat);
+        chimneyCap.position.set(-0.35, 1.68 + bbqChimneyH + 0.04, 0);
+        bbqStation.add(chimneyCap);
 
-        // Костровище (Fire Pit) с полукруглой скамьей
-        const firePitGrp = new THREE.Group();
-        const pitRing = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.75, 0.25, 16), patioStoneMat);
-        pitRing.position.y = 0.125;
-        firePitGrp.add(pitRing);
-        const pitCoal = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.10, 12), fireGlowMat);
-        pitCoal.position.y = 0.20;
-        firePitGrp.add(pitCoal);
-        // Полукруглая скамья
-        const benchCurve = new THREE.Mesh(new THREE.CylinderGeometry(1.60, 1.60, 0.40, 16, 1, true, 0, Math.PI * 0.9), pergolaWoodMat);
-        benchCurve.position.y = 0.20;
-        firePitGrp.add(benchCurve);
-        firePitGrp.position.set(10.5, 0, -13.0);
-        patioGrp.add(firePitGrp);
+        bbqStation.position.set(pavCenterX + pavW / 2 - 0.95, pavFloorH, pavCenterZ);
+        bbqStation.rotation.y = -Math.PI / 2; // развернута рабочей зоной внутрь беседки
+        bbqPavilionGrp.add(bbqStation);
 
-        landscapeGroup.add(patioGrp);
+        // ОБЕДЕННАЯ ГРУППА ПО ЦЕНТРУ БЕСЕДКИ (МАССИВНЫЙ СТОЛ И СКАМЬИ НА 8 МЕСТ)
+        const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.06, 0.90), pergolaWoodMat);
+        tableTop.position.set(pavCenterX - 0.45, pavFloorH + 0.76, pavCenterZ);
+        tableTop.castShadow = true;
+        bbqPavilionGrp.add(tableTop);
+        for (let dx of [-0.75, 0.75]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.73, 0.70), pergolaWoodMat);
+            leg.position.set(pavCenterX - 0.45 + dx, pavFloorH + 0.365, pavCenterZ);
+            bbqPavilionGrp.add(leg);
+        }
+        for (let dz of [-0.65, 0.65]) {
+            const bench = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.05, 0.32), pergolaWoodMat);
+            bench.position.set(pavCenterX - 0.45, pavFloorH + 0.45, pavCenterZ + dz);
+            bench.castShadow = true;
+            bbqPavilionGrp.add(bench);
+            for (let dx of [-0.70, 0.70]) {
+                const bLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.26), pergolaWoodMat);
+                bLeg.position.set(pavCenterX - 0.45 + dx, pavFloorH + 0.21, pavCenterZ + dz);
+                bbqPavilionGrp.add(bLeg);
+            }
+        }
 
-        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -15.5 ... -46.0)
-        const gardenWalkGeo = new THREE.PlaneGeometry(1.30, 30.5);
+        // Подвесной потолочный светильник в беседке
+        const pavLampCable = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.65, 6), bollardBodyMat);
+        pavLampCable.position.set(pavCenterX - 0.45, ridgeY - 0.35, pavCenterZ);
+        bbqPavilionGrp.add(pavLampCable);
+        const pavLampShade = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.16, 12, 1, true), bollardBodyMat);
+        pavLampShade.position.set(pavCenterX - 0.45, ridgeY - 0.68, pavCenterZ);
+        bbqPavilionGrp.add(pavLampShade);
+        const pavLampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), bollardLightMat);
+        pavLampBulb.position.set(pavCenterX - 0.45, ridgeY - 0.72, pavCenterZ);
+        bbqPavilionGrp.add(pavLampBulb);
+
+        landscapeGroup.add(bbqPavilionGrp);
+
+        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -18.88 ... -46.0)
+        // Отходит от поперечной аллеи на юг через плодовый сад к тепличной площади
+        const gardenWalkW = 1.20;
+        const gardenWalkLen = 46.00 - 18.88; // 27.12 м
+        const gardenWalkGeo = new THREE.PlaneGeometry(gardenWalkW, gardenWalkLen);
         const gardenWalk = new THREE.Mesh(gardenWalkGeo, gravelMat);
         gardenWalk.rotation.x = -Math.PI / 2;
-        gardenWalk.position.set(15.0, 0.015, -30.75);
+        gardenWalk.position.set(13.80, 0.015, (-18.88 - 46.00) / 2);
         gardenWalk.receiveShadow = true;
         landscapeGroup.add(gardenWalk);
 
@@ -2216,10 +2349,13 @@
 
         // 9. ПАРКОВОЕ ОСВЕЩЕНИЕ (14 ЛАНДШАФТНЫХ БОЛЛАРДОВ С ТЁПЛЫМ СВЕТОМ)
         const bollardPositions = [
-            [8.3, 4.0], [9.1, 1.8],
-            [12.3, -10.3], [17.7, -10.3], [12.3, -15.7], [17.7, -15.7],
-            [14.2, -20.0], [15.8, -26.0], [14.2, -32.0], [15.8, -38.0],
-            [3.2, -14.0], [18.2, -7.5], [15.0, -40.0], [20.0, -41.0]
+            [8.3, 4.0], [9.1, 1.8],         // у калитки и дорожки к дому
+            [9.1, -15.0], [10.6, -15.0],     // у дорожки от террасы к аллее
+            [3.2, -17.4],                    // у ступеней террасы бани
+            [13.0, -17.4], [13.0, -19.2],    // у входа в беседку-барбекю
+            [13.0, -25.0], [14.6, -31.0], [13.0, -37.0], // вдоль садовой аллеи
+            [18.2, -7.5],                    // у площадки перед сараем
+            [15.0, -40.0], [20.0, -41.0]     // у тепличного огорода
         ];
         bollardPositions.forEach(bp => createBollard(bp[0], bp[1]));
 
@@ -4753,8 +4889,8 @@
                 targetPos = { x: 5.0, y: 3.6, z: 22.0 };
                 targetLook = { x: 5.0, y: 2.2, z: 1.0 };
             } else if (view === 'siteBBQ') {
-                targetPos = { x: 23.0, y: 7.5, z: -8.0 };
-                targetLook = { x: 15.0, y: 1.5, z: -13.0 };
+                targetPos = { x: 23.5, y: 6.0, z: -14.0 };
+                targetLook = { x: 16.1, y: 2.0, z: -20.6 };
             } else if (view === 'siteOrchard') {
                 targetPos = { x: 26.0, y: 10.5, z: -18.0 };
                 targetLook = { x: 15.0, y: 2.0, z: -30.0 };
@@ -4765,8 +4901,8 @@
                 targetPos = { x: 16.0, y: 6.5, z: -25.0 };
                 targetLook = { x: 8.0, y: 2.2, z: -9.5 };
             } else if (view === 'siteBath') {
-                targetPos = { x: 7.2, y: 2.3, z: -13.0 };
-                targetLook = { x: 3.2, y: 0.9, z: -16.5 };
+                targetPos = { x: 9.85, y: 6.5, z: -10.0 };
+                targetLook = { x: 8.5, y: 1.0, z: -18.3 };
             } else if (view === 'siteFarRear') {
                 targetPos = { x: 15.0, y: 12.0, z: -76.0 };
                 targetLook = { x: 10.0, y: 3.5, z: -20.0 };
