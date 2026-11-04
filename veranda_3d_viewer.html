@@ -309,17 +309,7 @@
         greenVergeMesh.receiveShadow = true;
         siteGroup.add(greenVergeMesh);
 
-        // Мощёный въездной пандус от асфальта через зелёную зону к воротам
-        const rampNearZ = getRoadNearZ(3.3);
-        const rampLen = rampNearZ - 7.0;
-        const rampGeo = new THREE.PlaneGeometry(5.8, rampLen);
-        const rampMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
-        const ramp = new THREE.Mesh(rampGeo, rampMat);
-        ramp.rotation.x = -Math.PI / 2;
-        ramp.position.set(3.3, 0.022, 7.0 + rampLen / 2);
-        siteGroup.add(ramp);
-
-        // 6. Architectural Front Fence along ул. Калинина (RAL 7016 Anthracite)
+        // 6. Architectural Front Fence, Gates & Circulation (Новая схема зонирования)
         const fencePostMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.6 });
         const fenceSlatMat = new THREE.MeshStandardMaterial({ color: 0x272d37, roughness: 0.5 });
         const fencePlinthMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
@@ -352,7 +342,7 @@
 
             const postCount = Math.max(2, Math.round(len / 2.6) + 1);
             for (let i = 0; i < postCount; i++) {
-                const px = x1 + i * (len / (postCount - 1));
+                const px = Math.min(x1, x2) + i * (len / (postCount - 1));
                 const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, height + 0.08, 0.12), fencePostMat);
                 post.position.set(px, (height + 0.08) / 2, z);
                 post.castShadow = true;
@@ -360,44 +350,152 @@
             }
         }
 
-        // Left street fence section: от левой межи до ворот
-        createFencePlinth(CAD_POINTS[0].x, 0.8, 7.0);
-        createSlatSection(CAD_POINTS[0].x, 0.8, 7.0);
+        function createPerpendicularFence(z1, z2, x, height = 1.75) {
+            const len = Math.abs(z2 - z1);
+            const zMin = Math.min(z1, z2);
+            const zMax = Math.max(z1, z2);
+            const numSlats = 11;
+            const slatH = 0.09;
+            const gap = (height - 0.2 - numSlats * slatH) / (numSlats - 1);
+            const panelGroup = new THREE.Group();
+            for (let i = 0; i < numSlats; i++) {
+                const y = 0.25 + i * (slatH + gap);
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(0.02, slatH, len - 0.06), fenceSlatMat);
+                slat.position.set(0, y, (z1 + z2) / 2);
+                slat.rotation.z = 0.25;
+                slat.castShadow = true;
+                panelGroup.add(slat);
+            }
+            panelGroup.position.x = x;
+            siteGroup.add(panelGroup);
 
-        // Automated Sliding Gate (Откатные ворота 5,0 м: X = 0.8 to 5.8)
-        const gateGroup = new THREE.Group();
-        const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(5.0, 1.75, 0.08), fencePostMat);
-        const gateSlats = new THREE.Mesh(new THREE.BoxGeometry(4.88, 1.62, 0.03), fenceSlatMat);
-        gateGroup.add(gateFrame);
-        gateGroup.add(gateSlats);
+            // Цоколь под секцией
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), fencePlinthMat);
+            plinth.position.set(x, 0.11, (z1 + z2) / 2);
+            plinth.castShadow = true;
+            siteGroup.add(plinth);
 
-        const gatePylonL = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.95, 0.20), fencePostMat);
-        gatePylonL.position.set(-2.55, 0.1, 0);
-        gateGroup.add(gatePylonL);
-        const gatePylonR = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.95, 0.20), fencePostMat);
-        gatePylonR.position.set(2.55, 0.1, 0);
-        gateGroup.add(gatePylonR);
-        gateGroup.position.set(3.3, 0.95, 7.0);
-        siteGroup.add(gateGroup);
+            // Столбы
+            const postCount = Math.max(2, Math.round(len / 2.6) + 1);
+            for (let i = 0; i < postCount; i++) {
+                const pz = zMin + i * (len / (postCount - 1));
+                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, height + 0.08, 0.12), fencePostMat);
+                post.position.set(x, (height + 0.08) / 2, pz);
+                post.castShadow = true;
+                siteGroup.add(post);
+            }
+        }
 
-        // Pedestrian Wicket Gate (Калитка 1,1 м: X = 6.0 to 7.1)
-        const wicketGroup = new THREE.Group();
-        const wicketDoor = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.06), fenceSlatMat);
-        wicketDoor.castShadow = true;
-        wicketGroup.add(wicketDoor);
-        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
-        handle.position.set(-0.45, 0, 0.06);
-        wicketGroup.add(handle);
-        wicketGroup.position.set(6.55, 0.95, 7.0);
-        siteGroup.add(wicketGroup);
+        function createWicketAlongZ(z1, z2, x, height = 1.75) {
+            const width = Math.abs(z2 - z1);
+            const zCenter = (z1 + z2) / 2;
+            const wGroup = new THREE.Group();
+            const wDoor = new THREE.Mesh(new THREE.BoxGeometry(0.06, height, width - 0.06), fenceSlatMat);
+            wDoor.castShadow = true;
+            wGroup.add(wDoor);
+            const handleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+            for (let side of [-0.05, 0.05]) {
+                const h = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.22, 8), handleMat);
+                h.position.set(side, 0, width / 2 - 0.12);
+                wGroup.add(h);
+            }
+            for (let pz of [z1, z2]) {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.14, height + 0.15, 0.14), fencePostMat);
+                p.position.set(0, 0.075, pz - zCenter);
+                p.castShadow = true;
+                wGroup.add(p);
+            }
+            wGroup.position.set(x, height / 2, zCenter);
+            siteGroup.add(wGroup);
+        }
 
-        // Intercom pillar
-        const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.9, 0.18), fencePostMat);
-        intercom.position.set(7.18, 0.95, 7.0);
+        function createSwingGate(x1, x2, z, height = 1.70) {
+            const width = Math.abs(x2 - x1);
+            const xCenter = (x1 + x2) / 2;
+            const leafW = (width - 0.08) / 2;
+            const gateGrp = new THREE.Group();
+
+            for (let side of [-1, 1]) {
+                const leafGrp = new THREE.Group();
+                const frame = new THREE.Mesh(new THREE.BoxGeometry(leafW, height, 0.06), fencePostMat);
+                leafGrp.add(frame);
+                const slats = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.08, height - 0.12, 0.03), fenceSlatMat);
+                leafGrp.add(slats);
+
+                const hMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+                const h = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), hMat);
+                h.position.set(-side * (leafW / 2 - 0.10), 0, 0.05);
+                leafGrp.add(h);
+
+                leafGrp.position.set(side * (leafW / 2 + 0.02), height / 2, 0);
+                gateGrp.add(leafGrp);
+            }
+
+            for (let px of [x1, x2]) {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, height + 0.20, 0.16), fencePostMat);
+                p.position.set(px - xCenter, (height + 0.20) / 2, 0);
+                p.castShadow = true;
+                gateGrp.add(p);
+            }
+
+            const stop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            stop.position.set(0, 0.04, 0);
+            gateGrp.add(stop);
+
+            gateGrp.position.set(xCenter, 0, z);
+            siteGroup.add(gateGrp);
+        }
+
+        // А. ПЛАВНАЯ ПОДЪЕЗДНАЯ ДОРОГА ПОД НАВЕС С УЛИЦЫ КАЛИНИНА ("ЖЁЛТАЯ ДОРОЖКА")
+        // Свободный въезд без забора с плавным радиусом поворота под навес
+        const paveMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75 });
+        const drivewayShape = new THREE.Shape();
+        drivewayShape.moveTo(-3.8, 9.8);
+        drivewayShape.lineTo(2.2, 9.8);
+        drivewayShape.quadraticCurveTo(3.4, 7.5, 7.8, 4.3);
+        drivewayShape.lineTo(7.8, 0.0);
+        drivewayShape.lineTo(1.8, 0.0);
+        drivewayShape.quadraticCurveTo(1.6, 3.8, -2.4, 7.0);
+        drivewayShape.quadraticCurveTo(-3.4, 8.4, -3.8, 9.8);
+        const drivewayMesh = new THREE.Mesh(new THREE.ShapeGeometry(drivewayShape), paveMat);
+        drivewayMesh.rotation.x = -Math.PI / 2;
+        drivewayMesh.position.y = 0.016;
+        drivewayMesh.receiveShadow = true;
+        siteGroup.add(drivewayMesh);
+
+        // Б. ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (НАЧИНАЕТСЯ ОТ НАВЕСА X = 7.80)
+        // 1. Цоколь фасадного забора
+        createFencePlinth(7.80, 9.80, 7.0);
+        createFencePlinth(10.90, CAD_POINTS[1].x, 7.0);
+
+        // 2. Секция жалюзи от навеса до новой калитки
+        createSlatSection(7.80, 9.80, 7.0);
+
+        // 3. КАЛИТКА №1: СТРОГО НАПРОТИВ КРЫЛЬЦА ВЕРАНДЫ (X = 9.80 ... 10.90, Z = 7.0)
+        const wicket1Group = new THREE.Group();
+        const wicket1Door = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.06), fenceSlatMat);
+        wicket1Door.castShadow = true;
+        wicket1Group.add(wicket1Door);
+        const handle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
+        handle1.position.set(-0.45, 0, 0.06);
+        wicket1Group.add(handle1);
+        wicket1Group.position.set(10.35, 0.95, 7.0);
+        siteGroup.add(wicket1Group);
+
+        // Столбы калитки №1
+        for (let px of [9.80, 10.90]) {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.95, 0.14), fencePostMat);
+            post.position.set(px, 1.95 / 2, 7.0);
+            post.castShadow = true;
+            siteGroup.add(post);
+        }
+
+        // Столб домофона и табличка адреса рядом с калиткой №1
+        const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.90, 0.18), fencePostMat);
+        intercom.position.set(11.05, 0.95, 7.0);
         intercom.castShadow = true;
         siteGroup.add(intercom);
 
-        // Address Sign on Fence
         const signCanvas = document.createElement('canvas');
         signCanvas.width = 256; signCanvas.height = 96;
         const sCtx = signCanvas.getContext('2d');
@@ -409,12 +507,45 @@
         sCtx.fillText('аг. Вишов • 25 соток', 128, 74);
         const signTex = new THREE.CanvasTexture(signCanvas);
         const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.26), new THREE.MeshBasicMaterial({ map: signTex }));
-        signMesh.position.set(7.6, 1.35, 7.07);
+        signMesh.position.set(11.55, 1.35, 7.07);
         siteGroup.add(signMesh);
 
-        // Right street fence section: X = 7.3 до правой межи (длинная фасадная часть широкого двора)
-        createFencePlinth(7.3, CAD_POINTS[1].x, 7.0);
-        createSlatSection(7.3, CAD_POINTS[1].x, 7.0);
+        // 4. Длинная секция фасадного забора от калитки до восточной межи
+        createSlatSection(10.90, CAD_POINTS[1].x, 7.0);
+
+        // 5. ПРЯМАЯ МОЩЁНАЯ ДОРОЖКА ОТ КАЛИТКИ №1 К СТУПЕНЯМ КРЫЛЬЦА
+        const walkPorch = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 5.9), paveMat);
+        walkPorch.rotation.x = -Math.PI / 2;
+        walkPorch.position.set(10.35, 0.018, 4.05);
+        walkPorch.receiveShadow = true;
+        siteGroup.add(walkPorch);
+
+        // В. РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР ПОД НАВЕСОМ (ПЕРПЕНДИКУЛЯРНО ДОМУ, X = 7.80) С КАЛИТКОЙ №2
+        // Секция от фасадного забора до навеса (Z = 7.00 ... 4.10)
+        createPerpendicularFence(7.00, 4.10, 7.80);
+        // Секция от края навеса до калитки (Z = 4.10 ... 2.80)
+        createPerpendicularFence(4.10, 2.80, 7.80);
+        // КАЛИТКА №2: проход из-под навеса во внутренний двор (Z = 2.80 ... 1.70, ширина 1.10 м)
+        createWicketAlongZ(2.80, 1.70, 7.80);
+        // Секция от калитки до стены дома (Z = 1.70 ... 0.00)
+        createPerpendicularFence(1.70, 0.00, 7.80);
+
+        // Дорожка-связка от калитки №2 к крыльцу
+        const walkLink = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), paveMat);
+        walkLink.rotation.x = -Math.PI / 2;
+        walkLink.position.set(9.0, 0.020, 2.25);
+        walkLink.receiveShadow = true;
+        siteGroup.add(walkLink);
+
+        // Г. ЛЕВЫЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР С РАСПАШНЫМИ ВОРОТАМИ (Z = -9.50)
+        // Идёт от заднего левого угла дома (X = 0.00) до левого межевого забора (X = -5.80)
+        createFencePlinth(-0.90, 0.00, -9.50);
+        createSlatSection(-0.90, 0.00, -9.50, 1.70);
+        createFencePlinth(-5.80, -4.90, -9.50);
+        createSlatSection(-5.80, -4.90, -9.50, 1.70);
+
+        // ДВУСТВОРЧАТЫЕ РАСПАШНЫЕ ВОРОТА 4,0 М В САД
+        createSwingGate(-4.90, -0.90, -9.50, 1.70);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
@@ -452,27 +583,13 @@
         createBorderFenceSegment(CAD_POINTS[3], CAD_POINTS[4]); // 4 -> 5 (33.72 m)
         createBorderFenceSegment(CAD_POINTS[4], CAD_POINTS[0]); // 5 -> 1 (72.64 m)
 
-        // 8. Paved Plaza & Pathways (Благоустройство и мощение)
-        const paveMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.75 });
-
-        // Parking plaza connecting gate and carport
-        const parkingPlaza = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.1), paveMat);
-        parkingPlaza.rotation.x = -Math.PI / 2;
-        parkingPlaza.position.set(4.4, 0.016, 3.55);
-        parkingPlaza.receiveShadow = true;
-        siteGroup.add(parkingPlaza);
-
-        // Walkway from Wicket Gate to Veranda Porch
-        const walkWicket = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 5.4), paveMat);
-        walkWicket.rotation.x = -Math.PI / 2;
-        walkWicket.position.set(6.6, 0.018, 4.3);
-        walkWicket.receiveShadow = true;
-        siteGroup.add(walkWicket);
-
-        // Foundation Blind Area (Отмостка вокруг дома и веранды)
+        // 8. Foundation Blind Area (Отмостка вокруг дома и веранды)
         const blindMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
         const blindArea = new THREE.Mesh(new THREE.PlaneGeometry(HW + VW + 1.8, HL + 1.8), blindMat);
         blindArea.rotation.x = -Math.PI / 2;
+        blindArea.position.set((HW + VW) / 2, 0.012, -HL / 2);
+        blindArea.receiveShadow = true;
+        siteGroup.add(blindArea);
         blindArea.position.set((HW + VW) / 2, 0.012, -HL / 2);
         blindArea.receiveShadow = true;
         siteGroup.add(blindArea);
@@ -3133,14 +3250,6 @@
         padMesh.position.set((CP_X0 + CP_X1)/2, 0.02, (CP_Z0 + CP_Z1)/2);
         padMesh.receiveShadow = true;
         carportGroup.add(padMesh);
-
-        // Paved walkway from parking pad directly to veranda steps
-        const cpWalkGeo = new THREE.PlaneGeometry(1.8, 1.8);
-        const cpWalkMesh = new THREE.Mesh(cpWalkGeo, padMat);
-        cpWalkMesh.rotation.x = -Math.PI / 2;
-        cpWalkMesh.position.set(8.2, 0.022, 1.1);
-        cpWalkMesh.receiveShadow = true;
-        carportGroup.add(cpWalkMesh);
 
         // 2. Timber Ledger Beam on house wall
         const wallLedger = new THREE.Mesh(new THREE.BoxGeometry(CP_W, 0.15, 0.12), woodMat);
