@@ -3693,81 +3693,415 @@
         gutter.position.set((CP_X0 + CP_X1)/2, CP_Y_FRONT + 0.03, CP_Z1 + 0.18);
         carportGroup.add(gutter);
 
-        // 7. 1 REALISTIC STYLIZED 3D CAR PARKED PARALLEL TO ROAD
-        function createStylizedCar(colorHex, isSuv) {
+        // 7. REALISTIC BELGEE S50 / GEELY EMGRAND SEDAN (Ice Blue Metallic)
+        function createBelgeeS50(colorHex = 0x8fb3cf) {
             const car = new THREE.Group();
-            const length = isSuv ? 4.65 : 4.55;
-            const width = isSuv ? 1.92 : 1.82;
-            const height = isSuv ? 1.62 : 1.42;
-            const clearance = isSuv ? 0.22 : 0.15;
-            const wheelR = isSuv ? 0.36 : 0.31;
-            const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, metalness: 0.5, roughness: 0.25 });
-            const darkGlass = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1, metalness: 0.8 });
-            const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
-            const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.85, roughness: 0.15 });
 
-            // Lower body
-            const chH = height * 0.44;
-            const chassis = new THREE.Mesh(new THREE.BoxGeometry(width, chH, length), bodyMat);
-            chassis.position.set(0, clearance + chH/2, 0);
-            chassis.castShadow = true;
-            car.add(chassis);
+            const L = 4.64;
+            const W = 1.82;
+            const H = 1.46;
+            const G = 0.16;
+            const wheelR = 0.315;
+            const frontAxleZ = 1.325;
+            const rearAxleZ = -1.325;
 
-            // Greenhouse / Cabin
-            const cabH = height * 0.54;
-            const cabL = isSuv ? length * 0.64 : length * 0.54;
-            const cabW = width * 0.86;
-            const cabZ = isSuv ? -0.2 : -0.28;
-            const cabin = new THREE.Mesh(new THREE.BoxGeometry(cabW, cabH, cabL), darkGlass);
-            cabin.position.set(0, clearance + chH + cabH/2 - 0.04, cabZ);
-            cabin.castShadow = true;
-            car.add(cabin);
+            // Materials
+            // metalness: 0.15 / roughness: 0.20 gives genuine automotive clearcoat finish with vibrant light blue color
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: colorHex,
+                metalness: 0.15,
+                roughness: 0.20
+            });
+            const darkGlassMat = new THREE.MeshStandardMaterial({
+                color: 0x111c2e,
+                roughness: 0.12,
+                metalness: 0.10,
+                side: THREE.DoubleSide
+            });
+            const chromeMat = new THREE.MeshStandardMaterial({
+                color: 0xf1f5f9,
+                metalness: 0.25,
+                roughness: 0.15
+            });
+            const blackTrimMat = new THREE.MeshStandardMaterial({
+                color: 0x18181b,
+                roughness: 0.70
+            });
+            const tireMat = new THREE.MeshStandardMaterial({
+                color: 0x141416,
+                roughness: 0.92
+            });
+            const rimMat = new THREE.MeshStandardMaterial({
+                color: 0xe2e8f0,
+                metalness: 0.20,
+                roughness: 0.22
+            });
+            const brakeDiscMat = new THREE.MeshStandardMaterial({
+                color: 0x64748b,
+                metalness: 0.20,
+                roughness: 0.35
+            });
+            const brakeCaliperMat = new THREE.MeshStandardMaterial({
+                color: 0xdc2626,
+                roughness: 0.40
+            });
+            const headlightMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 0.95,
+                roughness: 0.15
+            });
+            const drlMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xf8fafc,
+                emissiveIntensity: 1.2
+            });
+            const taillightMat = new THREE.MeshStandardMaterial({
+                color: 0xdc2626,
+                emissive: 0xef4444,
+                emissiveIntensity: 0.95,
+                roughness: 0.20
+            });
+            const mirrorGlassMat = new THREE.MeshStandardMaterial({
+                color: 0xf8fafc,
+                metalness: 0.25,
+                roughness: 0.10
+            });
 
-            // Roof plate
-            const carRoof = new THREE.Mesh(new THREE.BoxGeometry(cabW + 0.04, 0.05, cabL), bodyMat);
-            carRoof.position.set(0, clearance + chH + cabH - 0.02, cabZ);
-            car.add(carRoof);
+            // 0. Soft Contact Shadow under car
+            const shadowCanvas = document.createElement("canvas");
+            shadowCanvas.width = 256; shadowCanvas.height = 512;
+            const sCtx = shadowCanvas.getContext("2d");
+            const sGrad = sCtx.createRadialGradient(128, 256, 40, 128, 256, 128);
+            sGrad.addColorStop(0, "rgba(0, 0, 0, 0.75)");
+            sGrad.addColorStop(0.6, "rgba(0, 0, 0, 0.40)");
+            sGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+            sCtx.fillStyle = sGrad;
+            sCtx.fillRect(0, 0, 256, 512);
+            const shadowTex = new THREE.CanvasTexture(shadowCanvas);
+            const shadowPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.10, 4.80),
+                new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.75 })
+            );
+            shadowPlane.rotation.x = -Math.PI / 2;
+            shadowPlane.position.set(0, 0.022, 0);
+            car.add(shadowPlane);
 
-            // 4 Wheels
-            for (let wx of [-width/2 + 0.06, width/2 - 0.06]) {
-                for (let wz of [-length * 0.31, length * 0.31]) {
-                    const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, 0.22, 16), tireMat);
-                    tire.rotation.z = Math.PI / 2;
-                    tire.position.set(wx, wheelR, wz);
-                    tire.castShadow = true;
-                    car.add(tire);
+            // 1. One Solid Unified Sedan Body (Цельный кузов седана Belgee S50)
+            const bodyShape = new THREE.Shape();
+            bodyShape.moveTo(2.26, 0.18);
+            bodyShape.lineTo(2.32, 0.45);   // носовой выступ переднего бампера
+            bodyShape.lineTo(2.28, 0.68);   // верх решётки / кромка капота
+            bodyShape.lineTo(1.05, 0.86);   // наклонный капот
+            bodyShape.lineTo(0.35, 1.42);   // наклонное лобовое стекло (32°)
+            bodyShape.lineTo(-0.45, 1.42);  // крыша
+            bodyShape.lineTo(-1.25, 0.94);  // покатое заднее стекло (fastback rake)
+            bodyShape.lineTo(-2.18, 0.94);  // верхняя плоскость крышки багажника
+            bodyShape.lineTo(-2.22, 0.96);  // спойлерная кромка (ducktail)
+            bodyShape.lineTo(-2.26, 0.86);  // спуск к задним фонарям
+            bodyShape.lineTo(-2.32, 0.48);  // задний бампер
+            bodyShape.lineTo(-2.20, 0.18);  // нижний задний диффузор
+            // Арка заднего колеса:
+            bodyShape.lineTo(-1.68, 0.18);
+            bodyShape.bezierCurveTo(-1.65, 0.38, -1.00, 0.38, -0.97, 0.18);
+            // Порог между колёсами:
+            bodyShape.lineTo(0.97, 0.18);
+            // Арка переднего колеса:
+            bodyShape.bezierCurveTo(1.00, 0.38, 1.65, 0.38, 1.68, 0.18);
+            bodyShape.closePath();
 
-                    const rim = new THREE.Mesh(new THREE.CylinderGeometry(wheelR * 0.58, wheelR * 0.58, 0.23, 12), rimMat);
-                    rim.rotation.z = Math.PI / 2;
-                    rim.position.set(wx, wheelR, wz);
-                    car.add(rim);
+            const bodyDepth = W - 0.06; // 1.76m
+            const bodyExtrudeSettings = {
+                steps: 1,
+                depth: bodyDepth,
+                bevelEnabled: true,
+                bevelThickness: 0.03,
+                bevelSize: 0.03,
+                bevelSegments: 3
+            };
+            const bodyGeo = new THREE.ExtrudeGeometry(bodyShape, bodyExtrudeSettings);
+            bodyGeo.translate(0, 0, -bodyDepth / 2);
+            bodyGeo.rotateY(-Math.PI / 2);
+            const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            car.add(bodyMesh);
+
+            // Антенна «акулий плавник» на крыше
+            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.16), bodyMat);
+            fin.position.set(0, 1.47, -0.32);
+            car.add(fin);
+
+            // 2. Flush Tinted Glass Panels (Идеально прилегающие стёкла)
+            // Лобовое стекло (windshield): точно на наклонной плоскости с учётом bevel
+            const wsMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.38, 0.90), darkGlassMat);
+            wsMesh.position.set(0, 1.168, 0.722);
+            wsMesh.rotation.x = -Math.atan2(0.70, 0.56); // -0.896 rad (наклон назад вдоль передних стоек)
+            car.add(wsMesh);
+
+            // Тонкие чёрные щётки стеклоочистителей у основания лобового стекла
+            for (let side of [-0.28, 0.28]) {
+                const wiper = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.015, 0.015), blackTrimMat);
+                wiper.position.set(side, 0.90, 1.06);
+                wiper.rotation.x = -Math.atan2(0.70, 0.56);
+                wiper.rotation.z = 0.08;
+                car.add(wiper);
+            }
+
+            // Заднее стекло (rear window): точно на наклонной плоскости с учётом bevel
+            const rwMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.935), darkGlassMat);
+            rwMesh.position.set(0, 1.210, -0.870);
+            rwMesh.rotation.x = Math.atan2(0.80, 0.48); // +1.030 rad (наклон вперёд вдоль задних стоек)
+            car.add(rwMesh);
+
+            // Панорамный люк на крыше
+            const sunroof = new THREE.Mesh(new THREE.PlaneGeometry(0.88, 0.65), darkGlassMat);
+            sunroof.rotation.x = -Math.PI / 2;
+            sunroof.position.set(0, 1.455, -0.05);
+            car.add(sunroof);
+
+            // Боковые стёкла кабины: аккуратный трапециевидный профиль, идеально вписанный в силуэт
+            const sideWindowShape = new THREE.Shape();
+            sideWindowShape.moveTo(0.95, 0.88);
+            sideWindowShape.lineTo(0.28, 1.38);
+            sideWindowShape.lineTo(-0.40, 1.38);
+            sideWindowShape.lineTo(-1.15, 0.88);
+            sideWindowShape.closePath();
+            const sGlassGeo = new THREE.ShapeGeometry(sideWindowShape);
+
+            for (let side of [-1, 1]) {
+                const sGlass = new THREE.Mesh(sGlassGeo, darkGlassMat);
+                sGlass.rotation.y = -Math.PI / 2;
+                sGlass.position.set(side * (bodyDepth / 2 + 0.033), 0, 0);
+                car.add(sGlass);
+
+                // Чёрная центральная стойка B
+                const bPillar = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.44, 0.08), blackTrimMat);
+                bPillar.position.set(side * (bodyDepth / 2 + 0.034), 1.13, -0.05);
+                car.add(bPillar);
+
+                // Нижний хромированный молдинг остекления
+                const beltChrome = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.015, 2.12), chromeMat);
+                beltChrome.position.set(side * (bodyDepth / 2 + 0.034), 0.875, -0.10);
+                car.add(beltChrome);
+
+                // Ручки дверей
+                for (let dz of [-0.48, 0.48]) {
+                    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, 0.12), bodyMat);
+                    handle.position.set(side * (bodyDepth / 2 + 0.04), 0.80, dz);
+                    handle.castShadow = true;
+                    car.add(handle);
                 }
             }
 
-            // Headlights facing road (+Z)
-            const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfef08a, emissiveIntensity: 0.8 });
-            for (let lx of [-width * 0.34, width * 0.34]) {
-                const hl = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.04), lightMat);
-                hl.position.set(lx, clearance + chH * 0.72, length/2);
-                car.add(hl);
+            // 3. Front Face: Geely Vertical Chrome Grille & Headlights (Фирменная решётка радиатора Belgee S50)
+            const bumperZ = 2.31;
+            const grilleW = 0.82;
+            const grilleH = 0.24;
+            const grilleY = 0.55;
+
+            // Чёрный фон и хромированная окантовка решётки
+            const grilleBack = new THREE.Mesh(new THREE.BoxGeometry(grilleW, grilleH, 0.03), blackTrimMat);
+            grilleBack.position.set(0, grilleY, bumperZ + 0.015);
+            car.add(grilleBack);
+
+            const gFrameT = 0.025;
+            for (let side of [-1, 1]) {
+                const vertFrame = new THREE.Mesh(new THREE.BoxGeometry(gFrameT, grilleH, 0.035), chromeMat);
+                vertFrame.position.set(side * (grilleW / 2 - gFrameT / 2), grilleY, bumperZ + 0.02);
+                car.add(vertFrame);
+            }
+            for (let ySide of [-1, 1]) {
+                const horizFrame = new THREE.Mesh(new THREE.BoxGeometry(grilleW, gFrameT, 0.035), chromeMat);
+                horizFrame.position.set(0, grilleY + ySide * (grilleH / 2 - gFrameT / 2), bumperZ + 0.02);
+                car.add(horizFrame);
             }
 
-            // Taillights facing house (-Z)
-            const tailMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 0.9 });
-            for (let lx of [-width * 0.36, width * 0.36]) {
-                const tl = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.09, 0.04), tailMat);
-                tl.position.set(lx, clearance + chH * 0.75, -length/2);
-                car.add(tl);
+            // 14 вертикальных хромированных ламелей (фирменный щит Belgee S50)
+            const numSlats = 14;
+            const slatStep = (grilleW - 0.08) / (numSlats - 1);
+            for (let i = 0; i < numSlats; i++) {
+                const sx = -(grilleW - 0.08) / 2 + i * slatStep;
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(0.008, grilleH - 0.03, 0.02), chromeMat);
+                slat.position.set(sx, grilleY, bumperZ + 0.025);
+                car.add(slat);
+            }
+
+            // Хромированная эмблема
+            const badge = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.02), chromeMat);
+            badge.position.set(0, grilleY + 0.04, bumperZ + 0.035);
+            car.add(badge);
+
+            // Нижний воздухозаборник и хромированный сплиттер
+            const lowerIntake = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.12, 0.04), blackTrimMat);
+            lowerIntake.position.set(0, G + 0.14, bumperZ + 0.01);
+            car.add(lowerIntake);
+
+            const chromeSplitter = new THREE.Mesh(new THREE.BoxGeometry(1.20, 0.02, 0.04), chromeMat);
+            chromeSplitter.position.set(0, G + 0.04, bumperZ + 0.02);
+            car.add(chromeSplitter);
+
+            // Номерной знак «S50» спереди
+            const pCanvas = document.createElement("canvas");
+            pCanvas.width = 128; pCanvas.height = 32;
+            const pCtx = pCanvas.getContext("2d");
+            pCtx.fillStyle = "#111827"; pCtx.fillRect(0, 0, 128, 32);
+            pCtx.strokeStyle = "#475569"; pCtx.lineWidth = 2; pCtx.strokeRect(2, 2, 124, 28);
+            pCtx.fillStyle = "#ffffff"; pCtx.font = "bold 18px sans-serif"; pCtx.textAlign = "center";
+            pCtx.fillText("S50", 64, 22);
+            const plateTex = new THREE.CanvasTexture(pCanvas);
+
+            const plateMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.09, 0.02), blackTrimMat);
+            plateMesh.position.set(0, 0.38, bumperZ + 0.025);
+            car.add(plateMesh);
+
+            const plateFace = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.08), new THREE.MeshBasicMaterial({ map: plateTex }));
+            plateFace.position.set(0, 0.38, bumperZ + 0.036);
+            car.add(plateFace);
+
+            // 4. Swept-Back LED Headlights (Хищные светодиодные фары с ДХО)
+            for (let side of [-1, 1]) {
+                const hlGroup = new THREE.Group();
+                const hlBox = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.11, 0.18), darkGlassMat);
+                hlBox.position.set(side * (grilleW / 2 + 0.18), 0.62, bumperZ - 0.04);
+                hlBox.rotation.y = -side * 0.22;
+                hlBox.rotation.z = side * 0.05;
+                hlGroup.add(hlBox);
+
+                // LED линзы
+                for (let li of [-0.07, 0.05]) {
+                    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 12), headlightMat);
+                    lens.rotation.x = Math.PI / 2;
+                    lens.position.set(side * (grilleW / 2 + 0.18) + li, 0.62, bumperZ + 0.03);
+                    hlGroup.add(lens);
+                }
+
+                // Ходовые огни ДХО
+                const drl = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.015, 0.03), drlMat);
+                drl.position.set(side * (grilleW / 2 + 0.18), 0.665, bumperZ + 0.03);
+                drl.rotation.y = -side * 0.22;
+                hlGroup.add(drl);
+
+                car.add(hlGroup);
+            }
+
+            // 5. Rear Full-Width Taillight Bar & Plate (Задняя светодиодная полоса)
+            const rLightBar = new THREE.Mesh(new THREE.BoxGeometry(W - 0.22, 0.08, 0.04), taillightMat);
+            rLightBar.position.set(0, 0.88, -L / 2 + 0.06);
+            car.add(rLightBar);
+
+            const rPlateFace = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.08), new THREE.MeshBasicMaterial({ map: plateTex }));
+            rPlateFace.rotation.y = Math.PI;
+            rPlateFace.position.set(0, 0.58, -L / 2 + 0.04);
+            car.add(rPlateFace);
+
+            // Катафоты в заднем бампере
+            for (let side of [-1, 1]) {
+                const ref = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.02), taillightMat);
+                ref.position.set(side * (W * 0.35), G + 0.16, -L / 2 + 0.06);
+                car.add(ref);
+            }
+
+            // 6. Side Mirrors (Боковые зеркала заднего вида на ножках)
+            for (let side of [-1, 1]) {
+                const mGroup = new THREE.Group();
+                const stalk = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.04), blackTrimMat);
+                stalk.position.set(side * (W / 2 + 0.03), 0.94, 0.72);
+                mGroup.add(stalk);
+
+                const mBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.09, 0.18), bodyMat);
+                mBody.position.set(side * (W / 2 + 0.11), 0.96, 0.72);
+                mBody.rotation.y = -side * 0.15;
+                mGroup.add(mBody);
+
+                const mGlass = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.07, 0.14), mirrorGlassMat);
+                mGlass.position.set(side * (W / 2 + 0.05), 0.96, 0.72);
+                mGroup.add(mGlass);
+
+                const mBlinker = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, 0.12), drlMat);
+                mBlinker.position.set(side * (W / 2 + 0.18), 0.96, 0.72);
+                mGroup.add(mBlinker);
+
+                car.add(mGroup);
+            }
+
+            // 7. Belgee 17-Inch Multi-Spoke Alloy Wheels & Tires
+            const wheelTrack = W / 2 - 0.02; // 0.89m - вылет вровень с арками
+            const rimRadius = wheelR * 0.68; // ~0.23m
+            const darkRimDrumMat = new THREE.MeshStandardMaterial({
+                color: 0x18181b,
+                roughness: 0.70
+            });
+            for (let side of [-1, 1]) {
+                for (let wz of [frontAxleZ, rearAxleZ]) {
+                    const wGroup = new THREE.Group();
+
+                    // Резиновая шина (215/50 R17)
+                    const tire = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, 0.21, 24), tireMat);
+                    tire.rotation.z = Math.PI / 2;
+                    tire.castShadow = true;
+                    wGroup.add(tire);
+
+                    // Тёмно-графитовый барабан колеса (глубина внутри диска)
+                    const rimDrum = new THREE.Mesh(new THREE.CylinderGeometry(rimRadius * 0.96, rimRadius * 0.96, 0.19, 20), darkRimDrumMat);
+                    rimDrum.rotation.z = Math.PI / 2;
+                    wGroup.add(rimDrum);
+
+                    // Внешний хромированный обод диска
+                    const rimLip = new THREE.Mesh(new THREE.TorusGeometry(rimRadius - 0.015, 0.014, 8, 24), rimMat);
+                    rimLip.position.set(side * 0.10, 0, 0);
+                    rimLip.rotation.y = Math.PI / 2;
+                    wGroup.add(rimLip);
+
+                    // Тормозной диск
+                    const disc = new THREE.Mesh(new THREE.CylinderGeometry(rimRadius * 0.65, rimRadius * 0.65, 0.03, 16), brakeDiscMat);
+                    disc.position.set(side * 0.06, 0, 0);
+                    disc.rotation.z = Math.PI / 2;
+                    wGroup.add(disc);
+
+                    // Красный тормозной суппорт
+                    const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.06), brakeCaliperMat);
+                    caliper.position.set(side * 0.07, rimRadius * 0.45, 0.03);
+                    wGroup.add(caliper);
+
+                    // 10 сдвоенных турбинных спиц в светлом металлике
+                    const numSpokes = 10;
+                    for (let s = 0; s < numSpokes; s++) {
+                        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.016, rimRadius * 0.88, 0.024), rimMat);
+                        spoke.rotation.x = (s * Math.PI) / (numSpokes / 2);
+                        spoke.position.set(side * 0.098, 0, 0);
+                        wGroup.add(spoke);
+                    }
+
+                    // Центральная ступица со светлым колпачком
+                    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 12), chromeMat);
+                    hub.rotation.z = Math.PI / 2;
+                    hub.position.set(side * 0.102, 0, 0);
+                    wGroup.add(hub);
+
+                    wGroup.position.set(side * wheelTrack, wheelR, wz);
+                    car.add(wGroup);
+                }
             }
 
             return car;
         }
+        const createStylizedCar = (color, isSuv) => createBelgeeS50(color);
 
-        // 1 Car (Modern Crossover SUV parked parallel to the road)
-        const car1 = createStylizedCar(0x1e3a8a, true); // Dark metallic blue crossover
+        // 1 Car (Modern Belgee S50 / Geely Emgrand Sedan in Ice Blue Metallic)
+        const car1 = createBelgeeS50(0x8fb3cf);
         car1.position.set((CP_X0 + CP_X1)/2, 0, (CP_Z0 + CP_Z1)/2);
-        car1.rotation.y = Math.PI / 2; // Развёрнут строго параллельно дороге!
+        car1.rotation.y = Math.PI / 2;
         carportGroup.add(car1);
+
+        // Потолочный архитектурный светильник под навесом для эффектной подсветки автомобиля
+        const cpLight = new THREE.PointLight(0xfff8ee, 1.8, 8.0);
+        cpLight.position.set((CP_X0 + CP_X1) / 2, 2.30, (CP_Z0 + CP_Z1) / 2);
+        carportGroup.add(cpLight);
+
+
+
+
 
         let carportVisible = true;
         function toggleCarport() {
