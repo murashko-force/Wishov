@@ -551,6 +551,85 @@
             return secGroup;
         }
 
+        // Создание лёгкого металлического столба (RAL 7016) с заглушкой
+        function createSteelPost(x, z, height = 1.70, size = 0.08) {
+            const postGrp = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.BoxGeometry(size, height, size), fencePostMat);
+            body.position.set(0, height / 2, 0);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            postGrp.add(body);
+
+            // Плоская металлическая заглушка / крышка сверху
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(size + 0.012, 0.02, size + 0.012), fenceCapMat);
+            cap.position.set(0, height + 0.01, 0);
+            cap.castShadow = true;
+            postGrp.add(cap);
+
+            postGrp.position.set(x, 0, z);
+            siteGroup.add(postGrp);
+            return postGrp;
+        }
+
+        // Материал заниженного бетонного бордюра / цоколя
+        const lowCurbMat = new THREE.MeshStandardMaterial({ color: 0x3b4252, roughness: 0.85 });
+
+        // Создание лёгкой секции: заниженная лента 12 см + 2 лаги + евроштакетник СТРОГО В 1 РЯД (воздушный с зазором 4 см)
+        function createLightPicketSection(x1, z1, x2, z2, totalHeight = 1.65, curbH = 0.12) {
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const len = Math.hypot(dx, dz);
+            if (len < 0.05) return;
+
+            const cx = (x1 + x2) / 2;
+            const cz = (z1 + z2) / 2;
+            const rotY = Math.atan2(dx, dz);
+
+            const secGroup = new THREE.Group();
+
+            // 1. Заниженная аккуратная цокольная лента (бордюр 12 см)
+            const curb = new THREE.Mesh(new THREE.BoxGeometry(0.10, curbH, len), lowCurbMat);
+            curb.position.set(0, curbH / 2, 0);
+            curb.castShadow = true;
+            curb.receiveShadow = true;
+            secGroup.add(curb);
+
+            // 2. Горизонтальные лаги (труба 40х20 мм)
+            const lowerRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
+            lowerRail.position.set(0, curbH + 0.22, 0);
+            lowerRail.castShadow = true;
+            secGroup.add(lowerRail);
+
+            const upperRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
+            upperRail.position.set(0, totalHeight - 0.20, 0);
+            upperRail.castShadow = true;
+            secGroup.add(upperRail);
+
+            // 3. Вертикальный евроштакетник СТРОГО В 1 РЯД (зазор 40 мм)
+            const picketH = totalHeight - curbH - 0.04;
+            const picketY = curbH + 0.02 + picketH / 2;
+            const slatW = 0.11;      // ширина планки 110 мм
+            const slatThick = 0.016; // толщина планки
+            const step = 0.15;       // шаг 150 мм -> зазор ровно 40 мм
+            const halfLen = len / 2;
+
+            const slatGeo = new THREE.BoxGeometry(slatThick, picketH, slatW);
+            const frontStart = -halfLen + slatW * 0.6;
+            const frontEnd = halfLen - slatW * 0.6;
+            for (let zPos = frontStart; zPos <= frontEnd; zPos += step) {
+                const slatMesh = new THREE.Mesh(slatGeo, picketMat);
+                slatMesh.position.set(0.018, picketY, zPos);
+                slatMesh.castShadow = true;
+                slatMesh.receiveShadow = true;
+                secGroup.add(slatMesh);
+            }
+
+            secGroup.position.set(cx, 0, cz);
+            secGroup.rotation.y = rotY;
+            siteGroup.add(secGroup);
+            return secGroup;
+        }
+
         // Создание калитки в стиле евроштакетника с ручкой из нержавеющей стали
         function createWicket(x1, z1, x2, z2, height = 1.68) {
             const dx = x2 - x1;
@@ -724,15 +803,15 @@
         siteGroup.add(apronMesh);
 
         // Б. ВАРИАНТ Б: ДИАГОНАЛЬНЫЙ СКОС 45° И ЕДИНАЯ КАЛИТКА ВХОДА (УЛИЦА + НАВЕС)
-        // 1. Уличный столб (Pillar A) на линии Z = 7.00:
+        // 1. Уличный кирпичный столб (Pillar A) на фасадной линии Z = 7.00:
         createBrickPillar(8.85, 7.00);
 
-        // 2. Столб у навеса (Pillar B) на линии X = 7.80:
-        createBrickPillar(7.80, 5.95);
+        // 2. Аккуратный металлический столб у навеса (Pillar B) на линии X = 7.80:
+        createSteelPost(7.80, 5.95, 1.70, 0.08);
 
-        // 3. ЕДИНАЯ КАЛИТКА 1,10 М ПОД УГЛОМ 45° МЕЖДУ СТОЛБАМИ А И Б
+        // 3. ЕДИНАЯ КАЛИТКА 1,25 М ПОД УГЛОМ 45° МЕЖДУ СТОЛБАМИ А И Б
         // Створка калитки «смотрит» одновременно и на заезд с авто, и на улицу Калинина
-        createWicket(7.934, 6.084, 8.716, 6.866);
+        createWicket(7.828, 5.978, 8.716, 6.866);
 
         // Табличка адреса и видеодомофон на столичном уличном столбе (Pillar A, X = 8.85)
         const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.04), fencePostMat);
@@ -777,26 +856,26 @@
         walkPorch.receiveShadow = true;
         siteGroup.add(walkPorch);
 
-        // В. СПЛОШНОЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР ПОД НАВЕСОМ (ПЕРПЕНДИКУЛЯРНО ДОМУ, X = 7.80)
-        // Идёт от диагонального столба B (Z = 5.95) до стены дома (Z = 0.00) БЕЗ второй калитки
-        createBrickPillar(7.80, 3.00);
-        createPicketSection(7.80, 5.76, 7.80, 3.19);
-        createBrickPillar(7.80, 0.00);
-        createPicketSection(7.80, 2.81, 7.80, 0.19);
+        // В. ЛЁГКИЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР ПОД НАВЕСОМ (ПЕРПЕНДИКУЛЯРНО ДОМУ, X = 7.80)
+        // Металлические столбы 80х80 мм, заниженная лента 12 см, штакетник строго в 1 ряд (зазор 4 см)
+        createSteelPost(7.80, 3.00, 1.70, 0.08);
+        createLightPicketSection(7.80, 5.91, 7.80, 3.04, 1.65, 0.12);
+        createSteelPost(7.80, 0.00, 1.70, 0.08);
+        createLightPicketSection(7.80, 2.96, 7.80, 0.04, 1.65, 0.12);
 
-        // Г. ЛЕВЫЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР С РАСПАШНЫМИ ВОРОТАМИ В САД (Z = -9.50)
-        // Идёт от заднего левого угла дома (X = 0.00) до левого межевого забора (X = -5.80)
-        createBrickPillar(0.00, -9.50);
-        createBrickPillar(-0.71, -9.50);
-        createPicketSection(-0.19, -9.50, -0.52, -9.50);
+        // Г. ЛЁГКИЙ ЛЕВЫЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР С РАСПАШНЫМИ ВОРОТАМИ В САД (Z = -9.50)
+        // Металлические столбы 100х100 / 80х80 мм, заниженная лента 12 см, штакетник в 1 ряд
+        createSteelPost(0.00, -9.50, 1.70, 0.08);
+        createSteelPost(-0.90, -9.50, 1.75, 0.10);
+        createLightPicketSection(-0.04, -9.50, -0.85, -9.50, 1.65, 0.12);
 
         // ДВУСТВОРЧАТЫЕ РАСПАШНЫЕ ВОРОТА 4,0 М (чистый створ X = -4.90 ... -0.90)
-        createBrickPillar(-5.09, -9.50);
-        createSwingGate(-4.90, -9.50, -0.90, -9.50);
+        createSteelPost(-4.90, -9.50, 1.75, 0.10);
+        createSwingGate(-4.85, -9.50, -0.95, -9.50, 1.65);
 
-        // Секция от ворот до межевого забора (X = -5.09 ... -5.80)
-        createBrickPillar(-5.80, -9.50);
-        createPicketSection(-5.28, -9.50, -5.61, -9.50);
+        // Секция от ворот до межевого забора (X = -4.90 ... -5.80)
+        createSteelPost(-5.80, -9.50, 1.70, 0.08);
+        createLightPicketSection(-4.95, -9.50, -5.76, -9.50, 1.65, 0.12);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
