@@ -51,18 +51,21 @@
         <!-- Master Plan 25 Ares Controls Box -->
         <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
             <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #34d399; font-weight: 700; margin-bottom: 7px; display:flex; justify-content:space-between; align-items:center;">
-                <span>🗺 Генплан участка (25 соток)</span>
+                <span>🗺 Генплан и Ландшафт (25 соток)</span>
                 <span style="font-size: 10px; color: #a7f3d0; font-weight: 500;">аг. Вишов, 26</span>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
-                <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня с лаунж-террасой</button>
+                <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня с лаунжем</button>
+                <button onclick="setCamera('siteBBQ')" style="background: #b91c1c; font-weight: 600; padding: 6px 8px;">🔥 BBQ & Патио</button>
+                <button onclick="setCamera('siteOrchard')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🍎 Плодовый сад</button>
+                <button onclick="setCamera('siteGreenhouse')" style="background: #0284c7; font-weight: 600; padding: 6px 8px;">🌱 Огород и теплица</button>
                 <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
-                <button onclick="setCamera('siteGarden')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🌳 Сад за домом</button>
             </div>
             <div style="display: flex; gap: 6px; margin-top: 6px;">
-                <button class="secondary" id="site-toggle" onclick="toggleSiteMode()" style="flex:1; background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; font-weight: 600; color: #a7f3d0; padding: 5px 8px; font-size: 11px;">Участок 25 соток: Вкл ⇄</button>
-                <button class="secondary" id="infra-toggle" onclick="toggleInfra()" style="flex:1; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; font-weight: 600; color: #93c5fd; padding: 5px 8px; font-size: 11px;">Сети / ЛЭП: Вкл ⇄</button>
+                <button class="secondary" id="landscape-toggle" onclick="toggleLandscape()" style="flex:1; background: rgba(34, 197, 94, 0.25); border: 1px solid #22c55e; font-weight: 600; color: #86efac; padding: 5px 8px; font-size: 11px;">Ландшафт: Вкл ⇄</button>
+                <button class="secondary" id="site-toggle" onclick="toggleSiteMode()" style="flex:1; background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; font-weight: 600; color: #a7f3d0; padding: 5px 8px; font-size: 11px;">Участок 25с: Вкл ⇄</button>
+                <button class="secondary" id="infra-toggle" onclick="toggleInfra()" style="flex:1; background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; font-weight: 600; color: #93c5fd; padding: 5px 8px; font-size: 11px;">ЛЭП: Вкл ⇄</button>
             </div>
         </div>
         
@@ -71,6 +74,10 @@
             <div class="spec-box"><span>Фасад по улице</span><strong>35,26 м (ул. Калинина)</strong></div>
             <div class="spec-box"><span>Глубина участка</span><strong>72,64 м (Межа)</strong></div>
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
+            <div class="spec-box"><span>Патио / Барбекю</span><strong>5,0 × 5,0 м (пергола)</strong></div>
+            <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
+            <div class="spec-box"><span>Плодовый сад</span><strong>8 деревьев + шпалеры</strong></div>
+            <div class="spec-box"><span>Грядки эко-огорода</span><strong>6 приподнятых коробов</strong></div>
             <div class="spec-box"><span>Дом + Веранда</span><strong>11,2 × 9,5 м (90,8 м²)</strong></div>
             <div class="spec-box"><span>Навес (1 авто)</span><strong>6,0 × 4,0 м (24 м²)</strong></div>
             <div class="spec-box"><span>Открытая терраса</span><strong>4,20 × 2,7 м (11,3 м²)</strong></div>
@@ -123,7 +130,7 @@
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xb0d0e6);
-        scene.fog = new THREE.FogExp2(0xb0d0e6, 0.015);
+        scene.fog = new THREE.Fog(0xb0d0e6, 70, 220);
 
         // CORE ARCHITECTURAL DIMENSIONS (Defined at top)
         const HW = 8.5; // Реальная ширина фасада 8,5 м!       // House width
@@ -1833,8 +1840,388 @@
 
         siteGroup.add(shedGroup);
 
-        // 11. Landscape Area (Садово-парковая ландшафтная зона в южной части участка)
-        // Подготовлено под проектирование ландшафтного дизайна (дорожки, плодовый сад, зоны отдыха, миксбордеры)
+        // ==========================================
+        // 11. LANDSCAPE ARCHITECTURE LAYER (25 СОТОК БЛАГОУСТРОЙСТВА)
+        // ==========================================
+        const landscapeGroup = new THREE.Group();
+        siteGroup.add(landscapeGroup);
+
+        // --- Ландшафтные материалы ---
+        const gravelMat = new THREE.MeshStandardMaterial({ color: 0xcdc5b4, roughness: 0.95, side: THREE.DoubleSide });
+        const patioStoneMat = new THREE.MeshStandardMaterial({ color: 0xa8b0b8, roughness: 0.85, side: THREE.DoubleSide });
+        const barkMulchMat = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.95 });
+        const barkWoodMat = new THREE.MeshStandardMaterial({ color: 0x4a3321, roughness: 0.9 });
+        const foliageGreen1 = new THREE.MeshStandardMaterial({ color: 0x2d6a26, roughness: 0.85 });
+        const foliageGreen2 = new THREE.MeshStandardMaterial({ color: 0x3b7d32, roughness: 0.85 });
+        const thujaMat = new THREE.MeshStandardMaterial({ color: 0x1d471f, roughness: 0.8 });
+        const pineMugoMat = new THREE.MeshStandardMaterial({ color: 0x223e20, roughness: 0.85 });
+        const flowerLilacMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.8 });
+        const flowerHydrangeaMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.75 });
+        const flowerSpiraeaMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.8 });
+        const pergolaWoodMat = new THREE.MeshStandardMaterial({ color: 0x713f12, roughness: 0.75 });
+        const bbqBrickMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.85 });
+        const fireGlowMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xf97316, emissiveIntensity: 0.9 });
+        const raisedBedWoodMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.8 });
+        const gardenSoilMat = new THREE.MeshStandardMaterial({ color: 0x271c14, roughness: 0.95 });
+        const veggieGreenMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.85 });
+        const polycarbMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.15, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+        const galvSteelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
+        const bollardBodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
+        const bollardLightMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfde047, emissiveIntensity: 0.8 });
+
+        // Генератор хвойных деревьев / туй Смарагд (конусная форма)
+        function createThuja(x, z, h = 2.4, r = 0.5) {
+            const grp = new THREE.Group();
+            const mulch = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.1, r * 1.1, 0.02, 12), barkMulchMat);
+            mulch.position.y = 0.012;
+            grp.add(mulch);
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h, 8), thujaMat);
+            cone.position.y = h / 2;
+            cone.castShadow = true; cone.receiveShadow = true;
+            grp.add(cone);
+            const top = new THREE.Mesh(new THREE.ConeGeometry(r * 0.6, h * 0.4, 7), thujaMat);
+            top.position.y = h * 0.85;
+            grp.add(top);
+            grp.position.set(x, 0, z);
+            landscapeGroup.add(grp);
+            return grp;
+        }
+
+        // Генератор плодовых деревьев (яблони, груши, вишни)
+        function createFruitTree(x, z, trunkH = 1.3, crownR = 1.4, mat = foliageGreen1) {
+            const grp = new THREE.Group();
+            const mulch = new THREE.Mesh(new THREE.CylinderGeometry(crownR * 0.8, crownR * 0.8, 0.02, 16), barkMulchMat);
+            mulch.position.y = 0.012;
+            grp.add(mulch);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.14, trunkH, 8), barkWoodMat);
+            trunk.position.y = trunkH / 2;
+            trunk.castShadow = true;
+            grp.add(trunk);
+            const c1 = new THREE.Mesh(new THREE.SphereGeometry(crownR, 8, 6), mat);
+            c1.position.y = trunkH + crownR * 0.75;
+            c1.scale.set(1.1, 0.9, 1.0);
+            c1.castShadow = true; c1.receiveShadow = true;
+            grp.add(c1);
+            const c2 = new THREE.Mesh(new THREE.SphereGeometry(crownR * 0.75, 7, 5), mat);
+            c2.position.set(crownR * 0.35, trunkH + crownR * 0.95, -crownR * 0.2);
+            c2.castShadow = true;
+            grp.add(c2);
+            const c3 = new THREE.Mesh(new THREE.SphereGeometry(crownR * 0.7, 7, 5), mat);
+            c3.position.set(-crownR * 0.3, trunkH + crownR * 0.8, crownR * 0.3);
+            c3.castShadow = true;
+            grp.add(c3);
+            grp.position.set(x, 0, z);
+            landscapeGroup.add(grp);
+            return grp;
+        }
+
+        // Генератор декоративных кустарников (гортензии, спиреи, можжевельники)
+        function createShrub(x, z, radius = 0.55, mat = foliageGreen2, flowerMat = null) {
+            const grp = new THREE.Group();
+            const bush = new THREE.Mesh(new THREE.SphereGeometry(radius, 7, 5), mat);
+            bush.scale.set(1.1, 0.75, 1.0);
+            bush.position.y = radius * 0.65;
+            bush.castShadow = true;
+            grp.add(bush);
+            if (flowerMat) {
+                for (let i = 0; i < 4; i++) {
+                    const ang = (i / 4) * Math.PI * 2;
+                    const fl = new THREE.Mesh(new THREE.SphereGeometry(radius * 0.25, 5, 4), flowerMat);
+                    fl.position.set(Math.cos(ang) * radius * 0.6, radius * 0.85, Math.sin(ang) * radius * 0.6);
+                    grp.add(fl);
+                }
+            }
+            grp.position.set(x, 0, z);
+            landscapeGroup.add(grp);
+            return grp;
+        }
+
+        // Генератор ландшафтных фонарей-боллардов
+        function createBollard(x, z) {
+            const grp = new THREE.Group();
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.55, 8), bollardBodyMat);
+            post.position.y = 0.275;
+            grp.add(post);
+            const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.10, 8), bollardLightMat);
+            lamp.position.y = 0.50;
+            grp.add(lamp);
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 8), bollardBodyMat);
+            cap.position.y = 0.56;
+            grp.add(cap);
+            grp.position.set(x, 0, z);
+            landscapeGroup.add(grp);
+            return grp;
+        }
+
+        // 1. ПОДЪЕЗДНОЙ ПРОЕЗД ОТ ВОРОТ №1 К САРАЮ / ГАРАЖУ И РАЗВОРОТНАЯ ПЛОЩАДКА
+        const shedDriveShape = new THREE.Shape();
+        shedDriveShape.moveTo(22.80, -7.00);
+        shedDriveShape.lineTo(26.80, -7.00);
+        shedDriveShape.lineTo(26.80, 9.50);
+        shedDriveShape.lineTo(18.00, 9.50);
+        shedDriveShape.lineTo(18.00, 7.00);
+        shedDriveShape.lineTo(22.80, 7.00);
+        shedDriveShape.closePath();
+        const shedDriveMesh = new THREE.Mesh(new THREE.ShapeGeometry(shedDriveShape), paveMat);
+        shedDriveMesh.rotation.x = -Math.PI / 2;
+        shedDriveMesh.position.y = 0.016;
+        shedDriveMesh.receiveShadow = true;
+        landscapeGroup.add(shedDriveMesh);
+
+        // 2. ПАРАДНАЯ ПЕШЕХОДНАЯ ДОРОЖКА ВОСТОЧНОГО ДВОРА
+        // Соединяет боковые ступени террасы (X = 11.20, Z = -3.15) с площадкой сарая и патио BBQ
+        const yardWalkShape = new THREE.Shape();
+        yardWalkShape.moveTo(11.20, 2.55);
+        yardWalkShape.lineTo(11.20, 3.75);
+        yardWalkShape.bezierCurveTo(14.50, 3.75, 17.50, 5.00, 18.00, 7.00);
+        yardWalkShape.lineTo(19.20, 7.00);
+        yardWalkShape.bezierCurveTo(18.70, 4.50, 15.00, 2.55, 11.20, 2.55);
+        yardWalkShape.closePath();
+        const yardWalkMesh = new THREE.Mesh(new THREE.ShapeGeometry(yardWalkShape), paveMat);
+        yardWalkMesh.rotation.x = -Math.PI / 2;
+        yardWalkMesh.position.y = 0.017;
+        yardWalkMesh.receiveShadow = true;
+        landscapeGroup.add(yardWalkMesh);
+
+        // 3. ПОШАГОВАЯ САДОВАЯ ТРОПИНКА К БАНЕ («STEPPING STONES»)
+        // Каменные плиты от задней террасы дома (Z = -9.5) к террасе бани (X = 1.4, Z = -15.5)
+        const steppingStoneGeo = new THREE.BoxGeometry(0.65, 0.03, 0.45);
+        const bathPathPoints = [
+            [8.8, -10.2], [7.6, -11.0], [6.4, -11.9], [5.2, -12.8],
+            [4.0, -13.7], [2.8, -14.6], [1.8, -15.5]
+        ];
+        bathPathPoints.forEach((pt, idx) => {
+            const stone = new THREE.Mesh(steppingStoneGeo, patioStoneMat);
+            stone.position.set(pt[0], 0.02, pt[1]);
+            stone.rotation.y = 0.35 + (idx % 2) * 0.15;
+            stone.receiveShadow = true;
+            landscapeGroup.add(stone);
+        });
+
+        // 4. ЗОНА ПАТИО / БАРБЕКЮ И КОСТРОВИЩЕ (X = 12.5 ... 17.5, Z = -10.5 ... -15.5)
+        const patioGrp = new THREE.Group();
+        // Мощёное основание патио (5,0 х 5,0 м)
+        const patioFloor = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.04, 5.0), patioStoneMat);
+        patioFloor.position.set(15.0, 0.02, -13.0);
+        patioFloor.receiveShadow = true;
+        patioGrp.add(patioFloor);
+
+        // Деревянная пергола (4 стойки 150х150 мм + балки + 6 поперечных ламелей)
+        const pergH = 2.40;
+        const pergPosts = [[12.7, -10.7], [17.3, -10.7], [12.7, -15.3], [17.3, -15.3]];
+        pergPosts.forEach(pos => {
+            const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, pergH, 0.14), pergolaWoodMat);
+            post.position.set(pos[0], pergH / 2 + 0.04, pos[1]);
+            post.castShadow = true;
+            patioGrp.add(post);
+        });
+        // Продольные балки
+        for (let x of [12.7, 17.3]) {
+            const beam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 4.8), pergolaWoodMat);
+            beam.position.set(x, pergH + 0.09, -13.0);
+            beam.castShadow = true;
+            patioGrp.add(beam);
+        }
+        // Поперечные ламели жалюзи
+        for (let z = -15.1; z <= -10.9; z += 0.8) {
+            const louver = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.12, 0.06), pergolaWoodMat);
+            louver.position.set(15.0, pergH + 0.21, z);
+            louver.castShadow = true;
+            patioGrp.add(louver);
+        }
+
+        // Обеденный стол и 2 скамьи под перголой
+        const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.06, 0.90), pergolaWoodMat);
+        tableTop.position.set(15.0, 0.75, -12.5);
+        tableTop.castShadow = true;
+        patioGrp.add(tableTop);
+        for (let dx of [-0.80, 0.80]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.72, 0.70), pergolaWoodMat);
+            leg.position.set(15.0 + dx, 0.36, -12.5);
+            patioGrp.add(leg);
+        }
+        // Скамьи
+        for (let dz of [-0.65, 0.65]) {
+            const bench = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.05, 0.35), pergolaWoodMat);
+            bench.position.set(15.0, 0.45, -12.5 + dz);
+            bench.castShadow = true;
+            patioGrp.add(bench);
+            for (let dx of [-0.75, 0.75]) {
+                const bLeg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.42, 0.28), pergolaWoodMat);
+                bLeg.position.set(15.0 + dx, 0.21, -12.5 + dz);
+                patioGrp.add(bLeg);
+            }
+        }
+
+        // Стационарная кирпичная барбекю-печь / гриль (графитовый клинкер RAL 7016)
+        const bbqStation = new THREE.Group();
+        const bbqBase = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.85, 0.70), bbqBrickMat);
+        bbqBase.position.set(0, 0.425, 0);
+        bbqBase.castShadow = true;
+        bbqStation.add(bbqBase);
+        const bbqCounter = new THREE.Mesh(new THREE.BoxGeometry(1.70, 0.08, 0.75), fenceCapMat);
+        bbqCounter.position.set(0, 0.89, 0);
+        bbqStation.add(bbqCounter);
+        // Жаровня и портал
+        const bbqHearth = new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.75, 0.65), bbqBrickMat);
+        bbqHearth.position.set(-0.35, 1.305, 0);
+        bbqStation.add(bbqHearth);
+        const bbqChimney = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.90, 0.45), bbqBrickMat);
+        bbqChimney.position.set(-0.35, 2.13, 0);
+        bbqStation.add(bbqChimney);
+        bbqStation.position.set(13.6, 0.04, -14.9);
+        patioGrp.add(bbqStation);
+
+        // Костровище (Fire Pit) с полукруглой скамьей
+        const firePitGrp = new THREE.Group();
+        const pitRing = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.75, 0.25, 16), patioStoneMat);
+        pitRing.position.y = 0.125;
+        firePitGrp.add(pitRing);
+        const pitCoal = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.10, 12), fireGlowMat);
+        pitCoal.position.y = 0.20;
+        firePitGrp.add(pitCoal);
+        // Полукруглая скамья
+        const benchCurve = new THREE.Mesh(new THREE.CylinderGeometry(1.60, 1.60, 0.40, 16, 1, true, 0, Math.PI * 0.9), pergolaWoodMat);
+        benchCurve.position.y = 0.20;
+        firePitGrp.add(benchCurve);
+        firePitGrp.position.set(10.5, 0, -13.0);
+        patioGrp.add(firePitGrp);
+
+        landscapeGroup.add(patioGrp);
+
+        // 5. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -15.5 ... -46.0)
+        const gardenWalkGeo = new THREE.PlaneGeometry(1.30, 30.5);
+        const gardenWalk = new THREE.Mesh(gardenWalkGeo, gravelMat);
+        gardenWalk.rotation.x = -Math.PI / 2;
+        gardenWalk.position.set(15.0, 0.015, -30.75);
+        gardenWalk.receiveShadow = true;
+        landscapeGroup.add(gardenWalk);
+
+        // 6. ДЕКОРАТИВНОЕ ОЗЕЛЕНЕНИЕ И МИКСБОРДЕРЫ
+        // А. Парадный миксбордер вдоль уличного забора (X = 9.5 ... 22.5, Z = 6.2)
+        const streetMulch = new THREE.Mesh(new THREE.PlaneGeometry(13.0, 0.90), barkMulchMat);
+        streetMulch.rotation.x = -Math.PI / 2;
+        streetMulch.position.set(16.0, 0.012, 6.20);
+        streetMulch.receiveShadow = true;
+        landscapeGroup.add(streetMulch);
+
+        const streetThujaXs = [9.8, 12.4, 15.2, 18.0, 20.8];
+        streetThujaXs.forEach(tx => createThuja(tx, 6.20, 2.2, 0.45));
+        for (let bx = 11.1; bx <= 21.0; bx += 2.6) {
+            createShrub(bx, 6.20, 0.50, foliageGreen2, flowerHydrangeaMat);
+        }
+
+        // Б. Островок маскировки септика (вокруг люков X = 18.2, 19.6, Z = 4.0)
+        const septicIsland = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.8, 0.025, 16), barkMulchMat);
+        septicIsland.scale.set(1.5, 1.0, 0.9);
+        septicIsland.position.set(18.9, 0.012, 4.0);
+        septicIsland.receiveShadow = true;
+        landscapeGroup.add(septicIsland);
+        createShrub(17.2, 3.8, 0.55, pineMugoMat);
+        createShrub(20.5, 4.2, 0.50, pineMugoMat);
+        createShrub(18.9, 2.9, 0.45, foliageGreen2, flowerSpiraeaMat);
+
+        // В. Живая изгородь по правой восточной меже (X = 27.8, Z от +4.0 до -24.0)
+        for (let z = 3.5; z >= -24.0; z -= 3.2) {
+            createThuja(27.8, z, 2.5, 0.55);
+        }
+
+        // 7. ПЛОДОВЫЙ САД (ORCHARD, Z = -23.0 ... -35.0)
+        // 8 плодовых деревьев в 2 ряда в шахматном порядке
+        const orchardTrees = [
+            // Ряд 1 (Z = -24.5)
+            { x: 5.5, z: -24.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 10.5, z: -24.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 19.5, z: -24.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 24.5, z: -24.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            // Ряд 2 (Z = -32.5)
+            { x: 6.5, z: -32.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 11.5, z: -32.5, h: 1.3, r: 1.4, mat: foliageGreen1 },
+            { x: 18.5, z: -32.5, h: 1.4, r: 1.5, mat: foliageGreen2 },
+            { x: 23.5, z: -32.5, h: 1.3, r: 1.4, mat: foliageGreen1 }
+        ];
+        orchardTrees.forEach(t => createFruitTree(t.x, t.z, t.h, t.r, t.mat));
+
+        // Ягодные кустарники (малина, смородина) вдоль шпалер (Z = -20.5)
+        for (let x = 4.5; x <= 10.5; x += 1.5) {
+            createShrub(x, -20.5, 0.45, foliageGreen2);
+        }
+        for (let x = 19.0; x <= 25.0; x += 1.5) {
+            createShrub(x, -20.5, 0.45, foliageGreen2);
+        }
+
+        // 8. ЭКО-ОГОРОД И ТЕПЛИЦА (KITCHEN GARDEN & GREENHOUSE, Z = -39.0 ... -52.0)
+        const gardenZone = new THREE.Group();
+        // Гравийная площадка под огородную зону
+        const gardenGravel = new THREE.Mesh(new THREE.PlaneGeometry(19.0, 14.0), gravelMat);
+        gardenGravel.rotation.x = -Math.PI / 2;
+        gardenGravel.position.set(16.0, 0.012, -45.5);
+        gardenGravel.receiveShadow = true;
+        gardenZone.add(gardenGravel);
+
+        // Современная теплица 3,0 х 6,0 м (поликарбонат + оцинкованный каркас)
+        const ghGrp = new THREE.Group();
+        const ghW = 3.0, ghL = 6.0, ghH = 2.4;
+        // Цоколь теплицы
+        const ghBase = new THREE.Mesh(new THREE.BoxGeometry(ghW, 0.20, ghL), fenceCapMat);
+        ghBase.position.y = 0.10;
+        ghGrp.add(ghBase);
+        // Стены из прозрачного поликарбоната
+        const ghWalls = new THREE.Mesh(new THREE.BoxGeometry(ghW - 0.04, 1.50, ghL - 0.04), polycarbMat);
+        ghWalls.position.y = 0.20 + 0.75;
+        ghGrp.add(ghWalls);
+        // Арочная / двускатная кровля теплицы
+        const ghRoofL = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.03, ghL), polycarbMat);
+        ghRoofL.position.set(-ghW/4, 0.20 + 1.50 + 0.35, 0);
+        ghRoofL.rotation.z = Math.PI / 6;
+        ghGrp.add(ghRoofL);
+        const ghRoofR = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.03, ghL), polycarbMat);
+        ghRoofR.position.set(ghW/4, 0.20 + 1.50 + 0.35, 0);
+        ghRoofR.rotation.z = -Math.PI / 6;
+        ghGrp.add(ghRoofR);
+        // Каркасные металлические дуги/шпангоуты
+        for (let z = -ghL/2; z <= ghL/2; z += 1.5) {
+            const rib = new THREE.Mesh(new THREE.BoxGeometry(ghW, 0.04, 0.04), galvSteelMat);
+            rib.position.set(0, 0.20 + 1.50, z);
+            ghGrp.add(rib);
+        }
+        ghGrp.position.set(21.5, 0, -45.5);
+        gardenZone.add(ghGrp);
+
+        // 6 приподнятых модульных грядок (1,0 х 3,0 м, высота 0,35 м)
+        const bedPositions = [
+            [9.0, -41.5], [12.8, -41.5],
+            [9.0, -45.5], [12.8, -45.5],
+            [9.0, -49.5], [12.8, -49.5]
+        ];
+        bedPositions.forEach(bPos => {
+            const bedGrp = new THREE.Group();
+            const frame = new THREE.Mesh(new THREE.BoxGeometry(1.10, 0.35, 3.10), raisedBedWoodMat);
+            frame.position.y = 0.175;
+            frame.castShadow = true;
+            bedGrp.add(frame);
+            const soil = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.32, 2.95), gardenSoilMat);
+            soil.position.y = 0.18;
+            bedGrp.add(soil);
+            for (let rz = -1.2; rz <= 1.2; rz += 0.4) {
+                const crop = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.10, 0.18), veggieGreenMat);
+                crop.position.set(0, 0.38, rz);
+                bedGrp.add(crop);
+            }
+            bedGrp.position.set(bPos[0], 0, bPos[1]);
+            gardenZone.add(bedGrp);
+        });
+
+        landscapeGroup.add(gardenZone);
+
+        // 9. ПАРКОВОЕ ОСВЕЩЕНИЕ (14 ЛАНДШАФТНЫХ БОЛЛАРДОВ С ТЁПЛЫМ СВЕТОМ)
+        const bollardPositions = [
+            [8.3, 4.0], [9.1, 1.8],
+            [12.3, -10.3], [17.7, -10.3], [12.3, -15.7], [17.7, -15.7],
+            [14.2, -20.0], [15.8, -26.0], [14.2, -32.0], [15.8, -38.0],
+            [3.2, -14.0], [18.2, -7.5], [15.0, -40.0], [20.0, -41.0]
+        ];
+        bollardPositions.forEach(bp => createBollard(bp[0], bp[1]));
 
         // 12. Engineering Utilities Layer
         // A. Охранная зона ЛЭП (код 5.2, 35 м² в С-З углу у Точки 1)
@@ -4365,6 +4752,15 @@
             } else if (view === 'siteStreet') {
                 targetPos = { x: 5.0, y: 3.6, z: 22.0 };
                 targetLook = { x: 5.0, y: 2.2, z: 1.0 };
+            } else if (view === 'siteBBQ') {
+                targetPos = { x: 23.0, y: 7.5, z: -8.0 };
+                targetLook = { x: 15.0, y: 1.5, z: -13.0 };
+            } else if (view === 'siteOrchard') {
+                targetPos = { x: 26.0, y: 10.5, z: -18.0 };
+                targetLook = { x: 15.0, y: 2.0, z: -30.0 };
+            } else if (view === 'siteGreenhouse') {
+                targetPos = { x: 26.0, y: 8.5, z: -35.0 };
+                targetLook = { x: 15.0, y: 1.5, z: -46.0 };
             } else if (view === 'siteGarden') {
                 targetPos = { x: 16.0, y: 6.5, z: -25.0 };
                 targetLook = { x: 8.0, y: 2.2, z: -9.5 };
@@ -4404,6 +4800,14 @@
                 targetLook = { x: 4.5, y: 0, z: -4.75 };
             }
             animateCamera(targetPos, targetLook);
+        }
+
+        let landscapeVisible = true;
+        function toggleLandscape() {
+            landscapeVisible = !landscapeVisible;
+            landscapeGroup.visible = landscapeVisible;
+            const btn = document.getElementById('landscape-toggle');
+            if (btn) btn.textContent = landscapeVisible ? 'Ландшафт: Вкл ⇄' : 'Ландшафт: Выкл ⇄';
         }
 
         let siteModeVisible = true;
