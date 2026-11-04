@@ -107,7 +107,7 @@
 
         <div class="legend">
             <div class="legend-item"><div class="color-dot" style="background:#15803d"></div> Границы участка 25 соток (35,26 × 72,64 м)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#b8b0a6; border: 1px solid #272c35;"></div> Забор: ригельный кирпич, евроштакетник «шахматка» (RAL 7016), единая диагональная калитка и распашные ворота 4м</div>
+            <div class="legend-item"><div class="color-dot" style="background:#edf0f4; border: 1px solid #272c35;"></div> Забор: светлые наборные блоки (300×300 мм), заниженный цоколь 18 см, евроштакетник (RAL 7016), диагональная калитка и распашные ворота 4м</div>
             <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и трасса ЛЭП вдоль улицы</div>
             <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Септик / канализация (2 колодца во дворе)</div>
             <div class="legend-item"><div class="color-dot" style="background:#9a6b43"></div> Деревянная баня (2,4×5м) и блочный сарай (5×7,5м) параллельно заборам</div>
@@ -309,8 +309,8 @@
         greenVergeMesh.receiveShadow = true;
         siteGroup.add(greenVergeMesh);
 
-        // 6. Architectural Front Fence, Gates & Circulation (Столбы/цоколь из ригельного кирпича + евроштакетник «шахматка» RAL 7016)
-        function createFenceBrickTextures() {
+        // 6. Architectural Front Fence, Gates & Circulation (Столбы/цоколь из светлых наборных блоков в цвет дома + евроштакетник RAL 7016)
+        function createModularBlockTextures() {
             const W = 512, H = 512;
             const cCanvas = document.createElement('canvas');
             cCanvas.width = W; cCanvas.height = H;
@@ -320,55 +320,17 @@
             bCanvas.width = W; bCanvas.height = H;
             const bCtx = bCanvas.getContext('2d');
 
-            // Тёмно-серый кладочный шов (mortar)
-            cCtx.fillStyle = '#423f3b';
+            // Светлый цвет в тон фасада дома (#edf0f4 / #e8ecf1)
+            cCtx.fillStyle = '#edf0f4';
             cCtx.fillRect(0, 0, W, H);
-            bCtx.fillStyle = '#262422';
+            bCtx.fillStyle = '#808080';
             bCtx.fillRect(0, 0, W, H);
 
-            const rows = 16; // узкий ригельный кирпич (высота ~32px)
-            const rowH = H / rows;
-            const cols = 4;  // удлинённый формат (длина ~128px)
-            const colW = W / cols;
-            const joint = 2.5;
-
-            // Палитра светло-серого и песчаного меланжа ригельного кирпича по фото
-            const palette = [
-                [188, 182, 174], // #bcb6ae
-                [176, 170, 161], // #b0aaa1
-                [202, 196, 188], // #cac4bc
-                [165, 158, 148], // #a59e94
-                [152, 145, 136], // #989188
-                [180, 174, 165], // #b4aea5
-                [160, 154, 146]  // #a09a92
-            ];
-
-            for (let r = 0; r < rows; r++) {
-                const y = r * rowH;
-                const offset = (r % 2 === 0) ? 0 : colW * 0.5;
-                for (let c = -1; c <= cols + 1; c++) {
-                    const x = c * colW + offset;
-                    const pIdx = Math.abs(r * 5 + c * 11 + 77) % palette.length;
-                    const p = palette[pIdx];
-                    const seed = Math.sin(r * 12.9898 + c * 78.233);
-                    const varTone = (seed - 0.5) * 16;
-                    const rVal = Math.min(255, Math.max(0, p[0] + varTone));
-                    const gVal = Math.min(255, Math.max(0, p[1] + varTone));
-                    const bVal = Math.min(255, Math.max(0, p[2] + varTone));
-
-                    cCtx.fillStyle = `rgb(${Math.round(rVal)},${Math.round(gVal)},${Math.round(bVal)})`;
-                    cCtx.fillRect(x + joint, y + joint, colW - joint * 2, rowH - joint * 2);
-
-                    bCtx.fillStyle = '#9c9c9c';
-                    bCtx.fillRect(x + joint, y + joint, colW - joint * 2, rowH - joint * 2);
-                }
-            }
-
-            // Минеральная зернистость
+            // Натуральная минеральная зернистость архитектурного бетона
             const cImg = cCtx.getImageData(0, 0, W, H);
             const bImg = bCtx.getImageData(0, 0, W, H);
             for (let i = 0; i < cImg.data.length; i += 4) {
-                const n = (Math.random() - 0.5) * 16;
+                const n = (Math.random() - 0.5) * 10;
                 cImg.data[i] = Math.min(255, Math.max(0, cImg.data[i] + n));
                 cImg.data[i+1] = Math.min(255, Math.max(0, cImg.data[i+1] + n));
                 cImg.data[i+2] = Math.min(255, Math.max(0, cImg.data[i+2] + n));
@@ -379,6 +341,58 @@
             }
             cCtx.putImageData(cImg, 0, 0);
             bCtx.putImageData(bImg, 0, 0);
+
+            // 5 рядов блоков по высоте на 1.0 м (высота каждого наборного блока ровно 20 см = 102.4 px)
+            const rows = 5;
+            const rowH = H / rows; // 102.4 px
+            const cols = 2;        // длина цокольного блока 50 см = 256 px
+            const colW = W / cols;
+
+            // Горизонтальные русты/фаски блоков (глубокая тень в канавке + светлый блик сверху)
+            for (let r = 0; r <= rows; r++) {
+                const y = Math.round(r * rowH);
+
+                // Тень в глубине шва (руста)
+                cCtx.strokeStyle = '#8592a2';
+                cCtx.lineWidth = 3.0;
+                cCtx.beginPath(); cCtx.moveTo(0, y); cCtx.lineTo(W, y); cCtx.stroke();
+
+                bCtx.strokeStyle = '#181818';
+                bCtx.lineWidth = 4.0;
+                bCtx.beginPath(); bCtx.moveTo(0, y); bCtx.lineTo(W, y); bCtx.stroke();
+
+                // Светлый блик на верхней фаске блока снизу шва
+                cCtx.strokeStyle = '#ffffff';
+                cCtx.lineWidth = 1.5;
+                cCtx.beginPath(); cCtx.moveTo(0, y + 2.5); cCtx.lineTo(W, y + 2.5); cCtx.stroke();
+
+                // Мягкий полутеневой переход над швом
+                cCtx.strokeStyle = '#cbd3dc';
+                cCtx.lineWidth = 1.5;
+                cCtx.beginPath(); cCtx.moveTo(0, y - 2.5); cCtx.lineTo(W, y - 2.5); cCtx.stroke();
+            }
+
+            // Вертикальные швы блоков (с перевязкой через ряд для цокольной ленты)
+            for (let r = 0; r < rows; r++) {
+                const yStart = Math.round(r * rowH);
+                const yEnd = Math.round((r + 1) * rowH);
+                const offset = (r % 2 === 0) ? 0 : colW / 2;
+                for (let c = 0; c <= cols + 1; c++) {
+                    const x = Math.round(c * colW + offset);
+                    // Тонкий вертикальный стык
+                    cCtx.strokeStyle = '#9ca8b7';
+                    cCtx.lineWidth = 2.0;
+                    cCtx.beginPath(); cCtx.moveTo(x, yStart); cCtx.lineTo(x, yEnd); cCtx.stroke();
+
+                    bCtx.strokeStyle = '#303030';
+                    bCtx.lineWidth = 2.5;
+                    bCtx.beginPath(); bCtx.moveTo(x, yStart); bCtx.lineTo(x, yEnd); bCtx.stroke();
+
+                    cCtx.strokeStyle = '#ffffff';
+                    cCtx.lineWidth = 1.0;
+                    cCtx.beginPath(); cCtx.moveTo(x + 1.5, yStart); cCtx.lineTo(x + 1.5, yEnd); cCtx.stroke();
+                }
+            }
 
             const colorTex = new THREE.CanvasTexture(cCanvas);
             colorTex.wrapS = THREE.RepeatWrapping; colorTex.wrapT = THREE.RepeatWrapping;
@@ -415,13 +429,13 @@
             return geo;
         }
 
-        const { colorTex: fenceBrickTex, bumpTex: fenceBrickBump } = createFenceBrickTextures();
-        const fenceBrickMat = new THREE.MeshStandardMaterial({
-            map: fenceBrickTex,
-            bumpMap: fenceBrickBump,
-            bumpScale: 0.035,
-            roughness: 0.88,
-            metalness: 0.05
+        const { colorTex: fenceBlockTex, bumpTex: fenceBlockBump } = createModularBlockTextures();
+        const fenceBlockMat = new THREE.MeshStandardMaterial({
+            map: fenceBlockTex,
+            bumpMap: fenceBlockBump,
+            bumpScale: 0.025,
+            roughness: 0.85,
+            metalness: 0.02
         });
         const fenceCapMat = new THREE.MeshStandardMaterial({
             color: 0x272c35,
@@ -453,30 +467,46 @@
             metalness: 0.90
         });
 
-        // Создание кирпичного столба с металлической накрывкой RAL 7016
-        function createBrickPillar(x, z, height = 1.76, width = 0.38) {
+        // Создание столба из светлых наборных блоков 300х300 мм (высота 1.75 м) с графитовой крышкой RAL 7016 и фасадным светильником
+        function createModularPillar(x, z, height = 1.75, width = 0.30) {
             const pillarGrp = new THREE.Group();
-            // Тело столба
-            const body = new THREE.Mesh(createMetricBrickBox(width, height, width), fenceBrickMat);
+            // Тело столба (светлые блоки 300х300 мм)
+            const body = new THREE.Mesh(createMetricBrickBox(width, height, width), fenceBlockMat);
             body.position.set(0, height / 2, 0);
             body.castShadow = true;
             body.receiveShadow = true;
             pillarGrp.add(body);
 
-            // Металлическая плоская накрывка / колпак (RAL 7016 с лёгким свесом 3 см)
-            const cap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.06, 0.05, width + 0.06), fenceCapMat);
-            cap.position.set(0, height + 0.025, 0);
+            // Металлическая плоская накрывка / колпак (RAL 7016, 340х340 мм, аккуратный свес 2 см)
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.04, width + 0.04), fenceCapMat);
+            cap.position.set(0, height + 0.02, 0);
             cap.castShadow = true;
             cap.receiveShadow = true;
             pillarGrp.add(cap);
+
+            // Стильный накладной фасадный светильник-бра на столбе (по фото-референсу)
+            const lampHousing = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.14, 0.08), fenceCapMat);
+            lampHousing.position.set(0, height * 0.65, width / 2 + 0.02);
+            lampHousing.castShadow = true;
+            pillarGrp.add(lampHousing);
+
+            const lampGlass = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.06), new THREE.MeshStandardMaterial({
+                color: 0xfffaed,
+                emissive: 0xffeedd,
+                emissiveIntensity: 0.35,
+                roughness: 0.2
+            }));
+            lampGlass.position.set(0, height * 0.65, width / 2 + 0.025);
+            pillarGrp.add(lampGlass);
 
             pillarGrp.position.set(x, 0, z);
             siteGroup.add(pillarGrp);
             return pillarGrp;
         }
+        const createBrickPillar = createModularPillar; // Обратная совместимость
 
-        // Создание секции: кирпичный цоколь 35 см + отлив RAL 7016 + 2 лаги + двухсторонний евроштакетник «шахматка»
-        function createPicketSection(x1, z1, x2, z2, totalHeight = 1.70, plinthH = 0.35) {
+        // Создание секции: заниженный цоколь из светлых блоков 18 см + отлив RAL 7016 + 2 лаги + евроштакетник «шахматка»
+        function createPicketSection(x1, z1, x2, z2, totalHeight = 1.70, plinthH = 0.18) {
             const dx = x2 - x1;
             const dz = z2 - z1;
             const len = Math.hypot(dx, dz);
@@ -488,34 +518,34 @@
 
             const secGroup = new THREE.Group();
 
-            // 1. Кирпичный цоколь (ширина 28 см, высота plinthH)
-            const plinth = new THREE.Mesh(createMetricBrickBox(0.28, plinthH, len), fenceBrickMat);
+            // 1. Цоколь из светлых наборных блоков (ширина 22 см, высота plinthH = 18 см)
+            const plinth = new THREE.Mesh(createMetricBrickBox(0.22, plinthH, len), fenceBlockMat);
             plinth.position.set(0, plinthH / 2, 0);
             plinth.castShadow = true;
             plinth.receiveShadow = true;
             secGroup.add(plinth);
 
-            // 2. Металлический отлив / парапетная планка RAL 7016 (ширина 32 см)
-            const coping = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.025, len), fenceCapMat);
-            coping.position.set(0, plinthH + 0.0125, 0);
+            // 2. Металлический отлив / парапетная планка RAL 7016 (ширина 26 см, высота 2 см)
+            const coping = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, len), fenceCapMat);
+            coping.position.set(0, plinthH + 0.01, 0);
             coping.castShadow = true;
             coping.receiveShadow = true;
             secGroup.add(coping);
 
             // 3. Горизонтальные лаги (труба 40х20 мм)
             const lowerRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
-            lowerRail.position.set(0, plinthH + 0.28, 0);
+            lowerRail.position.set(0, plinthH + 0.22, 0);
             lowerRail.castShadow = true;
             secGroup.add(lowerRail);
 
             const upperRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
-            upperRail.position.set(0, totalHeight - 0.22, 0);
+            upperRail.position.set(0, totalHeight - 0.20, 0);
             upperRail.castShadow = true;
             secGroup.add(upperRail);
 
-            // 4. Двухсторонний вертикальный евроштакетник «шахматка»
-            const picketH = totalHeight - (plinthH + 0.025) - 0.04;
-            const picketY = plinthH + 0.025 + 0.02 + picketH / 2;
+            // 4. Двухсторонний вертикальный евроштакетник «шахматка» RAL 7016
+            const picketH = totalHeight - (plinthH + 0.02) - 0.04;
+            const picketY = plinthH + 0.02 + 0.02 + picketH / 2;
             const slatW = 0.11;      // ширина планки 110 мм
             const slatThick = 0.016; // толщина планки
             const step = 0.18;       // шаг между планками одного ряда (зазор 70 мм)
@@ -788,10 +818,9 @@
         drivewayMesh.receiveShadow = true;
         siteGroup.add(drivewayMesh);
 
-        // 2. Мощёный фартук от навеса и дороги к диагональной калитке
+        // 2. Мощёный фартук от дороги к диагональной калитке (с улицы)
         const apronShape = new THREE.Shape();
-        apronShape.moveTo(7.80, -4.00);
-        apronShape.lineTo(7.80, -5.95);
+        apronShape.moveTo(7.80, -5.95);
         apronShape.lineTo(8.85, -7.00);
         apronShape.lineTo(8.85, -9.80);
         apronShape.lineTo(7.80, -9.80);
@@ -803,19 +832,19 @@
         siteGroup.add(apronMesh);
 
         // Б. ВАРИАНТ Б: ДИАГОНАЛЬНЫЙ СКОС 45° И ЕДИНАЯ КАЛИТКА ВХОДА (УЛИЦА + НАВЕС)
-        // 1. Уличный кирпичный столб (Pillar A) на фасадной линии Z = 7.00:
-        createBrickPillar(8.85, 7.00);
+        // 1. Уличный столб из светлых наборных блоков (Pillar A) на фасадной линии Z = 7.00:
+        createModularPillar(8.85, 7.00, 1.75, 0.30);
 
-        // 2. Кирпичный столб у навеса (Pillar B) на линии X = 7.80 (симметричный портал калитки):
-        createBrickPillar(7.80, 5.95);
+        // 2. Столб у навеса (Pillar B) на линии X = 7.80 (симметричный портал калитки):
+        createModularPillar(7.80, 5.95, 1.75, 0.30);
 
-        // 3. ЕДИНАЯ КАЛИТКА 1,10 М ПОД УГЛОМ 45° МЕЖДУ КИРПИЧНЫМИ КОЛОННАМИ А И Б
+        // 3. ЕДИНАЯ КАЛИТКА 1,10 М ПОД УГЛОМ 45° МЕЖДУ СТОЛБАМИ А И Б
         // Створка калитки «смотрит» одновременно и на заезд с авто, и на улицу Калинина
-        createWicket(7.934, 6.084, 8.716, 6.866);
+        createWicket(7.91, 6.06, 8.74, 6.89, 1.70);
 
         // Табличка адреса и видеодомофон на столичном уличном столбе (Pillar A, X = 8.85)
         const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.04), fencePostMat);
-        intercom.position.set(8.85, 1.45, 7.21);
+        intercom.position.set(8.85, 1.45, 7.17);
         intercom.castShadow = true;
         siteGroup.add(intercom);
 
@@ -830,15 +859,15 @@
         sCtx.fillText('аг. Вишов • 25 соток', 128, 74);
         const signTex = new THREE.CanvasTexture(signCanvas);
         const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.20), new THREE.MeshBasicMaterial({ map: signTex }));
-        signMesh.position.set(8.85, 1.20, 7.21);
+        signMesh.position.set(8.85, 1.20, 7.17);
         siteGroup.add(signMesh);
 
         // 4. СПЛОШНОЙ ПАРАДНЫЙ ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (X = 8.85 ... 28.26, Z = 7.00)
-        // Равномерные секции без лишних разрывов и без второй калитки
+        // Светлые наборные блоки 300х300 мм + заниженный цоколь 18 см + евроштакетник RAL 7016
         const eastPillarsX = [8.85, 11.62, 14.39, 17.17, 19.94, 22.71, 25.48, 28.26];
         for (let i = 1; i < eastPillarsX.length; i++) {
-            createBrickPillar(eastPillarsX[i], 7.00);
-            createPicketSection(eastPillarsX[i-1] + 0.19, 7.00, eastPillarsX[i] - 0.19, 7.00);
+            createModularPillar(eastPillarsX[i], 7.00, 1.75, 0.30);
+            createPicketSection(eastPillarsX[i-1] + 0.15, 7.00, eastPillarsX[i] - 0.15, 7.00, 1.70, 0.18);
         }
 
         // 5. МОЩЁНАЯ ДОРОЖКА ОТ ДИАГОНАЛЬНОЙ КАЛИТКИ К СТУПЕНЯМ КРЫЛЬЦА ВЕРАНДЫ
@@ -855,6 +884,23 @@
         walkPorch.position.y = 0.018;
         walkPorch.receiveShadow = true;
         siteGroup.add(walkPorch);
+
+        // 5a. МОЩЁНАЯ ДОРОЖКА ОТ НАВЕСА К ДИАГОНАЛЬНОЙ КАЛИТКЕ (ПО КРАСНОЙ СТРЕЛКЕ ЗАКАЗЧИКА)
+        // Идёт со стороны навеса от переднего края парковки (X = 6.20 ... 7.75, Z = 4.00)
+        // вдоль разделительного забора прямо к внешнему порогу калитки у столба Б (X = 7.80, Z = 5.95)
+        const cpWalkShape = new THREE.Shape();
+        cpWalkShape.moveTo(6.20, -4.00);
+        cpWalkShape.lineTo(7.75, -4.00);
+        cpWalkShape.lineTo(7.75, -5.95);
+        cpWalkShape.lineTo(8.20, -6.40);
+        cpWalkShape.lineTo(7.50, -6.60);
+        cpWalkShape.bezierCurveTo(6.60, -5.70, 6.10, -4.80, 6.20, -4.00);
+        cpWalkShape.closePath();
+        const cpWalkMesh = new THREE.Mesh(new THREE.ShapeGeometry(cpWalkShape), paveMat);
+        cpWalkMesh.rotation.x = -Math.PI / 2;
+        cpWalkMesh.position.y = 0.021;
+        cpWalkMesh.receiveShadow = true;
+        siteGroup.add(cpWalkMesh);
 
         // В. ЛЁГКИЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР ПОД НАВЕСОМ (ПЕРПЕНДИКУЛЯРНО ДОМУ, X = 7.80)
         // Металлические столбы 80х80 мм, заниженная лента 12 см, штакетник строго в 1 ряд (зазор 4 см)
