@@ -477,18 +477,10 @@
         blindArea.receiveShadow = true;
         siteGroup.add(blindArea);
 
-        // 9. Двухкамерный септик и смотровые люки в восточном дворе (согласно Google Street View)
+        // 9. Двухкамерный септик в восточном дворе (2 бирюзовые полимерные крышки в газоне)
         const septicGroup = new THREE.Group();
 
-        // Грунтово-гравийная площадка вокруг септика (разрыхлённая земля / подсыпка)
-        const septicEarthMat = new THREE.MeshStandardMaterial({ color: 0x5a4838, roughness: 0.95 });
-        const septicEarth = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 3.2), septicEarthMat);
-        septicEarth.rotation.x = -Math.PI / 2;
-        septicEarth.position.set(18.5, 0.015, 4.0);
-        septicEarth.receiveShadow = true;
-        septicGroup.add(septicEarth);
-
-        // Бетонные оголовки колодцев и бирюзово-синие полимерные крышки (строго по фото панорамы)
+        // Бетонные оголовки колодцев и бирюзовые полимерные крышки прямо в зеленом газоне
         const concreteRingMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
         const septicCoverMat = new THREE.MeshStandardMaterial({ 
             color: 0x0284c7, 
@@ -497,44 +489,28 @@
         });
 
         // Колодец 1 (первая камера септика)
-        const ring1 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.12, 24), concreteRingMat);
-        ring1.position.set(18.2, 0.06, 4.0);
+        const ring1 = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.50, 0.08, 24), concreteRingMat);
+        ring1.position.set(18.2, 0.04, 4.0);
         ring1.castShadow = true;
+        ring1.receiveShadow = true;
         septicGroup.add(ring1);
 
-        const lid1 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 24), septicCoverMat);
-        lid1.position.set(18.2, 0.13, 4.0);
+        const lid1 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 24), septicCoverMat);
+        lid1.position.set(18.2, 0.08, 4.0);
         lid1.castShadow = true;
         septicGroup.add(lid1);
 
         // Колодец 2 (вторая фильтрационная камера)
-        const ring2 = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.12, 24), concreteRingMat);
-        ring2.position.set(19.6, 0.06, 4.0);
+        const ring2 = new THREE.Mesh(new THREE.CylinderGeometry(0.50, 0.50, 0.08, 24), concreteRingMat);
+        ring2.position.set(19.6, 0.04, 4.0);
         ring2.castShadow = true;
+        ring2.receiveShadow = true;
         septicGroup.add(ring2);
 
-        const lid2 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.05, 24), septicCoverMat);
-        lid2.position.set(19.6, 0.13, 4.0);
+        const lid2 = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 24), septicCoverMat);
+        lid2.position.set(19.6, 0.08, 4.0);
         lid2.castShadow = true;
         septicGroup.add(lid2);
-
-        // Деревянный строительный поддон рядом с люками (как зафиксировано на панораме Street View)
-        const palletGroup = new THREE.Group();
-        const palletMat = new THREE.MeshStandardMaterial({ color: 0xa8784d, roughness: 0.85 });
-        for (let bx of [-0.45, 0, 0.45]) {
-            const runner = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 1.2), palletMat);
-            runner.position.set(bx, 0.04, 0);
-            palletGroup.add(runner);
-        }
-        for (let bz = -0.55; bz <= 0.55; bz += 0.18) {
-            const slat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.025, 0.12), palletMat);
-            slat.position.set(0, 0.09, bz);
-            palletGroup.add(slat);
-        }
-        palletGroup.position.set(16.9, 0, 3.8);
-        palletGroup.rotation.y = 0.12;
-        palletGroup.castShadow = true;
-        septicGroup.add(palletGroup);
 
         siteGroup.add(septicGroup);
 
@@ -1353,10 +1329,8 @@
         infraGroup.add(lezMesh);
 
         // B. Опоры ЛЭП 0,4 кВ строго параллельно дороге в 1 м от края асфальта
-        // Фактически на территории участка стоит ровно 1 опора на X = 17.70м (на 50 см левее первого канализационного люка)
+        // Фактически на территории участка стоит ровно 1 железобетонная опора на X = 17.70м (на 50 см левее первого канализационного люка)
         const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 });
-        const cabinetMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5, metalness: 0.5 });
-        const pipeMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6 });
 
         const sitePoleX = 17.70; // ровно на 50 см левее левого люка септика (X = 18.2)
         const poleXs = [-25.0, sitePoleX, 55.0]; // 1 опора на участке + 2 внешние уличные опоры по трассе
@@ -1372,19 +1346,6 @@
             crossarm.position.set(px, 8.1, pz);
             crossarm.rotation.y = roadAngle;
             infraGroup.add(crossarm);
-
-            // На опоре участка смонтирован металлический ящик учёта электроэнергии (ВРУ) и кабельный опуск
-            if (px === sitePoleX) {
-                const cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.52, 0.22), cabinetMat);
-                cabinet.position.set(px, 1.85, pz - 0.20);
-                cabinet.rotation.y = roadAngle;
-                cabinet.castShadow = true;
-                infraGroup.add(cabinet);
-
-                const cablePipe = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 4.8, 8), pipeMat);
-                cablePipe.position.set(px + 0.14, 4.2, pz - 0.10);
-                infraGroup.add(cablePipe);
-            }
         });
 
         // Воздушные кабели ЛЭП строго параллельно проезжей части в 1 м от края асфальта
