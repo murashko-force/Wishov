@@ -1335,23 +1335,23 @@
         shedWalls.castShadow = true;
         shedGroup.add(shedWalls);
 
-        // Двускатная кровля гаража (конёк на высоте +3.95м)
+        // Двускатная кровля гаража (конёк на высоте +4.95м, поднято на 1.0м по запросу)
         const H_SHED_EAVE = 0.28 + 2.50; // 2.78м
-        const H_SHED_RIDGE = 3.95;       // конёк
+        const H_SHED_RIDGE = 4.95;       // конёк +4.95м (уклон ~38.3°)
         const shedSlopeLen = Math.hypot(2.50 + 0.25, H_SHED_RIDGE - H_SHED_EAVE) + 0.1;
         const shedSlopeAngle = Math.atan2(H_SHED_RIDGE - H_SHED_EAVE, 2.50 + 0.25);
 
         // Левый скат кровли (со стороны двора)
         const shedRoofL = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
         shedRoofL.rotation.z = shedSlopeAngle;
-        shedRoofL.position.set(-1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
+        shedRoofL.position.set(-1.375, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
         shedRoofL.castShadow = true;
         shedGroup.add(shedRoofL);
 
         // Правый скат кровли (со стороны забора)
         const shedRoofR = new THREE.Mesh(new THREE.BoxGeometry(shedSlopeLen, 0.08, 7.80), shedRoofMat);
         shedRoofR.rotation.z = -shedSlopeAngle;
-        shedRoofR.position.set(1.30, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
+        shedRoofR.position.set(1.375, (H_SHED_EAVE + H_SHED_RIDGE) / 2 + 0.04, 0);
         shedRoofR.castShadow = true;
         shedGroup.add(shedRoofR);
 
