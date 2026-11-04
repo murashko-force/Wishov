@@ -107,7 +107,7 @@
 
         <div class="legend">
             <div class="legend-item"><div class="color-dot" style="background:#15803d"></div> Границы участка 25 соток (35,26 × 72,64 м)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#1f242c; border: 1px solid #94a3b8;"></div> Забор, откатные ворота 5м и калитка (RAL 7016)</div>
+            <div class="legend-item"><div class="color-dot" style="background:#b8b0a6; border: 1px solid #272c35;"></div> Забор: ригельный кирпич, евроштакетник «шахматка» (RAL 7016), калитки и распашные ворота 4м</div>
             <div class="legend-item"><div class="color-dot" style="background:#f59e0b"></div> Охранная зона ЛЭП (35 м²) и трасса ЛЭП вдоль улицы</div>
             <div class="legend-item"><div class="color-dot" style="background:#0284c7"></div> Септик / канализация (2 колодца во дворе)</div>
             <div class="legend-item"><div class="color-dot" style="background:#9a6b43"></div> Деревянная баня (2,4×5м) и блочный сарай (5×7,5м) параллельно заборам</div>
@@ -309,141 +309,382 @@
         greenVergeMesh.receiveShadow = true;
         siteGroup.add(greenVergeMesh);
 
-        // 6. Architectural Front Fence, Gates & Circulation (Новая схема зонирования)
-        const fencePostMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.6 });
-        const fenceSlatMat = new THREE.MeshStandardMaterial({ color: 0x272d37, roughness: 0.5 });
-        const fencePlinthMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+        // 6. Architectural Front Fence, Gates & Circulation (Столбы/цоколь из ригельного кирпича + евроштакетник «шахматка» RAL 7016)
+        function createFenceBrickTextures() {
+            const W = 512, H = 512;
+            const cCanvas = document.createElement('canvas');
+            cCanvas.width = W; cCanvas.height = H;
+            const cCtx = cCanvas.getContext('2d');
 
-        function createFencePlinth(x1, x2, z) {
-            const len = Math.abs(x2 - x1);
-            const plinth = new THREE.Mesh(new THREE.BoxGeometry(len, 0.22, 0.22), fencePlinthMat);
-            plinth.position.set((x1 + x2) / 2, 0.11, z);
+            const bCanvas = document.createElement('canvas');
+            bCanvas.width = W; bCanvas.height = H;
+            const bCtx = bCanvas.getContext('2d');
+
+            // Тёмно-серый кладочный шов (mortar)
+            cCtx.fillStyle = '#423f3b';
+            cCtx.fillRect(0, 0, W, H);
+            bCtx.fillStyle = '#262422';
+            bCtx.fillRect(0, 0, W, H);
+
+            const rows = 16; // узкий ригельный кирпич (высота ~32px)
+            const rowH = H / rows;
+            const cols = 4;  // удлинённый формат (длина ~128px)
+            const colW = W / cols;
+            const joint = 2.5;
+
+            // Палитра светло-серого и песчаного меланжа ригельного кирпича по фото
+            const palette = [
+                [188, 182, 174], // #bcb6ae
+                [176, 170, 161], // #b0aaa1
+                [202, 196, 188], // #cac4bc
+                [165, 158, 148], // #a59e94
+                [152, 145, 136], // #989188
+                [180, 174, 165], // #b4aea5
+                [160, 154, 146]  // #a09a92
+            ];
+
+            for (let r = 0; r < rows; r++) {
+                const y = r * rowH;
+                const offset = (r % 2 === 0) ? 0 : colW * 0.5;
+                for (let c = -1; c <= cols + 1; c++) {
+                    const x = c * colW + offset;
+                    const pIdx = Math.abs(r * 5 + c * 11 + 77) % palette.length;
+                    const p = palette[pIdx];
+                    const seed = Math.sin(r * 12.9898 + c * 78.233);
+                    const varTone = (seed - 0.5) * 16;
+                    const rVal = Math.min(255, Math.max(0, p[0] + varTone));
+                    const gVal = Math.min(255, Math.max(0, p[1] + varTone));
+                    const bVal = Math.min(255, Math.max(0, p[2] + varTone));
+
+                    cCtx.fillStyle = `rgb(${Math.round(rVal)},${Math.round(gVal)},${Math.round(bVal)})`;
+                    cCtx.fillRect(x + joint, y + joint, colW - joint * 2, rowH - joint * 2);
+
+                    bCtx.fillStyle = '#9c9c9c';
+                    bCtx.fillRect(x + joint, y + joint, colW - joint * 2, rowH - joint * 2);
+                }
+            }
+
+            // Минеральная зернистость
+            const cImg = cCtx.getImageData(0, 0, W, H);
+            const bImg = bCtx.getImageData(0, 0, W, H);
+            for (let i = 0; i < cImg.data.length; i += 4) {
+                const n = (Math.random() - 0.5) * 16;
+                cImg.data[i] = Math.min(255, Math.max(0, cImg.data[i] + n));
+                cImg.data[i+1] = Math.min(255, Math.max(0, cImg.data[i+1] + n));
+                cImg.data[i+2] = Math.min(255, Math.max(0, cImg.data[i+2] + n));
+
+                bImg.data[i] = Math.min(255, Math.max(0, bImg.data[i] + n * 1.5));
+                bImg.data[i+1] = bImg.data[i];
+                bImg.data[i+2] = bImg.data[i];
+            }
+            cCtx.putImageData(cImg, 0, 0);
+            bCtx.putImageData(bImg, 0, 0);
+
+            const colorTex = new THREE.CanvasTexture(cCanvas);
+            colorTex.wrapS = THREE.RepeatWrapping; colorTex.wrapT = THREE.RepeatWrapping;
+            colorTex.repeat.set(1.0, 1.0);
+
+            const bumpTex = new THREE.CanvasTexture(bCanvas);
+            bumpTex.wrapS = THREE.RepeatWrapping; bumpTex.wrapT = THREE.RepeatWrapping;
+            bumpTex.repeat.set(1.0, 1.0);
+
+            return { colorTex, bumpTex };
+        }
+
+        // Вспомогательный генератор геометрии с метрической развёрткой UV (1 единица UV = 1 метр)
+        function createMetricBrickBox(w, h, d) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const pos = geo.attributes.position;
+            const norm = geo.attributes.normal;
+            const uv = geo.attributes.uv;
+            for (let i = 0; i < pos.count; i++) {
+                const nx = Math.abs(norm.getX(i));
+                const nz = Math.abs(norm.getZ(i));
+                const x = pos.getX(i);
+                const y = pos.getY(i);
+                const z = pos.getZ(i);
+                if (nx > 0.5) {
+                    uv.setXY(i, z, y);
+                } else if (nz > 0.5) {
+                    uv.setXY(i, x, y);
+                } else {
+                    uv.setXY(i, x, z);
+                }
+            }
+            uv.needsUpdate = true;
+            return geo;
+        }
+
+        const { colorTex: fenceBrickTex, bumpTex: fenceBrickBump } = createFenceBrickTextures();
+        const fenceBrickMat = new THREE.MeshStandardMaterial({
+            map: fenceBrickTex,
+            bumpMap: fenceBrickBump,
+            bumpScale: 0.035,
+            roughness: 0.88,
+            metalness: 0.05
+        });
+        const fenceCapMat = new THREE.MeshStandardMaterial({
+            color: 0x272c35,
+            roughness: 0.42,
+            metalness: 0.45
+        });
+        const fencePostMat = new THREE.MeshStandardMaterial({
+            color: 0x1f242c,
+            roughness: 0.60
+        });
+        const picketMat = new THREE.MeshStandardMaterial({
+            color: 0x272c35,
+            roughness: 0.40,
+            metalness: 0.35
+        });
+        const picketRailMat = new THREE.MeshStandardMaterial({
+            color: 0x1d2128,
+            roughness: 0.50,
+            metalness: 0.50
+        });
+        const gateFrameMat = new THREE.MeshStandardMaterial({
+            color: 0x22262e,
+            roughness: 0.45,
+            metalness: 0.55
+        });
+        const chromeHandleMat = new THREE.MeshStandardMaterial({
+            color: 0xd1d5db,
+            roughness: 0.20,
+            metalness: 0.90
+        });
+
+        // Создание кирпичного столба с металлической накрывкой RAL 7016
+        function createBrickPillar(x, z, height = 1.76, width = 0.38) {
+            const pillarGrp = new THREE.Group();
+            // Тело столба
+            const body = new THREE.Mesh(createMetricBrickBox(width, height, width), fenceBrickMat);
+            body.position.set(0, height / 2, 0);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            pillarGrp.add(body);
+
+            // Металлическая плоская накрывка / колпак (RAL 7016 с лёгким свесом 3 см)
+            const cap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.06, 0.05, width + 0.06), fenceCapMat);
+            cap.position.set(0, height + 0.025, 0);
+            cap.castShadow = true;
+            cap.receiveShadow = true;
+            pillarGrp.add(cap);
+
+            pillarGrp.position.set(x, 0, z);
+            siteGroup.add(pillarGrp);
+            return pillarGrp;
+        }
+
+        // Создание секции: кирпичный цоколь 35 см + отлив RAL 7016 + 2 лаги + двухсторонний евроштакетник «шахматка»
+        function createPicketSection(x1, z1, x2, z2, totalHeight = 1.70, plinthH = 0.35) {
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const len = Math.hypot(dx, dz);
+            if (len < 0.05) return;
+
+            const cx = (x1 + x2) / 2;
+            const cz = (z1 + z2) / 2;
+            const rotY = Math.atan2(dx, dz);
+
+            const secGroup = new THREE.Group();
+
+            // 1. Кирпичный цоколь (ширина 28 см, высота plinthH)
+            const plinth = new THREE.Mesh(createMetricBrickBox(0.28, plinthH, len), fenceBrickMat);
+            plinth.position.set(0, plinthH / 2, 0);
             plinth.castShadow = true;
             plinth.receiveShadow = true;
-            siteGroup.add(plinth);
+            secGroup.add(plinth);
+
+            // 2. Металлический отлив / парапетная планка RAL 7016 (ширина 32 см)
+            const coping = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.025, len), fenceCapMat);
+            coping.position.set(0, plinthH + 0.0125, 0);
+            coping.castShadow = true;
+            coping.receiveShadow = true;
+            secGroup.add(coping);
+
+            // 3. Горизонтальные лаги (труба 40х20 мм)
+            const lowerRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
+            lowerRail.position.set(0, plinthH + 0.28, 0);
+            lowerRail.castShadow = true;
+            secGroup.add(lowerRail);
+
+            const upperRail = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.04, len), picketRailMat);
+            upperRail.position.set(0, totalHeight - 0.22, 0);
+            upperRail.castShadow = true;
+            secGroup.add(upperRail);
+
+            // 4. Двухсторонний вертикальный евроштакетник «шахматка»
+            const picketH = totalHeight - (plinthH + 0.025) - 0.04;
+            const picketY = plinthH + 0.025 + 0.02 + picketH / 2;
+            const slatW = 0.11;      // ширина планки 110 мм
+            const slatThick = 0.016; // толщина планки
+            const step = 0.18;       // шаг между планками одного ряда (зазор 70 мм)
+            const halfLen = len / 2;
+
+            // Геометрия одной планки штакетника
+            const slatGeo = new THREE.BoxGeometry(slatThick, picketH, slatW);
+
+            // Ряд 1: внешняя сторона (+X в локальных координатах, смещение +20 мм)
+            const frontStart = -halfLen + slatW * 0.7;
+            const frontEnd = halfLen - slatW * 0.7;
+            for (let zPos = frontStart; zPos <= frontEnd; zPos += step) {
+                const slatMesh = new THREE.Mesh(slatGeo, picketMat);
+                slatMesh.position.set(0.020, picketY, zPos);
+                slatMesh.castShadow = true;
+                slatMesh.receiveShadow = true;
+                secGroup.add(slatMesh);
+            }
+
+            // Ряд 2: внутренняя сторона (-X в локальных координатах, смещение -20 мм) со сдвигом на полшага (шахматка)
+            const backStart = frontStart + step / 2;
+            for (let zPos = backStart; zPos <= frontEnd; zPos += step) {
+                const slatMesh = new THREE.Mesh(slatGeo, picketMat);
+                slatMesh.position.set(-0.020, picketY, zPos);
+                slatMesh.castShadow = true;
+                slatMesh.receiveShadow = true;
+                secGroup.add(slatMesh);
+            }
+
+            secGroup.position.set(cx, 0, cz);
+            secGroup.rotation.y = rotY;
+            siteGroup.add(secGroup);
+            return secGroup;
         }
 
-        function createSlatSection(x1, x2, z, height = 1.7) {
-            const len = Math.abs(x2 - x1);
-            const numSlats = 11;
-            const slatH = 0.09;
-            const gap = (height - 0.2 - numSlats * slatH) / (numSlats - 1);
-            const panelGroup = new THREE.Group();
-            for (let i = 0; i < numSlats; i++) {
-                const y = 0.25 + i * (slatH + gap);
-                const slat = new THREE.Mesh(new THREE.BoxGeometry(len - 0.06, slatH, 0.02), fenceSlatMat);
-                slat.position.set(0, y, 0);
-                slat.rotation.x = 0.25;
-                slat.castShadow = true;
-                panelGroup.add(slat);
-            }
-            panelGroup.position.set((x1 + x2) / 2, 0, z);
-            siteGroup.add(panelGroup);
+        // Создание калитки в стиле евроштакетника с ручкой из нержавеющей стали
+        function createWicket(x1, z1, x2, z2, height = 1.68) {
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const span = Math.hypot(dx, dz);
+            const doorW = span - 0.06;
+            const cx = (x1 + x2) / 2;
+            const cz = (z1 + z2) / 2;
+            const rotY = Math.atan2(dx, dz);
 
-            const postCount = Math.max(2, Math.round(len / 2.6) + 1);
-            for (let i = 0; i < postCount; i++) {
-                const px = Math.min(x1, x2) + i * (len / (postCount - 1));
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, height + 0.08, 0.12), fencePostMat);
-                post.position.set(px, (height + 0.08) / 2, z);
-                post.castShadow = true;
-                siteGroup.add(post);
-            }
-        }
-
-        function createPerpendicularFence(z1, z2, x, height = 1.75) {
-            const len = Math.abs(z2 - z1);
-            const zMin = Math.min(z1, z2);
-            const zMax = Math.max(z1, z2);
-            const numSlats = 11;
-            const slatH = 0.09;
-            const gap = (height - 0.2 - numSlats * slatH) / (numSlats - 1);
-            const panelGroup = new THREE.Group();
-            for (let i = 0; i < numSlats; i++) {
-                const y = 0.25 + i * (slatH + gap);
-                const slat = new THREE.Mesh(new THREE.BoxGeometry(0.02, slatH, len - 0.06), fenceSlatMat);
-                slat.position.set(0, y, (z1 + z2) / 2);
-                slat.rotation.z = 0.25;
-                slat.castShadow = true;
-                panelGroup.add(slat);
-            }
-            panelGroup.position.x = x;
-            siteGroup.add(panelGroup);
-
-            // Цоколь под секцией
-            const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, len), fencePlinthMat);
-            plinth.position.set(x, 0.11, (z1 + z2) / 2);
-            plinth.castShadow = true;
-            siteGroup.add(plinth);
-
-            // Столбы
-            const postCount = Math.max(2, Math.round(len / 2.6) + 1);
-            for (let i = 0; i < postCount; i++) {
-                const pz = zMin + i * (len / (postCount - 1));
-                const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, height + 0.08, 0.12), fencePostMat);
-                post.position.set(x, (height + 0.08) / 2, pz);
-                post.castShadow = true;
-                siteGroup.add(post);
-            }
-        }
-
-        function createWicketAlongZ(z1, z2, x, height = 1.75) {
-            const width = Math.abs(z2 - z1);
-            const zCenter = (z1 + z2) / 2;
             const wGroup = new THREE.Group();
-            const wDoor = new THREE.Mesh(new THREE.BoxGeometry(0.06, height, width - 0.06), fenceSlatMat);
-            wDoor.castShadow = true;
-            wGroup.add(wDoor);
-            const handleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
-            for (let side of [-0.05, 0.05]) {
-                const h = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.22, 8), handleMat);
-                h.position.set(side, 0, width / 2 - 0.12);
-                wGroup.add(h);
+
+            // Стальной рамный профиль 50х40 мм (RAL 7016)
+            const frameBottom = 0.08;
+            const leafH = height - frameBottom;
+            const frameT = 0.04;
+            const frameW = 0.05;
+
+            // Вертикальные стойки рамы
+            for (let side of [-1, 1]) {
+                const vert = new THREE.Mesh(new THREE.BoxGeometry(frameT, leafH, frameW), gateFrameMat);
+                vert.position.set(0, frameBottom + leafH / 2, side * (doorW / 2 - frameW / 2));
+                vert.castShadow = true;
+                wGroup.add(vert);
             }
-            for (let pz of [z1, z2]) {
-                const p = new THREE.Mesh(new THREE.BoxGeometry(0.14, height + 0.15, 0.14), fencePostMat);
-                p.position.set(0, 0.075, pz - zCenter);
-                p.castShadow = true;
-                wGroup.add(p);
+            // Горизонтальные перемычки рамы (верхняя, нижняя, средняя)
+            for (let yPos of [frameBottom + frameW / 2, frameBottom + leafH / 2, height - frameW / 2]) {
+                const horiz = new THREE.Mesh(new THREE.BoxGeometry(frameT, frameW, doorW - frameW * 2), gateFrameMat);
+                horiz.position.set(0, yPos, 0);
+                horiz.castShadow = true;
+                wGroup.add(horiz);
             }
-            wGroup.position.set(x, height / 2, zCenter);
+
+            // Заполнение евроштакетником внутри створки
+            const slatW = 0.105;
+            const picketH = leafH - frameW * 2;
+            const slatGeo = new THREE.BoxGeometry(0.015, picketH, slatW);
+            const numSlats = Math.floor((doorW - frameW * 2) / (slatW + 0.025));
+            const actualStep = (doorW - frameW * 2 - slatW) / Math.max(1, (numSlats - 1));
+            for (let i = 0; i < numSlats; i++) {
+                const zPos = -(doorW / 2 - frameW - slatW / 2) + i * actualStep;
+                const slat = new THREE.Mesh(slatGeo, picketMat);
+                slat.position.set(0, frameBottom + frameW + picketH / 2, zPos);
+                slat.castShadow = true;
+                wGroup.add(slat);
+            }
+
+            // Вертикальные ручки-штанги из нержавеющей стали с обеих сторон
+            for (let side of [-0.045, 0.045]) {
+                const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.32, 12), chromeHandleMat);
+                handle.position.set(side, frameBottom + leafH * 0.55, doorW / 2 - 0.12);
+                wGroup.add(handle);
+                // Крепёжные стойки ручки
+                for (let hy of [-0.12, 0.12]) {
+                    const standoff = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.03, 8), chromeHandleMat);
+                    standoff.rotation.z = Math.PI / 2;
+                    standoff.position.set(side * 0.65, frameBottom + leafH * 0.55 + hy, doorW / 2 - 0.12);
+                    wGroup.add(standoff);
+                }
+            }
+
+            wGroup.position.set(cx, 0, cz);
+            wGroup.rotation.y = rotY;
             siteGroup.add(wGroup);
+            return wGroup;
         }
 
-        function createSwingGate(x1, x2, z, height = 1.70) {
-            const width = Math.abs(x2 - x1);
-            const xCenter = (x1 + x2) / 2;
-            const leafW = (width - 0.08) / 2;
+        // Создание двустворчатых распашных ворот 4,0 м в стиле евроштакетника
+        function createSwingGate(x1, z1, x2, z2, height = 1.70) {
+            const dx = x2 - x1;
+            const dz = z2 - z1;
+            const totalWidth = Math.hypot(dx, dz);
+            const cx = (x1 + x2) / 2;
+            const cz = (z1 + z2) / 2;
+            const rotY = Math.atan2(dx, dz);
+
             const gateGrp = new THREE.Group();
+            const leafW = (totalWidth - 0.08) / 2;
+            const frameBottom = 0.08;
+            const leafH = height - frameBottom;
+            const frameT = 0.05;
+            const frameW = 0.06;
 
             for (let side of [-1, 1]) {
                 const leafGrp = new THREE.Group();
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(leafW, height, 0.06), fencePostMat);
-                leafGrp.add(frame);
-                const slats = new THREE.Mesh(new THREE.BoxGeometry(leafW - 0.08, height - 0.12, 0.03), fenceSlatMat);
-                leafGrp.add(slats);
 
-                const hMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
-                const h = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), hMat);
-                h.position.set(-side * (leafW / 2 - 0.10), 0, 0.05);
-                leafGrp.add(h);
+                // Периметр створки (профиль 60х40 мм RAL 7016)
+                for (let s of [-1, 1]) {
+                    const vert = new THREE.Mesh(new THREE.BoxGeometry(frameT, leafH, frameW), gateFrameMat);
+                    vert.position.set(0, frameBottom + leafH / 2, s * (leafW / 2 - frameW / 2));
+                    vert.castShadow = true;
+                    leafGrp.add(vert);
+                }
+                for (let yPos of [frameBottom + frameW / 2, frameBottom + leafH / 2, height - frameW / 2]) {
+                    const horiz = new THREE.Mesh(new THREE.BoxGeometry(frameT, frameW, leafW - frameW * 2), gateFrameMat);
+                    horiz.position.set(0, yPos, 0);
+                    horiz.castShadow = true;
+                    leafGrp.add(horiz);
+                }
 
-                leafGrp.position.set(side * (leafW / 2 + 0.02), height / 2, 0);
+                // Заполнение створки евроштакетником
+                const slatW = 0.11;
+                const picketH = leafH - frameW * 2;
+                const slatGeo = new THREE.BoxGeometry(0.016, picketH, slatW);
+                const step = 0.16;
+                const innerW = leafW - frameW * 2;
+                const nSlats = Math.floor(innerW / step);
+                const actualStep = (innerW - slatW) / Math.max(1, (nSlats - 1));
+                for (let i = 0; i < nSlats; i++) {
+                    const zPos = -(innerW / 2 - slatW / 2) + i * actualStep;
+                    const slat = new THREE.Mesh(slatGeo, picketMat);
+                    slat.position.set(0, frameBottom + frameW + picketH / 2, zPos);
+                    slat.castShadow = true;
+                    leafGrp.add(slat);
+                }
+
+                // Ручка на каждой створке возле центра
+                const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 12), chromeHandleMat);
+                handle.position.set(-0.045, frameBottom + leafH * 0.52, -side * (leafW / 2 - 0.12));
+                leafGrp.add(handle);
+
+                leafGrp.position.set(0, 0, side * (leafW / 2 + 0.02));
                 gateGrp.add(leafGrp);
             }
 
-            for (let px of [x1, x2]) {
-                const p = new THREE.Mesh(new THREE.BoxGeometry(0.16, height + 0.20, 0.16), fencePostMat);
-                p.position.set(px - xCenter, (height + 0.20) / 2, 0);
-                p.castShadow = true;
-                gateGrp.add(p);
-            }
-
-            const stop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-            stop.position.set(0, 0.04, 0);
+            // Центральный упор ворот в грунт
+            const stop = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.12), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+            stop.position.set(0, 0.03, 0);
             gateGrp.add(stop);
 
-            gateGrp.position.set(xCenter, 0, z);
+            gateGrp.position.set(cx, 0, cz);
+            gateGrp.rotation.y = rotY;
             siteGroup.add(gateGrp);
+            return gateGrp;
         }
 
         // А. ПЛАВНАЯ ПОДЪЕЗДНАЯ ДОРОГА ПОД НАВЕС С УЛИЦЫ КАЛИНИНА ("ЖЁЛТАЯ ДОРОЖКА")
@@ -463,36 +704,21 @@
         drivewayMesh.receiveShadow = true;
         siteGroup.add(drivewayMesh);
 
-        // Б. ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (НАЧИНАЕТСЯ ОТ НАВЕСА X = 7.80)
-        // 1. Цоколь фасадного забора
-        createFencePlinth(7.80, 9.80, 7.0);
-        createFencePlinth(10.90, CAD_POINTS[1].x, 7.0);
+        // Б. ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (Z = 7.00)
+        // 1. Угловой столб у въезда / навеса
+        createBrickPillar(7.80, 7.00);
 
-        // 2. Секция жалюзи от навеса до новой калитки
-        createSlatSection(7.80, 9.80, 7.0);
+        // 2. Секция от навеса до калитки №1
+        createPicketSection(7.99, 7.00, 9.41, 7.00);
 
-        // 3. КАЛИТКА №1: СТРОГО НАПРОТИВ КРЫЛЬЦА ВЕРАНДЫ (X = 9.80 ... 10.90, Z = 7.0)
-        const wicket1Group = new THREE.Group();
-        const wicket1Door = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.75, 0.06), fenceSlatMat);
-        wicket1Door.castShadow = true;
-        wicket1Group.add(wicket1Door);
-        const handle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
-        handle1.position.set(-0.45, 0, 0.06);
-        wicket1Group.add(handle1);
-        wicket1Group.position.set(10.35, 0.95, 7.0);
-        siteGroup.add(wicket1Group);
+        // 3. КАЛИТКА №1: СТРОГО НАПРОТИВ КРЫЛЬЦА ВЕРАНДЫ (X = 9.60 ... 11.00, Z = 7.00)
+        createBrickPillar(9.60, 7.00);
+        createBrickPillar(11.00, 7.00);
+        createWicket(9.79, 7.00, 10.81, 7.00);
 
-        // Столбы калитки №1
-        for (let px of [9.80, 10.90]) {
-            const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.95, 0.14), fencePostMat);
-            post.position.set(px, 1.95 / 2, 7.0);
-            post.castShadow = true;
-            siteGroup.add(post);
-        }
-
-        // Столб домофона и табличка адреса рядом с калиткой №1
-        const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.90, 0.18), fencePostMat);
-        intercom.position.set(11.05, 0.95, 7.0);
+        // Табличка адреса и видеодомофон, смонтированные на кирпичном столбе калитки №1 (X = 11.00)
+        const intercom = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.04), fencePostMat);
+        intercom.position.set(11.00, 1.45, 7.21);
         intercom.castShadow = true;
         siteGroup.add(intercom);
 
@@ -506,12 +732,17 @@
         sCtx.fillStyle = '#94a3b8'; sCtx.font = '16px sans-serif';
         sCtx.fillText('аг. Вишов • 25 соток', 128, 74);
         const signTex = new THREE.CanvasTexture(signCanvas);
-        const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 0.26), new THREE.MeshBasicMaterial({ map: signTex }));
-        signMesh.position.set(11.55, 1.35, 7.07);
+        const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.20), new THREE.MeshBasicMaterial({ map: signTex }));
+        signMesh.position.set(11.00, 1.20, 7.21);
         siteGroup.add(signMesh);
 
-        // 4. Длинная секция фасадного забора от калитки до восточной межи
-        createSlatSection(10.90, CAD_POINTS[1].x, 7.0);
+        // 4. Длинный фасадный забор от калитки №1 до восточной межи (X = 11.00 ... 28.26)
+        // Равномерные пролёты ~2.87 м с кирпичными столбами
+        const eastPillarsX = [11.00, 13.88, 16.75, 19.63, 22.50, 25.38, 28.26];
+        for (let i = 1; i < eastPillarsX.length; i++) {
+            createBrickPillar(eastPillarsX[i], 7.00);
+            createPicketSection(eastPillarsX[i-1] + 0.19, 7.00, eastPillarsX[i] - 0.19, 7.00);
+        }
 
         // 5. ПРЯМАЯ МОЩЁНАЯ ДОРОЖКА ОТ КАЛИТКИ №1 К СТУПЕНЯМ КРЫЛЬЦА
         const walkPorch = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 5.9), paveMat);
@@ -521,14 +752,19 @@
         siteGroup.add(walkPorch);
 
         // В. РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР ПОД НАВЕСОМ (ПЕРПЕНДИКУЛЯРНО ДОМУ, X = 7.80) С КАЛИТКОЙ №2
-        // Секция от фасадного забора до навеса (Z = 7.00 ... 4.10)
-        createPerpendicularFence(7.00, 4.10, 7.80);
-        // Секция от края навеса до калитки (Z = 4.10 ... 2.80)
-        createPerpendicularFence(4.10, 2.80, 7.80);
-        // КАЛИТКА №2: проход из-под навеса во внутренний двор (Z = 2.80 ... 1.70, ширина 1.10 м)
-        createWicketAlongZ(2.80, 1.70, 7.80);
-        // Секция от калитки до стены дома (Z = 1.70 ... 0.00)
-        createPerpendicularFence(1.70, 0.00, 7.80);
+        // Секция от фасадного угла (Z = 7.00) до калитки №2 (Z = 2.85) со средним столбом
+        createBrickPillar(7.80, 4.90);
+        createPicketSection(7.80, 6.81, 7.80, 5.09);
+        createBrickPillar(7.80, 2.85);
+        createPicketSection(7.80, 4.71, 7.80, 3.04);
+
+        // КАЛИТКА №2: проход из-под навеса во внутренний двор (Z = 2.85 ... 1.55, ширина 1.30 м, проём 0.92 м)
+        createBrickPillar(7.80, 1.55);
+        createWicket(7.80, 2.66, 7.80, 1.74);
+
+        // Секция от калитки №2 до стены дома (Z = 1.55 ... 0.00)
+        createBrickPillar(7.80, 0.00);
+        createPicketSection(7.80, 1.36, 7.80, 0.19);
 
         // Дорожка-связка от калитки №2 к крыльцу
         const walkLink = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.4), paveMat);
@@ -537,15 +773,19 @@
         walkLink.receiveShadow = true;
         siteGroup.add(walkLink);
 
-        // Г. ЛЕВЫЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР С РАСПАШНЫМИ ВОРОТАМИ (Z = -9.50)
+        // Г. ЛЕВЫЙ РАЗДЕЛИТЕЛЬНЫЙ ЗАБОР С РАСПАШНЫМИ ВОРОТАМИ В САД (Z = -9.50)
         // Идёт от заднего левого угла дома (X = 0.00) до левого межевого забора (X = -5.80)
-        createFencePlinth(-0.90, 0.00, -9.50);
-        createSlatSection(-0.90, 0.00, -9.50, 1.70);
-        createFencePlinth(-5.80, -4.90, -9.50);
-        createSlatSection(-5.80, -4.90, -9.50, 1.70);
+        createBrickPillar(0.00, -9.50);
+        createBrickPillar(-0.71, -9.50);
+        createPicketSection(-0.19, -9.50, -0.52, -9.50);
 
-        // ДВУСТВОРЧАТЫЕ РАСПАШНЫЕ ВОРОТА 4,0 М В САД
-        createSwingGate(-4.90, -0.90, -9.50, 1.70);
+        // ДВУСТВОРЧАТЫЕ РАСПАШНЫЕ ВОРОТА 4,0 М (чистый створ X = -4.90 ... -0.90)
+        createBrickPillar(-5.09, -9.50);
+        createSwingGate(-4.90, -9.50, -0.90, -9.50);
+
+        // Секция от ворот до межевого забора (X = -5.09 ... -5.80)
+        createBrickPillar(-5.80, -9.50);
+        createPicketSection(-5.28, -9.50, -5.61, -9.50);
 
         // 7. Perimeter Wire Mesh Fence (Межи 2-3, 3-4, 4-5, 5-1)
         const meshMat = new THREE.MeshStandardMaterial({
