@@ -114,7 +114,7 @@
             <div class="legend-item"><div class="color-dot" style="background:#e8ecf1; border: 1px solid #94a3b8;"></div> Светло-серые блоки / штукатурка стен дома</div>
             <div class="legend-item"><div class="color-dot" style="background:#2c3038"></div> Декоративная плитка / клинкер по центру</div>
             <div class="legend-item"><div class="color-dot" style="background:#27272a"></div> Т-образная кровля (металлочерепица)</div>
-            <div class="legend-item"><div class="color-dot" style="background:#92400e"></div> Деревянные стойки 150×150 на анкерах</div>
+            <div class="legend-item"><div class="color-dot" style="background:#edf0f4; border: 1px solid #272c35;"></div> Столбы террасы: светлые наборные блоки 300×300 (в тон забора)</div>
         </div>
     </div>
     <div class="info-badge">Вращение: ЛКМ | Панорама: ПКМ | Зум: Колёсико мыши</div>
@@ -2603,35 +2603,111 @@
         // ==========================================
         // OPEN TERRACE (Z: 0 to -L_OPEN = -4.2m)
         // ==========================================
-        const postGeo = new THREE.BoxGeometry(0.15, H_WALL - SOCLE, 0.15);
-        const postPositions = [
-            [V_X1 - 0.1, 0],
-            [V_X1 - 0.1, -2.1],
-            [V_X1 - 0.1, -L_OPEN],
-            [V_X0 + 0.1, 0],
-        ];
-        postPositions.forEach(pos => {
-            const post = new THREE.Mesh(postGeo, woodMat);
-            post.position.set(pos[0], SOCLE + (H_WALL - SOCLE)/2, pos[1]);
-            post.castShadow = true;
-            verandaGroup.add(post);
-        });
+        // Столбы открытой террасы: 3 блочных столба 300х300 мм из светлых наборных блоков
+        // (в цвет фасада дома и забора, горизонтальные русты каждые 20 см, графитовые колпаки RAL 7016 и фасадные бра)
+        // Пристенный столб у угла дома ликвидирован: балка террасы опирается напрямую на армопояс угла дома!
+        function createTerraceModularPillar(x, z, height = H_WALL - SOCLE, width = 0.30) {
+            const pillarGrp = new THREE.Group();
 
-        // Open Terrace Railings
-        const railHeight = 0.9;
-        const frontRail1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.08, 0.08), woodMat);
-        frontRail1.position.set(V_X0 + 0.6, SOCLE + railHeight, 0);
+            // 1. Тело столба из светлых наборных блоков (с метрической развёрткой рустов)
+            const body = new THREE.Mesh(createMetricBrickBox(width, height, width), fenceBlockMat);
+            body.position.set(0, height / 2, 0);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            pillarGrp.add(body);
+
+            // 2. Верхняя накрывка / капитель под балку (графит RAL 7016, 340х340 мм)
+            const topCap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.04, width + 0.04), fenceCapMat);
+            topCap.position.set(0, height - 0.02, 0);
+            topCap.castShadow = true;
+            pillarGrp.add(topCap);
+
+            // 3. Нижняя база / отлив у плиты
+            const baseCap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.03, 0.03, width + 0.03), fenceCapMat);
+            baseCap.position.set(0, 0.015, 0);
+            baseCap.castShadow = true;
+            pillarGrp.add(baseCap);
+
+            // 4. Настенный фасадный светильник-бра с рассеянным тёплым светом (стиль забора)
+            const lampBody = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.16, 0.04), fencePostMat);
+            lampBody.position.set(width / 2 + 0.02, height * 0.58, 0);
+            lampBody.castShadow = true;
+            pillarGrp.add(lampBody);
+
+            const lampGlass = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.10, 0.045), new THREE.MeshStandardMaterial({
+                color: 0xfff3c4,
+                emissive: 0xffedd5,
+                emissiveIntensity: 0.40,
+                roughness: 0.2
+            }));
+            lampGlass.position.set(width / 2 + 0.025, height * 0.58, 0);
+            pillarGrp.add(lampGlass);
+
+            pillarGrp.position.set(x, SOCLE, z);
+            verandaGroup.add(pillarGrp);
+            return pillarGrp;
+        }
+
+        const terracePillarX = V_X1 - 0.15; // 8.75m (вровень с наружным краем плиты 8.90м)
+        // 3 блочных столба по наружному дворовому краю террасы:
+        // Столб 1: угловой фасадный (Z = -0.15m)
+        createTerraceModularPillar(terracePillarX, -0.15);
+        // Столб 2: промежуточный дворовый (Z = -2.10m)
+        createTerraceModularPillar(terracePillarX, -2.10);
+        // Столб 3: угловой портал входа в тамбур (Z = -4.05m)
+        createTerraceModularPillar(terracePillarX, -L_OPEN + 0.15);
+
+        // Несущие прогоны (балки) обвязки кровли:
+        // 1. Передняя балка: опирается на армопояс угла дома (X = V_X0 = 6.20) и на угловой столб (X = 8.75)
+        const frontBeamLen = (terracePillarX + 0.15) - V_X0; // 2.70m
+        const frontTerraceBeam = new THREE.Mesh(new THREE.BoxGeometry(frontBeamLen, 0.15, 0.15), fencePostMat);
+        frontTerraceBeam.position.set((V_X0 + terracePillarX + 0.15) / 2, H_WALL - 0.075, -0.15);
+        frontTerraceBeam.castShadow = true;
+        verandaGroup.add(frontTerraceBeam);
+
+        // 2. Дворовый прогон: над всеми 3 столбами от переднего угла Z=0 до стены тамбура Z=-4.20
+        const sideTerraceBeam = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, L_OPEN), fencePostMat);
+        sideTerraceBeam.position.set(terracePillarX, H_WALL - 0.075, -L_OPEN / 2);
+        sideTerraceBeam.castShadow = true;
+        verandaGroup.add(sideTerraceBeam);
+
+        // Ограждения (перила) открытой террасы
+        const railHeight = 0.90;
+        // Переднее защитное ограждение слева от ступеней (между стеной дома X=6.20 и началом ступеней X=7.35)
+        const frontRailLen = 1.15;
+        const frontRail1 = new THREE.Mesh(new THREE.BoxGeometry(frontRailLen, 0.06, 0.08), woodMat);
+        frontRail1.position.set(V_X0 + frontRailLen / 2, SOCLE + railHeight, -0.15);
         verandaGroup.add(frontRail1);
 
-        const sideRail1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 4.0), woodMat);
-        sideRail1.position.set(V_X1 - 0.1, SOCLE + railHeight, -2.1);
-        verandaGroup.add(sideRail1);
-
-        for (let h = 0.25; h < railHeight; h += 0.22) {
-            const slat = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 4.0), woodMat);
-            slat.position.set(V_X1 - 0.1, SOCLE + h, -2.1);
+        for (let h of [0.28, 0.50, 0.72]) {
+            const slat = new THREE.Mesh(new THREE.BoxGeometry(frontRailLen, 0.04, 0.04), woodMat);
+            slat.position.set(V_X0 + frontRailLen / 2, SOCLE + h, -0.15);
             verandaGroup.add(slat);
         }
+
+        // Дворовые секции ограждения в пролётах между столбами 1-2 и 2-3 (пролёт 1.65 м)
+        const spanLen = 1.65;
+        const spanCentersZ = [-1.125, -3.075];
+        spanCentersZ.forEach(cz => {
+            // Верхний поручень из дерева
+            const handrail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, spanLen), woodMat);
+            handrail.position.set(terracePillarX, SOCLE + railHeight, cz);
+            handrail.castShadow = true;
+            verandaGroup.add(handrail);
+
+            // Нижний аккуратный отлив / цокольная планка RAL 7016
+            const curb = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, spanLen), fenceCapMat);
+            curb.position.set(terracePillarX, SOCLE + 0.04, cz);
+            verandaGroup.add(curb);
+
+            // Горизонтальные ламели ограждения
+            for (let h of [0.28, 0.48, 0.68]) {
+                const slat = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, spanLen), woodMat);
+                slat.position.set(terracePillarX, SOCLE + h, cz);
+                slat.castShadow = true;
+                verandaGroup.add(slat);
+            }
+        });
 
         // Concrete entrance steps from slab to road
         const stepWidth = 1.4;
