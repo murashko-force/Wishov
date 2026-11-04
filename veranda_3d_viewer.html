@@ -866,22 +866,42 @@
         signMesh.position.set(8.85, 1.20, 7.17);
         siteGroup.add(signMesh);
 
-        // 4. СПЛОШНОЙ ПАРАДНЫЙ ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (X = 8.85 ... 28.26, Z = 7.00)
+        // 4. ПАРАДНЫЙ ФАСАДНЫЙ ЗАБОР ПО УЛ. КАЛИНИНА (Z = 7.00) С ВЪЕЗДНЫМИ ВОРОТАМИ 1
         // Светлые наборные блоки 300х300 мм + заниженный цоколь 18 см + евроштакетник RAL 7016
-        const eastPillarsX = [8.85, 11.62, 14.39, 17.17, 19.94, 22.71, 25.48, 28.26];
+        // Секции забора от калитки до ворот (X = 8.85 ... 23.00, 5 равных пролётов):
+        const eastPillarsX = [8.85, 11.68, 14.51, 17.34, 20.17, 23.00];
         for (let i = 1; i < eastPillarsX.length; i++) {
             createModularPillar(eastPillarsX[i], 7.00, 1.75, 0.30);
             createPicketSection(eastPillarsX[i-1] + 0.15, 7.00, eastPillarsX[i] - 0.15, 7.00, 1.70, 0.18);
         }
 
-        // 5. МОЩЁНАЯ ДОРОЖКА ОТ ДИАГОНАЛЬНОЙ КАЛИТКИ К СТУПЕНЯМ КРЫЛЬЦА ВЕРАНДЫ
+        // ВЪЕЗДНЫЕ ВОРОТА №1 НА УЛ. КАЛИНИНА (РАСПАШНЫЕ 4,0 М, X = 23.00 ... 27.00)
+        createModularPillar(27.00, 7.00, 1.75, 0.30);
+        createSwingGate(23.05, 7.00, 26.95, 7.00, 1.70);
+
+        // Правый край забора до восточной межи (Point 2, X = 28.26):
+        createModularPillar(28.26, 7.00, 1.75, 0.30);
+        createPicketSection(27.15, 7.00, 28.11, 7.00, 1.70, 0.18);
+
+        // Подъездной мощёный фартук от дороги к воротам 1:
+        const gateApronShape = new THREE.Shape();
+        gateApronShape.moveTo(23.00, -7.00);
+        gateApronShape.lineTo(27.00, -7.00);
+        gateApronShape.lineTo(27.40, -9.80);
+        gateApronShape.lineTo(22.60, -9.80);
+        gateApronShape.closePath();
+        const gateApronMesh = new THREE.Mesh(new THREE.ShapeGeometry(gateApronShape), paveMat);
+        gateApronMesh.rotation.x = -Math.PI / 2;
+        gateApronMesh.position.y = 0.016;
+        gateApronMesh.receiveShadow = true;
+        siteGroup.add(gateApronMesh);
+
+        // 5. ПРЯМАЯ ЕСТЕСТВЕННАЯ МОЩЁНАЯ ДОРОЖКА ОТ КАЛИТКИ К СТУПЕНЯМ КРЫЛЬЦА ВЕРАНДЫ
         const walkShape = new THREE.Shape();
         walkShape.moveTo(7.90, -6.00);
-        walkShape.bezierCurveTo(8.00, -4.20, 8.60, -2.50, 9.50, -1.15); // левый край к нижней ступени (Z = 1.15)
-        walkShape.lineTo(11.20, -1.15); // площадка перед ступенями крыльца (ширина 1.70м, охватывает ступени 9.65..11.05)
-        walkShape.bezierCurveTo(11.35, -2.40, 10.60, -4.50, 9.60, -6.00); // правый плавный контур
-        walkShape.lineTo(8.80, -6.90); // правый край порога диагональной калитки
-        walkShape.lineTo(7.90, -6.00); // замыкание по линии порога калитки
+        walkShape.lineTo(9.00, -1.15); // прямой левый край от калитки к отцентрированным ступеням
+        walkShape.lineTo(10.40, -1.15); // площадка по ширине ступеней (1.40м, X = 9.00..10.40)
+        walkShape.lineTo(8.80, -6.90); // прямой правый край к порогу калитки
         walkShape.closePath();
         const walkPorch = new THREE.Mesh(new THREE.ShapeGeometry(walkShape), paveMat);
         walkPorch.rotation.x = -Math.PI / 2;
@@ -2652,43 +2672,42 @@
             return pillarGrp;
         }
 
-        const terracePillarX = V_X1 - 0.15; // 8.75m (вровень с наружным краем плиты 8.90м)
-        // 3 блочных столба по наружному дворовому краю террасы:
+        const terracePillarX = V_X1 - 0.15; // 11.05m (вровень с наружным краем плиты 11.20м)
+        // 2 блочных столба по наружному дворовому краю террасы (пристенный столб у стены тамбура удалён):
         // Столб 1: угловой фасадный (Z = -0.15m)
         createTerraceModularPillar(terracePillarX, -0.15);
         // Столб 2: промежуточный дворовый (Z = -2.10m)
         createTerraceModularPillar(terracePillarX, -2.10);
-        // Столб 3: угловой портал входа в тамбур (Z = -4.05m)
-        createTerraceModularPillar(terracePillarX, -L_OPEN + 0.15);
 
         // Несущие прогоны (балки) обвязки кровли:
-        // 1. Передняя балка: опирается на армопояс угла дома (X = V_X0 = 6.20) и на угловой столб (X = 8.75)
+        // 1. Передняя балка: опирается на армопояс угла дома (X = V_X0) и на угловой столб (X = terracePillarX)
         const frontBeamLen = (terracePillarX + 0.15) - V_X0; // 2.70m
         const frontTerraceBeam = new THREE.Mesh(new THREE.BoxGeometry(frontBeamLen, 0.15, 0.15), fencePostMat);
         frontTerraceBeam.position.set((V_X0 + terracePillarX + 0.15) / 2, H_WALL - 0.075, -0.15);
         frontTerraceBeam.castShadow = true;
         verandaGroup.add(frontTerraceBeam);
 
-        // 2. Дворовый прогон: над всеми 3 столбами от переднего угла Z=0 до стены тамбура Z=-4.20
+        // 2. Дворовый прогон: над столбами 1 и 2 с прямым опиранием на угол капитальной стены тамбура (Z = -4.20)
         const sideTerraceBeam = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, L_OPEN), fencePostMat);
         sideTerraceBeam.position.set(terracePillarX, H_WALL - 0.075, -L_OPEN / 2);
         sideTerraceBeam.castShadow = true;
         verandaGroup.add(sideTerraceBeam);
 
         // 1. Парадные бетонные ступени входа с террасы к дорожке (Z > 0)
+        // Отцентрированы по открытому фронту террасы (между стеной дома 8.50 и столбом 10.90, центр X = 9.70)
         const stepWidth = 1.4;
         const stepMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
         for (let s = 1; s <= 3; s++) {
             const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.13, 0.33), stepMat);
-            stepMesh.position.set(V_X0 + 1.85, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
+            stepMesh.position.set(9.70, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
             stepMesh.castShadow = true;
             stepMesh.receiveShadow = true;
             verandaGroup.add(stepMesh);
         }
 
-        // 2. Дворовые бетонные ступени со стороны террасы в сад/на газон (X > V_X1 = 8.90м)
-        // Расположены в первом пролёте между столбами 1 и 2 (Z = -1.125м)
-        const sideStepZ = -1.125;
+        // 2. Дворовые бетонные ступени со стороны террасы в сад/на газон (X > V_X1 = 11.20м)
+        // Расположены в правом пролёте между столбом 2 (Z = -2.10) и стеной тамбура (Z = -4.20)
+        const sideStepZ = -3.15;
         for (let s = 1; s <= 3; s++) {
             const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.13, stepWidth), stepMat);
             stepMesh.position.set(V_X1 + s * 0.30 - 0.14, SOCLE - s * 0.12 + 0.01, sideStepZ);
