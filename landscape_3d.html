@@ -172,7 +172,7 @@
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
             <div class="spec-box"><span>Беседка BBQ</span><strong>4,6 × 4,2 м (с крышей)</strong></div>
             <div class="spec-box"><span>Детская зона</span><strong>Качели, песочница, батут Ø3м</strong></div>
-            <div class="spec-box"><span>Каркасный бассейн</span><strong>Ø 3,66 × 1,00 м (10,5 м³)</strong></div>
+            <div class="spec-box"><span>Каркасный бассейн</span><strong>Ø 3,05 × 0,76 м (4,7 м³)</strong></div>
             <div class="spec-box"><span>Диван-качели</span><strong>Шатёр 2,4 × 1,5 м (с москитной сеткой)</strong></div>
             <div class="spec-box"><span>Дровник за сараем</span><strong>4,0 × 3,0 м (вентилируемый)</strong></div>
             <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
@@ -267,6 +267,8 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -281,12 +283,12 @@
         window.scene = scene;
 
         // Lighting
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x445544, 0.6);
+        const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x3e5238, 0.45);
         scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
-        dirLight.position.set(20, 45, -35); // Солнце со стороны сада (Юг)
-        dirLight.target.position.set(10, 0, -15);
+        const dirLight = new THREE.DirectionalLight(0xfff7e6, 1.15);
+        dirLight.position.set(3.0, 26.0, -32.0); // Солнце со стороны сада (Юг, угол 42°)
+        dirLight.target.position.set(5.5, 2.0, -7.0);
         scene.add(dirLight.target);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
@@ -2482,7 +2484,7 @@
         seat2Bar.position.set(sw2_X, 0.68, 0.16);
         swingGrp.add(seat2Bar);
 
-        swingGrp.position.set(3.60, 0, -14.20);
+        swingGrp.position.set(12.50, 0, -14.20);
         pgGroup.add(swingGrp);
 
         // ------------------------------------------
@@ -2551,7 +2553,7 @@
         mold.position.set(0.18, 0.20, -0.05);
         sbGrp.add(mold);
 
-        sbGrp.position.set(6.80, 0, -14.20);
+        sbGrp.position.set(15.20, 0, -14.20);
         pgGroup.add(sbGrp);
 
         // ------------------------------------------
@@ -2649,19 +2651,19 @@
         trLadder.position.set(0, 0, trR + 0.02);
         trampGrp.add(trLadder);
 
-        trampGrp.position.set(3.40, 0, -17.50);
+        trampGrp.position.set(7.10, 0, -17.50);
         pgGroup.add(trampGrp);
 
         // ------------------------------------------
-        // Г. КАРКАСНЫЙ СЕМЕЙНЫЙ БАССЕЙН (Ø 3,66 × 1,00 м, 10,5 м³)
-        // С лестницей, платформой и фильтр-насосом
+        // Г. КАРКАСНЫЙ СЕМЕЙНЫЙ БАССЕЙН СРЕДНИХ РАЗМЕРОВ (Ø 3,05 × 0,76 м, 4,7 м³)
+        // С двухсторонней лестницей, защитной подложкой и картриджным фильтр-насосом
         // ------------------------------------------
         const poolGrp = new THREE.Group();
-        const pR = 1.83; // радиус 1.83 м (диаметр 3.66 м)
-        const pH = 1.00; // глубина 1.00 м
+        const pR = 1.525; // радиус 1.525 м (диаметр 3.05 м)
+        const pH = 0.76;  // комфортная глубина 0.76 м
 
-        // Защитная подложка под бассейн на траве (серый геотекстиль Ø 4,0 м)
-        const poolGroundMat = new THREE.Mesh(new THREE.CircleGeometry(pR + 0.20, 32), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 }));
+        // Защитная подложка под бассейн на траве (серый геотекстиль Ø 3,40 м)
+        const poolGroundMat = new THREE.Mesh(new THREE.CircleGeometry(pR + 0.18, 32), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 }));
         poolGroundMat.rotation.x = -Math.PI / 2;
         poolGroundMat.position.set(0, 0.015, 0);
         poolGroundMat.receiveShadow = true;
@@ -2683,7 +2685,7 @@
         // Водная гладь внутри бассейна с бирюзовым отливом
         const waterMesh = new THREE.Mesh(new THREE.CircleGeometry(pR - 0.04, 32), poolWaterMat);
         waterMesh.rotation.x = -Math.PI / 2;
-        waterMesh.position.set(0, pH - 0.10, 0);
+        waterMesh.position.set(0, pH - 0.08, 0);
         poolGrp.add(waterMesh);
 
         // 12 наружных вертикальных стальных опор каркаса
@@ -2706,34 +2708,34 @@
 
         // Двухсторонняя безопасная лестница для бассейна
         const pLadder = new THREE.Group();
-        const pLadH = 1.25;
+        const pLadH = 0.98;
         [-0.22, 0.22].forEach(px => {
             // Внешняя наклонная стойка
             const legOut = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, pLadH, 8), poolFrameMat);
-            legOut.position.set(px, pLadH / 2, 0.26);
+            legOut.position.set(px, pLadH / 2, 0.22);
             legOut.rotation.x = -0.22;
             pLadder.add(legOut);
             // Внутренняя стойка в чашу
             const legIn = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, pLadH, 8), poolFrameMat);
-            legIn.position.set(px, pLadH / 2, -0.26);
+            legIn.position.set(px, pLadH / 2, -0.22);
             legIn.rotation.x = 0.22;
             pLadder.add(legIn);
             // Верхняя дуга-поручень
-            const arch = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.54), poolFrameMat);
-            arch.position.set(px, pLadH + 0.12, 0);
+            const arch = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, 0.46), poolFrameMat);
+            arch.position.set(px, pLadH + 0.10, 0);
             pLadder.add(arch);
         });
         // Верхняя площадка
-        const plat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.32), poolBlueMat);
-        plat.position.set(0, pH + 0.03, 0);
+        const plat = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.03, 0.28), poolBlueMat);
+        plat.position.set(0, pH + 0.02, 0);
         pLadder.add(plat);
         // Ступени с обеих сторон
-        [0.32, 0.65].forEach(sy => {
+        [0.26, 0.52].forEach(sy => {
             const stepOut = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.03, 0.10), poolBlueMat);
-            stepOut.position.set(0, sy, 0.26 * (1 - sy / pLadH) + 0.06);
+            stepOut.position.set(0, sy, 0.22 * (1 - sy / pLadH) + 0.05);
             pLadder.add(stepOut);
             const stepIn = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.03, 0.10), poolBlueMat);
-            stepIn.position.set(0, sy, -0.26 * (1 - sy / pLadH) - 0.06);
+            stepIn.position.set(0, sy, -0.22 * (1 - sy / pLadH) - 0.05);
             pLadder.add(stepIn);
         });
         pLadder.position.set(0, 0, pR + 0.04);
@@ -2752,7 +2754,7 @@
             poolGrp.add(hose);
         });
 
-        poolGrp.position.set(7.10, 0, -17.50);
+        poolGrp.position.set(3.50, 0, -17.50);
         pgGroup.add(poolGrp);
 
         landscapeGroup.add(pgGroup);
@@ -2964,9 +2966,9 @@
 
         sofaSwingGroup.add(sofaGrp);
 
-        // Размещение дивана-качелей на газоне у задней террасы веранды
-        sofaSwingGroup.position.set(9.85, 0, -14.80);
-        sofaSwingGroup.rotation.y = 0.15; // лёгкий поворот в сторону сада и бассейна
+        // Размещение дивана-качелей на восточном газоне через дорожку от батута и бассейна
+        sofaSwingGroup.position.set(12.50, 0, -17.20);
+        sofaSwingGroup.rotation.y = -0.20; // ориентирован на юго-запад к лужайке, бассейну и саду
         landscapeGroup.add(sofaSwingGroup);
 
         // ==========================================
@@ -3995,20 +3997,20 @@
         atticRightSlope.position.set(HW / 2 + (HW / 2 - 0.4) / 2, (H_WALL + H_RIDGE - 0.15) / 2, -HL / 2);
         houseInteriorGroup.add(atticRightSlope);
 
-        // 7. Освещение комнат 1-го этажа и чердака (тёплый свет 2700K)
-        const roomLight1 = new THREE.PointLight(0xffedd5, 1.4, 9.0);
+        // 7. Освещение комнат 1-го этажа и чердака (тёплый мягкий свет 2700K без засветки наружных стен)
+        const roomLight1 = new THREE.PointLight(0xffedd5, 0.6, 4.5);
         roomLight1.position.set(2.20, 2.30, -2.55);
         houseInteriorGroup.add(roomLight1);
 
-        const roomLight2 = new THREE.PointLight(0xfff1db, 1.5, 9.0);
+        const roomLight2 = new THREE.PointLight(0xfff1db, 0.8, 5.0);
         roomLight2.position.set(2.20, 2.30, -7.00);
         houseInteriorGroup.add(roomLight2);
 
-        const roomLight3 = new THREE.PointLight(0xfff1db, 1.5, 9.0);
+        const roomLight3 = new THREE.PointLight(0xfff1db, 0.8, 5.0);
         roomLight3.position.set(6.30, 2.30, -7.00);
         houseInteriorGroup.add(roomLight3);
 
-        const atticLight = new THREE.PointLight(0xffeedb, 1.3, 10.0);
+        const atticLight = new THREE.PointLight(0xffeedb, 0.35, 4.0);
         atticLight.position.set(HW / 2, H_WALL + 1.25, -HL / 2);
         houseInteriorGroup.add(atticLight);
 
@@ -4958,12 +4960,12 @@
         const Y_CANOPY_END = 2.35; // 2.35m (comfortable walking height at outer edge)
         const CANOPY_W = VW + 0.4; // 3.1m (with side overhangs)
 
-        // Lean-to shed roof slope over rear terrace
+        // Lean-to shed roof slope over rear terrace (металлочерепица уложена поверх стропил)
         const rearCanopySlopeMesh = createQuadMesh(
-            [V_X0 - 0.2, Y_CANOPY_START, Z_CANOPY_START],
-            [V_X1 + 0.2, Y_CANOPY_START, Z_CANOPY_START],
-            [V_X1 + 0.2, Y_CANOPY_END, Z_CANOPY_END],
-            [V_X0 - 0.2, Y_CANOPY_END, Z_CANOPY_END],
+            [V_X0 - 0.2, Y_CANOPY_START + 0.02, Z_CANOPY_START],
+            [V_X1 + 0.2, Y_CANOPY_START + 0.02, Z_CANOPY_START],
+            [V_X1 + 0.2, Y_CANOPY_END + 0.02, Z_CANOPY_END],
+            [V_X0 - 0.2, Y_CANOPY_END + 0.02, Z_CANOPY_END],
             roofMat
         );
         rearCanopySlopeMesh.castShadow = true;
@@ -4991,12 +4993,13 @@
         rFascia.position.set(V_X0 + VW/2, Y_CANOPY_END - 0.05, Z_CANOPY_END);
         rearCanopyGroup.add(rFascia);
 
-        // Timber rafters under rear canopy (3 rafters)
+        // Timber rafters under rear canopy (стропила строго под кровлей, не выступают наружу)
         const rearRafterLen = Math.hypot(Z_CANOPY_END - Z_CANOPY_START, Y_CANOPY_START - Y_CANOPY_END);
         const rearRafterPitch = Math.atan2(Y_CANOPY_START - Y_CANOPY_END, Math.abs(Z_CANOPY_END - Z_CANOPY_START));
+        const cosRearPitch = Math.cos(rearRafterPitch);
         [V_X0 + 0.1, V_X0 + VW/2, V_X1 - 0.1].forEach(rx => {
-            const rr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, rearRafterLen), woodMat);
-            rr.position.set(rx, (Y_CANOPY_START + Y_CANOPY_END)/2 - 0.06, (Z_CANOPY_START + Z_CANOPY_END)/2);
+            const rr = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, rearRafterLen - 0.06), woodMat);
+            rr.position.set(rx, (Y_CANOPY_START + Y_CANOPY_END)/2 - (0.07 * cosRearPitch) - 0.015, (Z_CANOPY_START + Z_CANOPY_END)/2);
             rr.rotation.x = -rearRafterPitch;
             rr.castShadow = true;
             rearCanopyGroup.add(rr);
@@ -5510,25 +5513,26 @@
         frontBeam.castShadow = true;
         carportGroup.add(frontBeam);
 
-        // 5. Усиленные стропила (50×200 мм, нормативный шаг 60 см - 11 стропил)
+        // 5. Усиленные стропила (50×200 мм, нормативный шаг 60 см - 11 стропил, строго под кровлей)
         const numRafters = 11;
         const rafterLen = Math.sqrt(CP_L * CP_L + (CP_Y_WALL - CP_Y_FRONT) * (CP_Y_WALL - CP_Y_FRONT));
         const rafterPitch = Math.atan2(CP_Y_WALL - CP_Y_FRONT, CP_L);
+        const cosRafterPitch = Math.cos(rafterPitch);
         for (let i = 0; i < numRafters; i++) {
             const rx = CP_X0 + (i / (numRafters - 1)) * CP_W;
-            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.20, rafterLen + 0.4), woodMat);
-            rafter.position.set(rx, (CP_Y_WALL + CP_Y_FRONT)/2, (CP_Z0 + CP_Z1)/2);
+            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.20, rafterLen - 0.05), woodMat);
+            rafter.position.set(rx, (CP_Y_WALL + CP_Y_FRONT)/2 - (0.10 * cosRafterPitch) - 0.015, (CP_Z0 + CP_Z1)/2);
             rafter.rotation.x = rafterPitch;
             rafter.castShadow = true;
             carportGroup.add(rafter);
         }
 
-        // 6. Roof Covering (Односкатная кровля 6.0 x 4.5м - металлочерепица RAL 7016)
+        // 6. Roof Covering (Односкатная кровля 6.0 x 4.5м - металлочерепица RAL 7016 поверх стропил)
         const cpRoofMesh = createQuadMesh(
-            [CP_X0 - 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
-            [CP_X1 + 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
-            [CP_X1 + 0.15, CP_Y_FRONT + 0.08, CP_Z1 + 0.15],
-            [CP_X0 - 0.15, CP_Y_FRONT + 0.08, CP_Z1 + 0.15],
+            [CP_X0 - 0.15, CP_Y_WALL + 0.02, CP_Z0 - 0.05],
+            [CP_X1 + 0.15, CP_Y_WALL + 0.02, CP_Z0 - 0.05],
+            [CP_X1 + 0.15, CP_Y_FRONT + 0.02, CP_Z1 + 0.15],
+            [CP_X0 - 0.15, CP_Y_FRONT + 0.02, CP_Z1 + 0.15],
             roofMat
         );
         cpRoofMesh.castShadow = true;
@@ -5941,8 +5945,8 @@
         car1.rotation.y = Math.PI / 2;
         carportGroup.add(car1);
 
-        // Потолочный архитектурный светильник под навесом для эффектной подсветки автомобиля
-        const cpLight = new THREE.PointLight(0xfff8ee, 1.8, 8.0);
+        // Потолочный архитектурный светильник под навесом для эффектной локальной подсветки автомобиля
+        const cpLight = new THREE.PointLight(0xfff8ee, 0.35, 3.8);
         cpLight.position.set((CP_X0 + CP_X1) / 2, 2.30, (CP_Z0 + CP_Z1) / 2);
         carportGroup.add(cpLight);
 
@@ -6144,11 +6148,11 @@
                 targetPos = { x: 23.5, y: 5.5, z: -14.0 };
                 targetLook = { x: 16.1, y: 2.0, z: -20.5 };
             } else if (view === 'sitePlayground') {
-                targetPos = { x: 12.0, y: 5.5, z: -11.0 };
-                targetLook = { x: 5.5, y: 1.5, z: -16.5 };
+                targetPos = { x: 8.5, y: 6.0, z: -11.0 };
+                targetLook = { x: 5.3, y: 1.2, z: -17.5 };
             } else if (view === 'siteSwingSofa') {
-                targetPos = { x: 13.5, y: 3.2, z: -12.0 };
-                targetLook = { x: 9.85, y: 1.4, z: -14.8 };
+                targetPos = { x: 17.0, y: 4.8, z: -10.5 };
+                targetLook = { x: 13.2, y: 1.5, z: -16.0 };
             } else if (view === 'siteWoodshed') {
                 targetPos = { x: 17.0, y: 4.2, z: -15.5 };
                 targetLook = { x: 22.5, y: 1.6, z: -19.3 };
