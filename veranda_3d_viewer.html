@@ -2550,52 +2550,205 @@
         });
 
         // ----------------------------------------------------
-        // ИНТЕРЬЕР ДОМА И ТЁПЛЫЙ ВЕЧЕРНИЙ СВЕТ В ОКНАХ
+        // ИНТЕРЬЕР ДОМА И ЧЕРДАКА (ОЛИВКОВЫЕ СТЕНЫ, ДЕРЕВЯННЫЕ ПОЛЫ, СВЕТ)
         // ----------------------------------------------------
         const houseInteriorGroup = new THREE.Group();
         houseGroup.add(houseInteriorGroup);
 
-        // 1. Тёплый дубовый пол во всех жилых комнатах дома
+        // Интерьерные материалы
+        const oliveWallMat = new THREE.MeshStandardMaterial({
+            color: 0x667a54, // благородный матовый оливковый цвет
+            roughness: 0.88,
+            side: THREE.DoubleSide
+        });
+        const woodFloorMat = new THREE.MeshStandardMaterial({
+            color: 0xbe8852, // тёплый деревянный пол (натуральный дуб/сосна)
+            roughness: 0.55
+        });
+        const whiteCeilingMat = new THREE.MeshStandardMaterial({
+            color: 0xfafbfa, // чистовой матовый светлый потолок снизу
+            roughness: 0.85
+        });
+
+        // 1. Тёплый деревянный пол 1-го этажа во всех жилых комнатах
         const intFloor = new THREE.Mesh(
             new THREE.BoxGeometry(HW - 0.8, 0.04, HL - 0.8),
-            new THREE.MeshStandardMaterial({ color: 0xc89d68, roughness: 0.55 })
+            woodFloorMat
         );
         intFloor.position.set(HW / 2, SOCLE + 0.02, -HL / 2);
         intFloor.receiveShadow = true;
         houseInteriorGroup.add(intFloor);
 
-        // 2. Белый внутренний потолок
+        // 2. Чистовой светлый потолок 1-го этажа (вид снизу)
         const intCeiling = new THREE.Mesh(
             new THREE.BoxGeometry(HW - 0.8, 0.04, HL - 0.8),
-            new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85 })
+            whiteCeilingMat
         );
         intCeiling.position.set(HW / 2, H_WALL - 0.02, -HL / 2);
         houseInteriorGroup.add(intCeiling);
 
-        // 3. Межкомнатные внутренние перегородки (по паспорту проекта: гостиная, спальни, кухня)
-        const intPartMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.90 });
-        const intPartZ = new THREE.Mesh(new THREE.BoxGeometry(0.15, H_WALL - SOCLE, HL - 0.8), intPartMat);
+        // 3. Тёплый деревянный пол на чердаке (настил на перекрытии)
+        const atticFloor = new THREE.Mesh(
+            new THREE.BoxGeometry(HW - 0.8, 0.03, HL - 0.8),
+            woodFloorMat
+        );
+        atticFloor.position.set(HW / 2, H_WALL + 0.015, -HL / 2);
+        atticFloor.receiveShadow = true;
+        houseInteriorGroup.add(atticFloor);
+
+        // 4. Оливковые внутренние перегородки 1-го этажа (гостиная, спальни, кухня)
+        const intPartZ = new THREE.Mesh(new THREE.BoxGeometry(0.15, H_WALL - SOCLE, HL - 0.8), oliveWallMat);
         intPartZ.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -HL / 2);
         houseInteriorGroup.add(intPartZ);
 
-        const intPartX = new THREE.Mesh(new THREE.BoxGeometry(HW - 0.8, H_WALL - SOCLE, 0.15), intPartMat);
+        const intPartX = new THREE.Mesh(new THREE.BoxGeometry(HW - 0.8, H_WALL - SOCLE, 0.15), oliveWallMat);
         intPartX.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -4.75);
         houseInteriorGroup.add(intPartX);
 
-        // 4. Тёплый вечерний свет (2700K) внутри комнат дома
-        const roomLight1 = new THREE.PointLight(0xffedd5, 1.3, 9.0);
+        // 5. Оливковая отделка внутренних плоскостей наружных стен 1-го этажа
+        // Внутренняя передняя стена (Z = -0.41)
+        const innerFrontWall = new THREE.Mesh(new THREE.BoxGeometry(HW - 0.8, H_WALL - SOCLE, 0.02), oliveWallMat);
+        innerFrontWall.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -0.41);
+        houseInteriorGroup.add(innerFrontWall);
+
+        // Внутренняя задняя стена (Z = -HL + 0.41) с проёмами под окна в сад
+        const innerBackPier1 = new THREE.Mesh(new THREE.BoxGeometry(1.05, H_WALL - SOCLE, 0.02), oliveWallMat);
+        innerBackPier1.position.set(0.40 + 1.05 / 2, SOCLE + (H_WALL - SOCLE) / 2, -HL + 0.41);
+        houseInteriorGroup.add(innerBackPier1);
+
+        const innerBackUnder1 = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_SILL_H, 0.02), oliveWallMat);
+        innerBackUnder1.position.set(2.20, HWIN_SILL_CY, -HL + 0.41);
+        houseInteriorGroup.add(innerBackUnder1);
+
+        const innerBackOver1 = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_LINTEL_H, 0.02), oliveWallMat);
+        innerBackOver1.position.set(2.20, HWIN_LINTEL_CY, -HL + 0.41);
+        houseInteriorGroup.add(innerBackOver1);
+
+        const innerBackPier2 = new THREE.Mesh(new THREE.BoxGeometry(2.60, H_WALL - SOCLE, 0.02), oliveWallMat);
+        innerBackPier2.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -HL + 0.41);
+        houseInteriorGroup.add(innerBackPier2);
+
+        const innerBackUnder2 = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_SILL_H, 0.02), oliveWallMat);
+        innerBackUnder2.position.set(6.30, HWIN_SILL_CY, -HL + 0.41);
+        houseInteriorGroup.add(innerBackUnder2);
+
+        const innerBackOver2 = new THREE.Mesh(new THREE.BoxGeometry(HWIN_W, HWIN_LINTEL_H, 0.02), oliveWallMat);
+        innerBackOver2.position.set(6.30, HWIN_LINTEL_CY, -HL + 0.41);
+        houseInteriorGroup.add(innerBackOver2);
+
+        const innerBackPier3 = new THREE.Mesh(new THREE.BoxGeometry(1.05, H_WALL - SOCLE, 0.02), oliveWallMat);
+        innerBackPier3.position.set(HW - 0.40 - 1.05 / 2, SOCLE + (H_WALL - SOCLE) / 2, -HL + 0.41);
+        houseInteriorGroup.add(innerBackPier3);
+
+        // Внутренняя левая стена (X = 0.41) с проёмами под окна левого фасада
+        const innerLeftPier1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_WALL - SOCLE, 1.40), oliveWallMat);
+        innerLeftPier1.position.set(0.41, SOCLE + (H_WALL - SOCLE) / 2, -0.40 - 0.70);
+        houseInteriorGroup.add(innerLeftPier1);
+
+        const innerLeftUnder1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, HWIN_SILL_H, HWIN_W), oliveWallMat);
+        innerLeftUnder1.position.set(0.41, HWIN_SILL_CY, -2.55);
+        houseInteriorGroup.add(innerLeftUnder1);
+
+        const innerLeftOver1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, HWIN_LINTEL_H, HWIN_W), oliveWallMat);
+        innerLeftOver1.position.set(0.41, HWIN_LINTEL_CY, -2.55);
+        houseInteriorGroup.add(innerLeftOver1);
+
+        const innerLeftPier2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_WALL - SOCLE, 2.90), oliveWallMat);
+        innerLeftPier2.position.set(0.41, SOCLE + (H_WALL - SOCLE) / 2, -4.75);
+        houseInteriorGroup.add(innerLeftPier2);
+
+        const innerLeftUnder2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, HWIN_SILL_H, HWIN_W), oliveWallMat);
+        innerLeftUnder2.position.set(0.41, HWIN_SILL_CY, -6.95);
+        houseInteriorGroup.add(innerLeftUnder2);
+
+        const innerLeftOver2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, HWIN_LINTEL_H, HWIN_W), oliveWallMat);
+        innerLeftOver2.position.set(0.41, HWIN_LINTEL_CY, -6.95);
+        houseInteriorGroup.add(innerLeftOver2);
+
+        const innerLeftPier3 = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_WALL - SOCLE, 1.40), oliveWallMat);
+        innerLeftPier3.position.set(0.41, SOCLE + (H_WALL - SOCLE) / 2, -HL + 0.40 + 0.70);
+        houseInteriorGroup.add(innerLeftPier3);
+
+        // Внутренняя правая стена (X = HW - 0.41)
+        const innerRightWall1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_WALL - SOCLE, 2.40), oliveWallMat);
+        innerRightWall1.position.set(HW - 0.41, SOCLE + (H_WALL - SOCLE) / 2, -0.40 - 1.20);
+        houseInteriorGroup.add(innerRightWall1);
+
+        const innerRightUnder = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.9, 1.4), oliveWallMat);
+        innerRightUnder.position.set(HW - 0.41, SOCLE + 0.45, -3.5);
+        houseInteriorGroup.add(innerRightUnder);
+
+        const innerRightOver = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.5, 1.4), oliveWallMat);
+        innerRightOver.position.set(HW - 0.41, H_WALL - 0.25, -3.5);
+        houseInteriorGroup.add(innerRightOver);
+
+        const innerRightWall2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, H_WALL - SOCLE, HL - 4.6), oliveWallMat);
+        innerRightWall2.position.set(HW - 0.41, SOCLE + (H_WALL - SOCLE) / 2, -4.2 - (HL - 4.6) / 2);
+        houseInteriorGroup.add(innerRightWall2);
+
+        // 6. Отделка чердака (оливковые стены фронтонов и подшивка скатов потолка снизу)
+        const atticGableShape = new THREE.Shape();
+        atticGableShape.moveTo(0.4, H_WALL);
+        atticGableShape.lineTo(HW - 0.4, H_WALL);
+        atticGableShape.lineTo(HW / 2, H_RIDGE - 0.15);
+        atticGableShape.closePath();
+
+        const atticWinW = 0.65, atticWinH = 0.95;
+        const atticWinCX = HW / 2, atticWinCY = H_WALL + 1.15;
+        const atticHole = new THREE.Path();
+        atticHole.moveTo(atticWinCX - atticWinW / 2, atticWinCY - atticWinH / 2);
+        atticHole.lineTo(atticWinCX + atticWinW / 2, atticWinCY - atticWinH / 2);
+        atticHole.lineTo(atticWinCX + atticWinW / 2, atticWinCY + atticWinH / 2);
+        atticHole.lineTo(atticWinCX - atticWinW / 2, atticWinCY + atticWinH / 2);
+        atticHole.closePath();
+        atticGableShape.holes.push(atticHole);
+
+        const atticGableGeo = new THREE.ShapeGeometry(atticGableShape);
+        const atticFrontGable = new THREE.Mesh(atticGableGeo, oliveWallMat);
+        atticFrontGable.position.set(0, 0, -0.41);
+        houseInteriorGroup.add(atticFrontGable);
+
+        const atticBackGable = new THREE.Mesh(atticGableGeo, oliveWallMat);
+        atticBackGable.position.set(0, 0, -HL + 0.41);
+        houseInteriorGroup.add(atticBackGable);
+
+        // Чистовая подшивка скатов кровли на чердаке снизу (в светлый тёплый оттенок)
+        const atticCeilingMat = new THREE.MeshStandardMaterial({
+            color: 0xf1f3ee,
+            roughness: 0.90,
+            side: THREE.DoubleSide
+        });
+        const atticSlopeLen = Math.hypot(HW / 2 - 0.4, H_RIDGE - 0.15 - H_WALL);
+        const atticSlopeAngle = Math.atan2(H_RIDGE - 0.15 - H_WALL, HW / 2 - 0.4);
+
+        const atticLeftSlope = new THREE.Mesh(new THREE.BoxGeometry(atticSlopeLen, 0.02, HL - 0.8), atticCeilingMat);
+        atticLeftSlope.rotation.z = atticSlopeAngle;
+        atticLeftSlope.position.set(0.4 + (HW / 2 - 0.4) / 2, (H_WALL + H_RIDGE - 0.15) / 2, -HL / 2);
+        houseInteriorGroup.add(atticLeftSlope);
+
+        const atticRightSlope = new THREE.Mesh(new THREE.BoxGeometry(atticSlopeLen, 0.02, HL - 0.8), atticCeilingMat);
+        atticRightSlope.rotation.z = -atticSlopeAngle;
+        atticRightSlope.position.set(HW / 2 + (HW / 2 - 0.4) / 2, (H_WALL + H_RIDGE - 0.15) / 2, -HL / 2);
+        houseInteriorGroup.add(atticRightSlope);
+
+        // 7. Освещение комнат 1-го этажа и чердака (тёплый свет 2700K)
+        const roomLight1 = new THREE.PointLight(0xffedd5, 1.4, 9.0);
         roomLight1.position.set(2.20, 2.30, -2.55);
         houseInteriorGroup.add(roomLight1);
 
-        const roomLight2 = new THREE.PointLight(0xfff1db, 1.4, 9.0);
+        const roomLight2 = new THREE.PointLight(0xfff1db, 1.5, 9.0);
         roomLight2.position.set(2.20, 2.30, -7.00);
         houseInteriorGroup.add(roomLight2);
 
-        const roomLight3 = new THREE.PointLight(0xfff1db, 1.4, 9.0);
+        const roomLight3 = new THREE.PointLight(0xfff1db, 1.5, 9.0);
         roomLight3.position.set(6.30, 2.30, -7.00);
         houseInteriorGroup.add(roomLight3);
 
-        // 5. Лёгкий полупрозрачный интерьерный тюль по краям оконных створок
+        const atticLight = new THREE.PointLight(0xffeedb, 1.3, 10.0);
+        atticLight.position.set(HW / 2, H_WALL + 1.25, -HL / 2);
+        houseInteriorGroup.add(atticLight);
+
+        // 8. Лёгкий полупрозрачный интерьерный тюль по краям оконных створок
         const curtainMat = new THREE.MeshStandardMaterial({
             color: 0xffffff,
             roughness: 0.95,
@@ -2606,7 +2759,7 @@
         for (let wx of [2.20, 6.30]) {
             for (let side of [-1, 1]) {
                 const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.35, 0.02), curtainMat);
-                curtain.position.set(wx + side * (HWIN_W / 2 - 0.13), HWIN_CY, -HL + 0.35);
+                curtain.position.set(wx + side * (HWIN_W / 2 - 0.13), HWIN_CY, -HL + 0.44);
                 houseInteriorGroup.add(curtain);
             }
         }
@@ -2614,7 +2767,7 @@
         for (let wz of [-2.55, -6.95]) {
             for (let side of [-1, 1]) {
                 const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.35, 0.22), curtainMat);
-                curtain.position.set(0.35, HWIN_CY, wz + side * (HWIN_W / 2 - 0.13));
+                curtain.position.set(0.44, HWIN_CY, wz + side * (HWIN_W / 2 - 0.13));
                 houseInteriorGroup.add(curtain);
             }
         }
