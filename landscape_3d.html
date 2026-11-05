@@ -2484,7 +2484,7 @@
         seat2Bar.position.set(sw2_X, 0.68, 0.16);
         swingGrp.add(seat2Bar);
 
-        swingGrp.position.set(12.50, 0, -14.20);
+        swingGrp.position.set(13.00, 0, -14.20);
         pgGroup.add(swingGrp);
 
         // ------------------------------------------
@@ -2553,7 +2553,7 @@
         mold.position.set(0.18, 0.20, -0.05);
         sbGrp.add(mold);
 
-        sbGrp.position.set(15.20, 0, -14.20);
+        sbGrp.position.set(15.80, 0, -14.20);
         pgGroup.add(sbGrp);
 
         // ------------------------------------------
@@ -2648,15 +2648,16 @@
             rStep.position.set(0, sy, -0.35 * (1 - sy / trH));
             trLadder.add(rStep);
         });
-        trLadder.position.set(0, 0, trR + 0.02);
+        trLadder.position.set(trR + 0.02, 0, 0);
+        trLadder.rotation.y = Math.PI / 2; // лесенка батута обращена к дорожке (на восток)
         trampGrp.add(trLadder);
 
-        trampGrp.position.set(7.10, 0, -17.50);
+        trampGrp.position.set(6.00, 0, -14.20);
         pgGroup.add(trampGrp);
 
         // ------------------------------------------
         // Г. КАРКАСНЫЙ СЕМЕЙНЫЙ БАССЕЙН СРЕДНИХ РАЗМЕРОВ (Ø 3,05 × 0,76 м, 4,7 м³)
-        // С двухсторонней лестницей, защитной подложкой и картриджным фильтр-насосом
+        // Со ступеньками, развёрнутыми к центральной дорожке, и фильтром сзади
         // ------------------------------------------
         const poolGrp = new THREE.Group();
         const pR = 1.525; // радиус 1.525 м (диаметр 3.05 м)
@@ -2706,7 +2707,7 @@
             poolGrp.add(shoe);
         }
 
-        // Двухсторонняя безопасная лестница для бассейна
+        // Двухсторонняя безопасная лестница для бассейна (СТУПЕНЬКАМИ К ДОРОЖКЕ НА ВОСТОК)
         const pLadder = new THREE.Group();
         const pLadH = 0.98;
         [-0.22, 0.22].forEach(px => {
@@ -2738,23 +2739,24 @@
             stepIn.position.set(0, sy, -0.22 * (1 - sy / pLadH) - 0.05);
             pLadder.add(stepIn);
         });
-        pLadder.position.set(0, 0, pR + 0.04);
+        pLadder.position.set(pR + 0.04, 0, 0);
+        pLadder.rotation.y = Math.PI / 2; // Ступеньки развёрнуты строго к дорожке
         poolGrp.add(pLadder);
 
-        // Картриджный фильтр-насос рядом с бассейном
+        // Картриджный фильтр-насос рядом с бассейном (с дальней западной стороны)
         const pumpGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.35, 12);
         const pumpMesh = new THREE.Mesh(pumpGeo, new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4 }));
-        pumpMesh.position.set(-pR - 0.35, 0.175, 0.30);
+        pumpMesh.position.set(-pR - 0.35, 0.175, 0);
         poolGrp.add(pumpMesh);
         // Шланги к бассейну
         [-0.05, 0.08].forEach(hy => {
             const hose = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.38, 8), new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.6 }));
             hose.rotation.z = Math.PI / 2;
-            hose.position.set(-pR - 0.18, 0.35 + hy, 0.30);
+            hose.position.set(-pR - 0.18, 0.35 + hy, 0);
             poolGrp.add(hose);
         });
 
-        poolGrp.position.set(3.50, 0, -17.50);
+        poolGrp.position.set(6.00, 0, -17.50);
         pgGroup.add(poolGrp);
 
         landscapeGroup.add(pgGroup);
@@ -2966,9 +2968,9 @@
 
         sofaSwingGroup.add(sofaGrp);
 
-        // Размещение дивана-качелей на восточном газоне через дорожку от батута и бассейна
-        sofaSwingGroup.position.set(12.50, 0, -17.20);
-        sofaSwingGroup.rotation.y = -0.20; // ориентирован на юго-запад к лужайке, бассейну и саду
+        // Размещение дивана-качелей строго напротив бассейна через дорожку (лицом на запад к бассейну)
+        sofaSwingGroup.position.set(13.00, 0, -17.50);
+        sofaSwingGroup.rotation.y = -Math.PI / 2; // развёрнут строго на запад через дорожку к бассейну
         landscapeGroup.add(sofaSwingGroup);
 
         // ==========================================
@@ -6148,11 +6150,11 @@
                 targetPos = { x: 23.5, y: 5.5, z: -14.0 };
                 targetLook = { x: 16.1, y: 2.0, z: -20.5 };
             } else if (view === 'sitePlayground') {
-                targetPos = { x: 8.5, y: 6.0, z: -11.0 };
-                targetLook = { x: 5.3, y: 1.2, z: -17.5 };
+                targetPos = { x: 9.85, y: 7.2, z: -9.5 };
+                targetLook = { x: 9.85, y: 1.2, z: -15.8 };
             } else if (view === 'siteSwingSofa') {
-                targetPos = { x: 17.0, y: 4.8, z: -10.5 };
-                targetLook = { x: 13.2, y: 1.5, z: -16.0 };
+                targetPos = { x: 17.5, y: 4.2, z: -17.5 };
+                targetLook = { x: 9.5, y: 1.4, z: -17.5 };
             } else if (view === 'siteWoodshed') {
                 targetPos = { x: 17.0, y: 4.2, z: -15.5 };
                 targetLook = { x: 22.5, y: 1.6, z: -19.3 };
