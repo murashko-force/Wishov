@@ -55,11 +55,10 @@
                 <span style="font-size: 10px; color: #a7f3d0; font-weight: 500;">аг. Вишов, 26</span>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                <button onclick="setCamera('siteTop')" style="background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
+                <button onclick="setCamera('siteTop')" style="grid-column: span 2; background: #059669; font-weight: 600; padding: 6px 8px;">🦅 Обзор 25 соток</button>
                 <button onclick="setCamera('siteBath')" style="background: #b45309; font-weight: 600; padding: 6px 8px;">🧖 Баня и аллея</button>
                 <button onclick="setCamera('siteBBQ')" style="background: #b91c1c; font-weight: 600; padding: 6px 8px;">🔥 Беседка BBQ</button>
                 <button onclick="setCamera('sitePlayground')" style="background: #d97706; font-weight: 600; padding: 6px 8px;">🧸 Детская площадка</button>
-                <button onclick="setCamera('siteDog')" style="background: #475569; font-weight: 600; padding: 6px 8px;">🐕 Вольер собаки</button>
                 <button onclick="setCamera('siteOrchard')" style="background: #15803d; font-weight: 600; padding: 6px 8px;">🍎 Плодовый сад</button>
                 <button onclick="setCamera('siteGreenhouse')" style="background: #0284c7; font-weight: 600; padding: 6px 8px;">🌱 Огород и теплица</button>
                 <button onclick="setCamera('siteStreet')" style="background: #0d9488; font-weight: 600; padding: 6px 8px;">🚗 Въезд (ул. Калинина)</button>
@@ -78,7 +77,6 @@
             <div class="spec-box"><span>Отступ от дороги</span><strong>7,00 м</strong></div>
             <div class="spec-box"><span>Беседка BBQ</span><strong>4,6 × 4,2 м (с крышей)</strong></div>
             <div class="spec-box"><span>Детская площадка</span><strong>5,6 × 4,6 м (горка, качели, песочница)</strong></div>
-            <div class="spec-box"><span>Вольер для собаки</span><strong>3,5 × 2,2 м (с будкой)</strong></div>
             <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
             <div class="spec-box"><span>Плодовый сад</span><strong>8 деревьев + шпалеры</strong></div>
             <div class="spec-box"><span>Грядки эко-огорода</span><strong>6 приподнятых коробов</strong></div>
@@ -2667,220 +2665,7 @@
 
         landscapeGroup.add(pgGroup);
 
-        // 6. ВОЛЬЕР ДЛЯ СОБАКИ С УТЕПЛЁННОЙ БУДКОЙ (Z = -18.1 ... -20.3 м, X = 22.05 ... 25.55 м)
-        // Расположен в хозяйственной зоне за сараем/гаражом у правой восточной границы
-        const dogAviaryGrp = new THREE.Group();
-        const aviaryW = 3.50; // ширина по оси X
-        const aviaryD = 2.20; // глубина по оси Z
-        const aviaryCX = 23.80; // центр по оси X
-        const aviaryCZ = -19.20; // центр по оси Z
-        const aviaryFloorH = 0.10; // приподнят на 10 см над землёй для сухости
-        const aviaryWallH = 2.05; // высота стенок
-
-        // Материалы вольера
-        const aviaryWoodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.75 }); // Имитация бруса
-        const aviaryFloorMat = new THREE.MeshStandardMaterial({ color: 0xc2823a, roughness: 0.7 }); // Строганый шпунтованный пол
-        const aviarySteelMat = new THREE.MeshStandardMaterial({ color: 0x1e242c, metalness: 0.75, roughness: 0.3 }); // Стальной профиль RAL 7016
-        const aviaryRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55, side: THREE.DoubleSide }); // Кровля RAL 7016
-        const dogBowlMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 }); // Нержавеющая сталь
-
-        // А. Тёплый деревянный настил пола на антисептированных брусьях
-        const aviaryDeck = new THREE.Mesh(new THREE.BoxGeometry(aviaryW, 0.04, aviaryD), aviaryFloorMat);
-        aviaryDeck.position.set(aviaryCX, aviaryFloorH + 0.02, aviaryCZ);
-        aviaryDeck.receiveShadow = true;
-        dogAviaryGrp.add(aviaryDeck);
-
-        for (let bx = -aviaryW / 2 + 0.15; bx <= aviaryW / 2 - 0.15; bx += 0.80) {
-            const joist = new THREE.Mesh(new THREE.BoxGeometry(0.10, aviaryFloorH, aviaryD), aviaryWoodMat);
-            joist.position.set(aviaryCX + bx, aviaryFloorH / 2, aviaryCZ);
-            dogAviaryGrp.add(joist);
-        }
-
-        // Б. Несущий стальной каркас вольера (профильная труба 50х50 мм)
-        const aviaryCornerPosts = [
-            [-aviaryW/2 + 0.025, -aviaryD/2 + 0.025],
-            [ aviaryW/2 - 0.025, -aviaryD/2 + 0.025],
-            [-aviaryW/2 + 0.025,  aviaryD/2 - 0.025],
-            [ aviaryW/2 - 0.025,  aviaryD/2 - 0.025]
-        ];
-        aviaryCornerPosts.forEach(cp => {
-            const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, aviaryWallH, 0.05), aviarySteelMat);
-            post.position.set(aviaryCX + cp[0], aviaryFloorH + aviaryWallH / 2, aviaryCZ + cp[1]);
-            post.castShadow = true;
-            dogAviaryGrp.add(post);
-        });
-
-        // Верхний обвязочный пояс
-        const topFrameX1 = new THREE.Mesh(new THREE.BoxGeometry(aviaryW, 0.05, 0.05), aviarySteelMat);
-        topFrameX1.position.set(aviaryCX, aviaryFloorH + aviaryWallH, aviaryCZ - aviaryD/2 + 0.025);
-        dogAviaryGrp.add(topFrameX1);
-        const topFrameX2 = new THREE.Mesh(new THREE.BoxGeometry(aviaryW, 0.05, 0.05), aviarySteelMat);
-        topFrameX2.position.set(aviaryCX, aviaryFloorH + aviaryWallH, aviaryCZ + aviaryD/2 - 0.025);
-        dogAviaryGrp.add(topFrameX2);
-        const topFrameZ1 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, aviaryD), aviarySteelMat);
-        topFrameZ1.position.set(aviaryCX - aviaryW/2 + 0.025, aviaryFloorH + aviaryWallH, aviaryCZ);
-        dogAviaryGrp.add(topFrameZ1);
-        const topFrameZ2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, aviaryD), aviarySteelMat);
-        topFrameZ2.position.set(aviaryCX + aviaryW/2 - 0.025, aviaryFloorH + aviaryWallH, aviaryCZ);
-        dogAviaryGrp.add(topFrameZ2);
-
-        // В. Глухие ветрозащитные деревянные стены (северная к сараю и восточная к меже)
-        // 1. Северная стена (к сараю, ветрозащита от северных ветров)
-        const wallNorth = new THREE.Mesh(new THREE.BoxGeometry(aviaryW - 0.06, aviaryWallH - 0.02, 0.03), aviaryWoodMat);
-        wallNorth.position.set(aviaryCX, aviaryFloorH + aviaryWallH / 2, aviaryCZ + aviaryD/2 - 0.025);
-        wallNorth.castShadow = true;
-        dogAviaryGrp.add(wallNorth);
-
-        // 2. Восточная стена (со стороны правой межи)
-        const wallEast = new THREE.Mesh(new THREE.BoxGeometry(0.03, aviaryWallH - 0.02, aviaryD - 0.06), aviaryWoodMat);
-        wallEast.position.set(aviaryCX + aviaryW/2 - 0.025, aviaryFloorH + aviaryWallH / 2, aviaryCZ);
-        wallEast.castShadow = true;
-        dogAviaryGrp.add(wallEast);
-
-        // Г. Стальная решетка с безопасным шагом прутка 75 мм (южная в сад и западная во двор)
-        // 1. Южная фасадная сторона (обращена к саду и солнцу)
-        for (let bx = -aviaryW/2 + 0.12; bx <= aviaryW/2 - 0.12; bx += 0.075) {
-            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, aviaryWallH - 0.06, 6), aviarySteelMat);
-            bar.position.set(aviaryCX + bx, aviaryFloorH + aviaryWallH / 2, aviaryCZ - aviaryD/2 + 0.025);
-            dogAviaryGrp.add(bar);
-        }
-
-        // 2. Западная фасадная решётка с входной дверью (X = aviaryCX - aviaryW/2)
-        const doorZCenter = aviaryCZ - 0.35;
-        const doorW = 0.80;
-        for (let bz = -aviaryD/2 + 0.10; bz <= aviaryD/2 - 0.10; bz += 0.075) {
-            if (Math.abs(bz - (doorZCenter - aviaryCZ)) > doorW / 2 + 0.02) {
-                const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, aviaryWallH - 0.06, 6), aviarySteelMat);
-                bar.position.set(aviaryCX - aviaryW/2 + 0.025, aviaryFloorH + aviaryWallH / 2, aviaryCZ + bz);
-                dogAviaryGrp.add(bar);
-            }
-        }
-
-        // Дверная коробка и створка калитки
-        const doorPost1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, aviaryWallH, 0.04), aviarySteelMat);
-        doorPost1.position.set(aviaryCX - aviaryW/2 + 0.025, aviaryFloorH + aviaryWallH / 2, doorZCenter - doorW / 2);
-        dogAviaryGrp.add(doorPost1);
-        const doorPost2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, aviaryWallH, 0.04), aviarySteelMat);
-        doorPost2.position.set(aviaryCX - aviaryW/2 + 0.025, aviaryFloorH + aviaryWallH / 2, doorZCenter + doorW / 2);
-        dogAviaryGrp.add(doorPost2);
-
-        for (let dz = doorZCenter - doorW/2 + 0.07; dz <= doorZCenter + doorW/2 - 0.07; dz += 0.075) {
-            const dBar = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, aviaryWallH - 0.15, 6), aviarySteelMat);
-            dBar.position.set(aviaryCX - aviaryW/2 + 0.025, aviaryFloorH + aviaryWallH / 2, dz);
-            dogAviaryGrp.add(dBar);
-        }
-        const doorLatch = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.06, 0.18), galvSteelMat);
-        doorLatch.position.set(aviaryCX - aviaryW/2 + 0.045, aviaryFloorH + 1.05, doorZCenter + doorW / 2 - 0.08);
-        dogAviaryGrp.add(doorLatch);
-
-        // Д. Односкатная кровля вольера с уклоном назад к сараю (RAL 7016)
-        const aviaryRoofLen = aviaryD + 0.35;
-        const aviaryRoofW = aviaryW + 0.30;
-        const roofSlopeAngle = -0.14; // уклон назад к северу
-        const aviaryRoof = new THREE.Mesh(new THREE.BoxGeometry(aviaryRoofW, 0.035, aviaryRoofLen), aviaryRoofMat);
-        aviaryRoof.position.set(aviaryCX, aviaryFloorH + aviaryWallH + 0.08, aviaryCZ);
-        aviaryRoof.rotation.x = roofSlopeAngle;
-        aviaryRoof.castShadow = true;
-        dogAviaryGrp.add(aviaryRoof);
-
-        // Е. Утепленная двухслойная будка для собаки
-        const boothW = 1.20;
-        const boothD = 0.85;
-        const boothH = 0.80;
-        const boothCX = aviaryCX + aviaryW / 2 - boothW / 2 - 0.10; // X = 24.85
-        const boothCZ = aviaryCZ + aviaryD / 2 - boothD / 2 - 0.10; // Z = -18.65 (в сухом северо-восточном углу)
-        const boothY = aviaryFloorH + 0.04;
-
-        const boothBody = new THREE.Mesh(new THREE.BoxGeometry(boothW, boothH, boothD), new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.75 }));
-        boothBody.position.set(boothCX, boothY + boothH / 2, boothCZ);
-        boothBody.castShadow = true;
-        dogAviaryGrp.add(boothBody);
-
-        const boothRoof = new THREE.Mesh(new THREE.BoxGeometry(boothW + 0.10, 0.04, boothD + 0.10), aviaryRoofMat);
-        boothRoof.position.set(boothCX, boothY + boothH + 0.02, boothCZ);
-        boothRoof.rotation.x = -0.06;
-        boothRoof.castShadow = true;
-        dogAviaryGrp.add(boothRoof);
-
-        const boothDoorHole = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.48, 0.02), new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.9 }));
-        boothDoorHole.position.set(boothCX - 0.25, boothY + 0.28, boothCZ - boothD / 2 - 0.01);
-        dogAviaryGrp.add(boothDoorHole);
-
-        // Ж. Поворотная кормушка с 2 мисками из нержавеющей стали
-        const feederY = aviaryFloorH + 0.35;
-        const feederZ = aviaryCZ + 0.50;
-        const feederFrame = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.50), aviarySteelMat);
-        feederFrame.position.set(aviaryCX - aviaryW/2 + 0.025, feederY, feederZ);
-        dogAviaryGrp.add(feederFrame);
-
-        [-0.14, 0.14].forEach(fz => {
-            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.07, 0.08, 12), dogBowlMat);
-            bowl.position.set(aviaryCX - aviaryW/2 + 0.08, feederY + 0.02, feederZ + fz);
-            dogAviaryGrp.add(bowl);
-        });
-
-        // З. 3D-модель собаки (Немецкая овчарка)
-        const dogMeshGrp = new THREE.Group();
-        const dogBodyMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.85 });
-        const dogDarkMat = new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.9 });
-
-        const dogTorso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 0.58), dogDarkMat);
-        dogTorso.position.set(0, 0.24, 0);
-        dogTorso.castShadow = true;
-        dogMeshGrp.add(dogTorso);
-
-        const dogChest = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.32, 0.28), dogBodyMat);
-        dogChest.position.set(0, 0.36, 0.26);
-        dogChest.rotation.x = -0.35;
-        dogMeshGrp.add(dogChest);
-
-        const dogHead = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.20, 0.24), dogDarkMat);
-        dogHead.position.set(0, 0.54, 0.38);
-        dogMeshGrp.add(dogHead);
-
-        const dogSnout = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.10, 0.16), dogDarkMat);
-        dogSnout.position.set(0, 0.49, 0.52);
-        dogMeshGrp.add(dogSnout);
-
-        [-0.08, 0.08].forEach(ex => {
-            const ear = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 4), dogDarkMat);
-            ear.position.set(ex, 0.68, 0.36);
-            ear.rotation.y = Math.PI / 4;
-            dogMeshGrp.add(ear);
-        });
-
-        [-0.10, 0.10].forEach(lx => {
-            const pawF = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.10, 0.32), dogBodyMat);
-            pawF.position.set(lx, 0.05, 0.30);
-            dogMeshGrp.add(pawF);
-        });
-
-        [-0.15, 0.15].forEach(lx => {
-            const thigh = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.24, 0.22), dogBodyMat);
-            thigh.position.set(lx, 0.16, -0.16);
-            dogMeshGrp.add(thigh);
-        });
-
-        const dogTail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.04, 0.35, 6), dogDarkMat);
-        dogTail.position.set(0, 0.14, -0.36);
-        dogTail.rotation.x = -0.7;
-        dogMeshGrp.add(dogTail);
-
-        dogMeshGrp.position.set(aviaryCX - 0.45, aviaryFloorH + 0.04, aviaryCZ - 0.20);
-        dogMeshGrp.rotation.y = -0.6; // смотрит на юг и на запад к калитке
-        dogAviaryGrp.add(dogMeshGrp);
-
-        // И. Мощёная дорожка от двора к двери вольера
-        const dogPathGeo = new THREE.PlaneGeometry(1.00, 2.80);
-        const dogPath = new THREE.Mesh(dogPathGeo, patioStoneMat);
-        dogPath.rotation.x = -Math.PI / 2;
-        dogPath.position.set(aviaryCX - aviaryW/2 - 0.50, 0.015, aviaryCZ + 0.20);
-        dogPath.receiveShadow = true;
-        dogAviaryGrp.add(dogPath);
-
-        landscapeGroup.add(dogAviaryGrp);
-
-        // 7. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -21.10 ... -46.0)
+        // 6. ЦЕНТРАЛЬНАЯ САДОВАЯ АЛЛЕЯ (ЮЖНОЕ НАПРАВЛЕНИЕ К ОГОРОДУ, Z = -21.10 ... -46.0)
         // Отходит от поперечной аллеи на юг через плодовый сад к тепличной площади
         const gardenWalkW = 1.20;
         const gardenWalkLen = 46.00 - 21.10; // 24.90 м
@@ -5557,9 +5342,6 @@
             } else if (view === 'sitePlayground') {
                 targetPos = { x: 8.8, y: 3.8, z: -12.4 };
                 targetLook = { x: 5.2, y: 1.3, z: -16.2 };
-            } else if (view === 'siteDog') {
-                targetPos = { x: 20.5, y: 2.2, z: -23.0 };
-                targetLook = { x: 23.8, y: 1.2, z: -19.2 };
             } else if (view === 'siteOrchard') {
                 targetPos = { x: 26.0, y: 10.5, z: -20.0 };
                 targetLook = { x: 15.0, y: 2.0, z: -32.0 };
