@@ -10,14 +10,99 @@
         #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
         .ui-panel {
             position: absolute; top: 20px; right: 20px; z-index: 10;
-            background: rgba(20, 24, 33, 0.90); backdrop-filter: blur(14px);
+            background: rgba(20, 24, 33, 0.92); backdrop-filter: blur(14px);
             border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
             padding: 16px 20px; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
             max-height: calc(100vh - 40px); overflow-y: auto;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+        }
+        .ui-panel.collapsed {
+            transform: translateX(calc(100% + 30px));
+            opacity: 0;
+            pointer-events: none;
         }
         .ui-panel::-webkit-scrollbar { width: 6px; }
         .ui-panel::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
         .ui-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
+        .panel-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .panel-header-row h1 {
+            margin-bottom: 0;
+            flex: 1;
+        }
+        .panel-close-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .panel-close-btn:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+        }
+        .panel-open-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 9;
+            background: rgba(14, 165, 233, 0.92);
+            backdrop-filter: blur(8px);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 24px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(2, 132, 199, 0.45);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .panel-open-btn:hover {
+            background: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px rgba(2, 132, 199, 0.6);
+        }
+        .panel-open-btn.visible {
+            display: inline-flex;
+        }
+        @media (max-width: 640px) {
+            .ui-panel {
+                top: 10px;
+                right: 10px;
+                max-width: calc(100vw - 20px);
+                width: calc(100vw - 20px);
+                max-height: calc(100vh - 20px);
+                padding: 12px 14px;
+            }
+            .panel-open-btn {
+                top: 10px;
+                right: 10px;
+                padding: 9px 14px;
+                font-size: 12px;
+            }
+            .info-badge {
+                display: none;
+            }
+        }
         h1 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #60a5fa; }
         p { font-size: 13px; line-height: 1.5; color: #cbd5e1; margin-bottom: 12px; }
         .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 12px; }
@@ -44,8 +129,16 @@
 </head>
 <body>
     <div id="canvas-container"></div>
-    <div class="ui-panel">
-        <h1>Жилой дом и Генплан в Вишове</h1>
+    <button id="panel-open-btn" class="panel-open-btn" onclick="toggleUIPanel()" title="Открыть панель управления">
+        <span>⚙️</span><span>Панель управления ☰</span>
+    </button>
+    <div class="ui-panel" id="ui-panel">
+        <div class="panel-header-row">
+            <h1>Жилой дом и Генплан в Вишове</h1>
+            <button class="panel-close-btn" onclick="toggleUIPanel()" title="Скрыть панель для свободного 3D-просмотра">
+                ✕ Скрыть
+            </button>
+        </div>
         <p>Интерактивная 3D-модель: Участок 25 соток (2500 м²), кадастр 720480501101000392, дом (8,5 × 9,5 м), веранда (2,7 × 9,5 м), навес 6×4 м.</p>
 
         <!-- Master Plan 25 Ares Controls Box -->
@@ -120,6 +213,18 @@
     <div class="info-badge">Вращение: ЛКМ | Панорама: ПКМ | Зум: Колёсико мыши</div>
 
     <script>
+        function toggleUIPanel() {
+            const panel = document.getElementById('ui-panel');
+            const openBtn = document.getElementById('panel-open-btn');
+            panel.classList.toggle('collapsed');
+            const isCollapsed = panel.classList.contains('collapsed');
+            if (isCollapsed) {
+                openBtn.classList.add('visible');
+            } else {
+                openBtn.classList.remove('visible');
+            }
+        }
+
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xb0d0e6);
