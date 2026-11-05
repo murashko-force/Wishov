@@ -237,7 +237,8 @@
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xb0d0e6);
-        scene.fog = new THREE.Fog(0xb0d0e6, 70, 220);
+        const isMobileDevice = window.innerWidth < 768;
+        scene.fog = new THREE.Fog(0xb0d0e6, isMobileDevice ? 150 : 130, isMobileDevice ? 480 : 420);
 
         // CORE ARCHITECTURAL DIMENSIONS (Defined at top)
         const HW = 8.5; // Реальная ширина фасада 8,5 м!       // House width
@@ -1906,19 +1907,54 @@
         shedGroup.add(fgRearMesh);
 
         // А. ПЕРЕДНИЙ ТОРЦЕВОЙ ФАСАД (Z = +3.75, ЛИЦОМ К ДОМУ/ДОРОГЕ, СТРОГО ПО ФОТО С КАМЕРЫ)
-        // На торцевом фасаде под фронтоном РОВНО 2 ОКНА (квадратные окна с бетонными перемычками):
-        for (let wx of [-1.25, 1.25]) {
-            // Оконный блок 0.70 × 0.80 м
-            const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.80, 0.08), shedWinFrameMat);
-            winFrame.position.set(wx, 1.60, 3.76);
-            winFrame.castShadow = true;
-            shedGroup.add(winFrame);
+        // На торцевом фасаде под фронтоном РОВНО 2 ОКНА (квадратные окна 0.70 × 0.80 м с бетонными перемычками и нишами):
+        const shedNicheMat = new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.95 });
+        const shedBenchMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.75 }); // деревянный верстак мастерской
 
-            const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.66, 0.02), glassMatBath);
-            winGlass.position.set(wx, 1.60, 3.78);
+        for (let wx of [-1.25, 1.25]) {
+            // 1. Полая оконная рама (4 профиля по контуру 65 мм, открытый световой проём)
+            const sfW = 0.70, sfH = 0.80, sfThick = 0.08, sfP = 0.065;
+            const topF = new THREE.Mesh(new THREE.BoxGeometry(sfW, sfP, sfThick), shedWinFrameMat);
+            topF.position.set(wx, 1.60 + (sfH - sfP) / 2, 3.76);
+            topF.castShadow = true;
+            shedGroup.add(topF);
+
+            const btmF = new THREE.Mesh(new THREE.BoxGeometry(sfW, sfP, sfThick), shedWinFrameMat);
+            btmF.position.set(wx, 1.60 - (sfH - sfP) / 2, 3.76);
+            btmF.castShadow = true;
+            shedGroup.add(btmF);
+
+            const leftF = new THREE.Mesh(new THREE.BoxGeometry(sfP, sfH - 2 * sfP, sfThick), shedWinFrameMat);
+            leftF.position.set(wx - (sfW - sfP) / 2, 1.60, 3.76);
+            leftF.castShadow = true;
+            shedGroup.add(leftF);
+
+            const rightF = new THREE.Mesh(new THREE.BoxGeometry(sfP, sfH - 2 * sfP, sfThick), shedWinFrameMat);
+            rightF.position.set(wx + (sfW - sfP) / 2, 1.60, 3.76);
+            rightF.castShadow = true;
+            shedGroup.add(rightF);
+
+            // Т-образный внутренний переплёт
+            const vMull = new THREE.Mesh(new THREE.BoxGeometry(0.035, sfH - 2 * sfP, sfThick * 0.9), shedWinFrameMat);
+            vMull.position.set(wx, 1.60, 3.76);
+            shedGroup.add(vMull);
+
+            // 2. Полупрозрачное стеклопакетное стекло с лёгким небесным отливом
+            const winGlass = new THREE.Mesh(new THREE.BoxGeometry(sfW - 2 * sfP, sfH - 2 * sfP, 0.015), glassMatBath);
+            winGlass.position.set(wx, 1.60, 3.76);
             shedGroup.add(winGlass);
 
-            // Железобетонная перемычка над окном
+            // 3. Заглублённая интерьерная ниша мастерской за окном (глубина 65 см)
+            const niche = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.78, 0.65), shedNicheMat);
+            niche.position.set(wx, 1.60, 3.75 - 0.32);
+            shedGroup.add(niche);
+
+            // 4. Деревянная полка-верстак внутри мастерской
+            const bench = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.04, 0.45), shedBenchMat);
+            bench.position.set(wx, 1.25, 3.75 - 0.25);
+            shedGroup.add(bench);
+
+            // 5. Железобетонная перемычка над окном
             const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.14, 0.12), lintelMat);
             lintel.position.set(wx, 2.07, 3.76);
             shedGroup.add(lintel);
@@ -3220,7 +3256,10 @@
             map: clinkerTexs.colorTex,
             bumpMap: clinkerTexs.bumpTex,
             bumpScale: 0.035,
-            roughness: 0.70
+            roughness: 0.70,
+            polygonOffset: true,
+            polygonOffsetFactor: -1.5,
+            polygonOffsetUnits: -3.0
         });
         const roofMat = new THREE.MeshStandardMaterial({
             color: 0xffffff,
@@ -3273,10 +3312,11 @@
         frontWall.receiveShadow = true;
         houseGroup.add(frontWall);
 
-        // Helper to construct realistic windows for the main house with proper architectural quarter (четверть) and recessed reveals
+        // Helper to construct realistic windows for the main house with proper hollow profiles, architectural quarter and reveals
         function createHouseWindow(cx, cy, cz, w, h, facing) {
             const grp = new THREE.Group();
             const frameThick = 0.07;
+            const pw = 0.065; // ширина оконного профиля ПВХ (65 мм)
             const sillColor = 0x334155; // Тёмный металлоотлив с капельником
 
             if (facing === 'X') {
@@ -3284,23 +3324,43 @@
                 // Рама заглублена в четверть на 14 см внутрь проёма (центр рамы: X = 0.14 + frameThick/2 = 0.175)
                 const frameX = 0.14 + frameThick / 2;
 
-                // 1. Оконная рама ПВХ
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, h - 0.02, w - 0.02), whiteTrimMat);
-                frame.position.set(frameX, cy, cz);
-                frame.castShadow = true;
-                grp.add(frame);
+                // 1. Полая оконная рама ПВХ (4 профиля по периметру, открытый световой проём)
+                const topFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, pw, w - 0.02), whiteTrimMat);
+                topFrame.position.set(frameX, cy + (h - 0.02 - pw) / 2, cz);
+                topFrame.castShadow = true;
+                grp.add(topFrame);
 
-                // 2. Центральный вертикальный импост (2 створки)
-                const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameThick + 0.01, h - 0.08, 0.06), whiteTrimMat);
+                const btmFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, pw, w - 0.02), whiteTrimMat);
+                btmFrame.position.set(frameX, cy - (h - 0.02 - pw) / 2, cz);
+                btmFrame.castShadow = true;
+                grp.add(btmFrame);
+
+                const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, h - 0.02 - 2 * pw, pw), whiteTrimMat);
+                leftFrame.position.set(frameX, cy, cz - (w - 0.02 - pw) / 2);
+                leftFrame.castShadow = true;
+                grp.add(leftFrame);
+
+                const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(frameThick, h - 0.02 - 2 * pw, pw), whiteTrimMat);
+                rightFrame.position.set(frameX, cy, cz + (w - 0.02 - pw) / 2);
+                rightFrame.castShadow = true;
+                grp.add(rightFrame);
+
+                // 2. Центральный вертикальный импост (деление на 2 створки)
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(frameThick + 0.005, h - 0.02 - 2 * pw, 0.05), whiteTrimMat);
                 mullion.position.set(frameX, cy, cz);
                 grp.add(mullion);
 
-                // 3. Стеклопакет
-                const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, h - 0.10, w - 0.10), glassMat);
+                // 3. Честное полупрозрачное стекло
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(0.015, h - 0.02 - pw, w - 0.02 - pw), glassMat);
                 glass.position.set(frameX, cy, cz);
                 grp.add(glass);
 
-                // 4. Наружные блочные откосы (глубина 14 см: от X = 0.0 до X = 0.14)
+                // 4. Внутренний белый подоконник
+                const intSill = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, w + 0.06), whiteTrimMat);
+                intSill.position.set(0.28, cy - h / 2 + 0.0125, cz);
+                grp.add(intSill);
+
+                // 5. Наружные блочные откосы (глубина 14 см: от X = 0.0 до X = 0.14)
                 const topReveal = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, w), blockMat);
                 topReveal.position.set(0.07, cy + h / 2 - 0.02, cz);
                 grp.add(topReveal);
@@ -3313,7 +3373,7 @@
                 rightReveal.position.set(0.07, cy, cz + w / 2 - 0.02);
                 grp.add(rightReveal);
 
-                // 5. Тонкий металлический отлив с уклоном (от рамы X = 0.14 наружу до X = -0.025, капельник 2,5 см)
+                // 6. Тонкий металлический отлив с уклоном (от рамы X = 0.14 наружу до X = -0.025, капельник 2,5 см)
                 const sillMat = new THREE.MeshStandardMaterial({ color: sillColor, roughness: 0.5, metalness: 0.6 });
                 const sill = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.015, w + 0.04), sillMat);
                 sill.position.set(0.065, cy - h / 2 + 0.01, cz);
@@ -3325,20 +3385,43 @@
                 // Рама заглублена на 14 см внутрь проёма к саду (центр рамы: Z = -9.50 + 0.14 + frameThick/2 = -9.325)
                 const frameZ = -HL + 0.14 + frameThick / 2;
 
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, h - 0.02, frameThick), whiteTrimMat);
-                frame.position.set(cx, cy, frameZ);
-                frame.castShadow = true;
-                grp.add(frame);
+                // 1. Полая оконная рама ПВХ
+                const topFrame = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, pw, frameThick), whiteTrimMat);
+                topFrame.position.set(cx, cy + (h - 0.02 - pw) / 2, frameZ);
+                topFrame.castShadow = true;
+                grp.add(topFrame);
 
-                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.06, h - 0.08, frameThick + 0.01), whiteTrimMat);
+                const btmFrame = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, pw, frameThick), whiteTrimMat);
+                btmFrame.position.set(cx, cy - (h - 0.02 - pw) / 2, frameZ);
+                btmFrame.castShadow = true;
+                grp.add(btmFrame);
+
+                const leftFrame = new THREE.Mesh(new THREE.BoxGeometry(pw, h - 0.02 - 2 * pw, frameThick), whiteTrimMat);
+                leftFrame.position.set(cx - (w - 0.02 - pw) / 2, cy, frameZ);
+                leftFrame.castShadow = true;
+                grp.add(leftFrame);
+
+                const rightFrame = new THREE.Mesh(new THREE.BoxGeometry(pw, h - 0.02 - 2 * pw, frameThick), whiteTrimMat);
+                rightFrame.position.set(cx + (w - 0.02 - pw) / 2, cy, frameZ);
+                rightFrame.castShadow = true;
+                grp.add(rightFrame);
+
+                // 2. Центральный вертикальный импост
+                const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.05, h - 0.02 - 2 * pw, frameThick + 0.005), whiteTrimMat);
                 mullion.position.set(cx, cy, frameZ);
                 grp.add(mullion);
 
-                const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.10, h - 0.10, 0.02), glassMat);
+                // 3. Честное полупрозрачное стекло
+                const glass = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02 - pw, h - 0.02 - pw, 0.015), glassMat);
                 glass.position.set(cx, cy, frameZ);
                 grp.add(glass);
 
-                // Наружные блочные откосы (глубина 14 см: от Z = -9.50 до Z = -9.36)
+                // 4. Внутренний белый подоконник
+                const intSill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.06, 0.025, 0.24), whiteTrimMat);
+                intSill.position.set(cx, cy - h / 2 + 0.0125, -HL + 0.26);
+                grp.add(intSill);
+
+                // 5. Наружные блочные откосы (глубина 14 см: от Z = -9.50 до Z = -9.36)
                 const topReveal = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, 0.14), blockMat);
                 topReveal.position.set(cx, cy + h / 2 - 0.02, -HL + 0.07);
                 grp.add(topReveal);
@@ -3351,7 +3434,7 @@
                 rightReveal.position.set(cx + w / 2 - 0.02, cy, -HL + 0.07);
                 grp.add(rightReveal);
 
-                // Тонкий металлический отлив с уклоном в сад
+                // 6. Тонкий металлический отлив с уклоном в сад
                 const sillMat = new THREE.MeshStandardMaterial({ color: sillColor, roughness: 0.5, metalness: 0.6 });
                 const sill = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.015, 0.18), sillMat);
                 sill.position.set(cx, cy - h / 2 + 0.01, -HL + 0.065);
@@ -3437,6 +3520,76 @@
             houseGroup.add(createHouseWindow(LEFT_X, HWIN_CY, wz, HWIN_W, HWIN_H, 'X'));
         });
 
+        // ----------------------------------------------------
+        // ИНТЕРЬЕР ДОМА И ТЁПЛЫЙ ВЕЧЕРНИЙ СВЕТ В ОКНАХ
+        // ----------------------------------------------------
+        const houseInteriorGroup = new THREE.Group();
+        houseGroup.add(houseInteriorGroup);
+
+        // 1. Тёплый дубовый пол во всех жилых комнатах дома
+        const intFloor = new THREE.Mesh(
+            new THREE.BoxGeometry(HW - 0.8, 0.04, HL - 0.8),
+            new THREE.MeshStandardMaterial({ color: 0xc89d68, roughness: 0.55 })
+        );
+        intFloor.position.set(HW / 2, SOCLE + 0.02, -HL / 2);
+        intFloor.receiveShadow = true;
+        houseInteriorGroup.add(intFloor);
+
+        // 2. Белый внутренний потолок
+        const intCeiling = new THREE.Mesh(
+            new THREE.BoxGeometry(HW - 0.8, 0.04, HL - 0.8),
+            new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.85 })
+        );
+        intCeiling.position.set(HW / 2, H_WALL - 0.02, -HL / 2);
+        houseInteriorGroup.add(intCeiling);
+
+        // 3. Межкомнатные внутренние перегородки (по паспорту проекта: гостиная, спальни, кухня)
+        const intPartMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.90 });
+        const intPartZ = new THREE.Mesh(new THREE.BoxGeometry(0.15, H_WALL - SOCLE, HL - 0.8), intPartMat);
+        intPartZ.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -HL / 2);
+        houseInteriorGroup.add(intPartZ);
+
+        const intPartX = new THREE.Mesh(new THREE.BoxGeometry(HW - 0.8, H_WALL - SOCLE, 0.15), intPartMat);
+        intPartX.position.set(HW / 2, SOCLE + (H_WALL - SOCLE) / 2, -4.75);
+        houseInteriorGroup.add(intPartX);
+
+        // 4. Тёплый вечерний свет (2700K) внутри комнат дома
+        const roomLight1 = new THREE.PointLight(0xffedd5, 1.3, 9.0);
+        roomLight1.position.set(2.20, 2.30, -2.55);
+        houseInteriorGroup.add(roomLight1);
+
+        const roomLight2 = new THREE.PointLight(0xfff1db, 1.4, 9.0);
+        roomLight2.position.set(2.20, 2.30, -7.00);
+        houseInteriorGroup.add(roomLight2);
+
+        const roomLight3 = new THREE.PointLight(0xfff1db, 1.4, 9.0);
+        roomLight3.position.set(6.30, 2.30, -7.00);
+        houseInteriorGroup.add(roomLight3);
+
+        // 5. Лёгкий полупрозрачный интерьерный тюль по краям оконных створок
+        const curtainMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            roughness: 0.95,
+            transparent: true,
+            opacity: 0.65
+        });
+        // Тюль на окнах в сад (Z = -9.5)
+        for (let wx of [2.20, 6.30]) {
+            for (let side of [-1, 1]) {
+                const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.35, 0.02), curtainMat);
+                curtain.position.set(wx + side * (HWIN_W / 2 - 0.13), HWIN_CY, -HL + 0.35);
+                houseInteriorGroup.add(curtain);
+            }
+        }
+        // Тюль на окнах левого фасада (X = 0.0)
+        for (let wz of [-2.55, -6.95]) {
+            for (let side of [-1, 1]) {
+                const curtain = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.35, 0.22), curtainMat);
+                curtain.position.set(0.35, HWIN_CY, wz + side * (HWIN_W / 2 - 0.13));
+                houseInteriorGroup.add(curtain);
+            }
+        }
+
         // Right wall (X = HW = 6.2)
         // Section 1: Front blank wall (Z: 0 to -2.8)
         const rWall1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, H_WALL - SOCLE, 2.8), blockMat);
@@ -3451,11 +3604,24 @@
         const rWallWinOver = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 1.4), blockMat);
         rWallWinOver.position.set(HW - 0.2, H_WALL - 0.25, -3.5);
         houseGroup.add(rWallWinOver);
-        const winFrame = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.3, 1.3), whiteTrimMat);
-        winFrame.position.set(HW - 0.2, SOCLE + 0.9 + 0.65, -3.5);
-        houseGroup.add(winFrame);
-        const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.2, 1.2), glassMat);
-        winGlass.position.set(HW - 0.2, SOCLE + 0.9 + 0.65, -3.5);
+        const rwCY = SOCLE + 0.9 + 0.65, rwW = 1.3, rwH = 1.3, rwThick = 0.08, rwP = 0.065;
+        const rwTop = new THREE.Mesh(new THREE.BoxGeometry(rwThick, rwP, rwW), whiteTrimMat);
+        rwTop.position.set(HW - 0.2, rwCY + (rwH - rwP) / 2, -3.5);
+        houseGroup.add(rwTop);
+        const rwBtm = new THREE.Mesh(new THREE.BoxGeometry(rwThick, rwP, rwW), whiteTrimMat);
+        rwBtm.position.set(HW - 0.2, rwCY - (rwH - rwP) / 2, -3.5);
+        houseGroup.add(rwBtm);
+        const rwLeft = new THREE.Mesh(new THREE.BoxGeometry(rwThick, rwH - 2 * rwP, rwP), whiteTrimMat);
+        rwLeft.position.set(HW - 0.2, rwCY, -3.5 - (rwW - rwP) / 2);
+        houseGroup.add(rwLeft);
+        const rwRight = new THREE.Mesh(new THREE.BoxGeometry(rwThick, rwH - 2 * rwP, rwP), whiteTrimMat);
+        rwRight.position.set(HW - 0.2, rwCY, -3.5 + (rwW - rwP) / 2);
+        houseGroup.add(rwRight);
+        const rwMull = new THREE.Mesh(new THREE.BoxGeometry(rwThick + 0.005, rwH - 2 * rwP, 0.045), whiteTrimMat);
+        rwMull.position.set(HW - 0.2, rwCY, -3.5);
+        houseGroup.add(rwMull);
+        const winGlass = new THREE.Mesh(new THREE.BoxGeometry(0.015, rwH - 2 * rwP, rwW - 2 * rwP), glassMat);
+        winGlass.position.set(HW - 0.2, rwCY, -3.5);
         houseGroup.add(winGlass);
 
         // Mid wall between window and door (Z: -4.2 to -4.7)
@@ -3586,19 +3752,31 @@
             // Д. Утопленное окно ПВХ (заглублено внутрь откосов на 12 см)
             const winZ = zGable - zDir * 0.12;
 
-            // Белая рама ПВХ
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.06, winH - 0.06, 0.05), whiteTrimMat);
-            frame.position.set(winCX, winCY, winZ);
-            frame.castShadow = true;
-            grp.add(frame);
+            // Полая белая рама ПВХ (4 профиля по контуру 55 мм)
+            const gwW = winW - 0.06, gwH = winH - 0.06, gwThick = 0.05, gwP = 0.055;
+            const topF = new THREE.Mesh(new THREE.BoxGeometry(gwW, gwP, gwThick), whiteTrimMat);
+            topF.position.set(winCX, winCY + (gwH - gwP) / 2, winZ);
+            grp.add(topF);
+
+            const btmF = new THREE.Mesh(new THREE.BoxGeometry(gwW, gwP, gwThick), whiteTrimMat);
+            btmF.position.set(winCX, winCY - (gwH - gwP) / 2, winZ);
+            grp.add(btmF);
+
+            const leftF = new THREE.Mesh(new THREE.BoxGeometry(gwP, gwH - 2 * gwP, gwThick), whiteTrimMat);
+            leftF.position.set(winCX - (gwW - gwP) / 2, winCY, winZ);
+            grp.add(leftF);
+
+            const rightF = new THREE.Mesh(new THREE.BoxGeometry(gwP, gwH - 2 * gwP, gwThick), whiteTrimMat);
+            rightF.position.set(winCX + (gwW - gwP) / 2, winCY, winZ);
+            grp.add(rightF);
 
             // Центральный вертикальный импост (2 створки)
-            const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.05, winH - 0.06, 0.06), whiteTrimMat);
+            const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.04, gwH - 2 * gwP, gwThick + 0.005), whiteTrimMat);
             mullion.position.set(winCX, winCY, winZ);
             grp.add(mullion);
 
             // Чистое прозрачное стекло (БЕЗ структуры блоков!)
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(winW - 0.16, winH - 0.16, 0.015), glassMat);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(gwW - 2 * gwP, gwH - 2 * gwP, 0.015), glassMat);
             glass.position.set(winCX, winCY, winZ);
             grp.add(glass);
 
@@ -3659,7 +3837,7 @@
         const cornerRustsGroup = new THREE.Group();
         houseGroup.add(cornerRustsGroup);
 
-        function createCornerRusts(cx, cz, signX, signZ) {
+        function createCornerRusts(cx, cz, dirX, dirZ, outX, outZ) {
             const grp = new THREE.Group();
             const pitch = 0.245;
             const bH = 0.20;
@@ -3671,15 +3849,15 @@
                 const lenX = isEven ? 0.42 : 0.22;
                 const lenZ = isEven ? 0.22 : 0.42;
 
-                // Face along X wall
+                // Face along X wall: выступает строго наружу в направлении outZ (исключает Z-fighting)
                 const bX = new THREE.Mesh(new THREE.BoxGeometry(lenX, bH, thick), clinkerMat);
-                bX.position.set(cx + signX * lenX / 2, y, cz + signZ * (thick / 2));
+                bX.position.set(cx + dirX * (lenX / 2), y, cz + outZ * (thick / 2));
                 bX.castShadow = true;
                 grp.add(bX);
 
-                // Face along Z wall
+                // Face along Z wall: выступает строго наружу в направлении outX
                 const bZ = new THREE.Mesh(new THREE.BoxGeometry(thick, bH, lenZ), clinkerMat);
-                bZ.position.set(cx + signX * (thick / 2), y, cz + signZ * lenZ / 2);
+                bZ.position.set(cx + outX * (thick / 2), y, cz + dirZ * (lenZ / 2));
                 bZ.castShadow = true;
                 grp.add(bZ);
             }
@@ -3687,15 +3865,15 @@
         }
 
         // 1. Передний левый угол дома (X = 0, Z = 0)
-        cornerRustsGroup.add(createCornerRusts(0, 0, +1, -1));
+        cornerRustsGroup.add(createCornerRusts(0, 0, +1, -1, -1, +1));
         // 2. Задний левый угол дома (X = 0, Z = -HL)
-        cornerRustsGroup.add(createCornerRusts(0, -HL, +1, +1));
+        cornerRustsGroup.add(createCornerRusts(0, -HL, +1, +1, -1, -1));
         // 3. Задний правый угол дома у сада (X = HW, Z = -HL)
-        cornerRustsGroup.add(createCornerRusts(HW, -HL, -1, +1));
+        cornerRustsGroup.add(createCornerRusts(HW, -HL, -1, +1, +1, -1));
         // 4. Задний правый угол веранды у сада (X = HW + VW, Z = -HL)
-        cornerRustsGroup.add(createCornerRusts(HW + VW, -HL, -1, +1));
+        cornerRustsGroup.add(createCornerRusts(HW + VW, -HL, -1, +1, +1, -1));
         // 5. Передний наружный угол стены прихожей (X = HW + VW, Z = -L_OPEN)
-        cornerRustsGroup.add(createCornerRusts(HW + VW, -L_OPEN, -1, -1));
+        cornerRustsGroup.add(createCornerRusts(HW + VW, -L_OPEN, -1, -1, +1, +1));
 
 
         // ==========================================
@@ -3878,12 +4056,30 @@
             topWall.castShadow = true;
             grp.add(topWall);
 
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.12, winH, WIN_W - 0.05), whiteTrimMat);
-            frame.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
-            grp.add(frame);
+            // Полая рама ПВХ из 4 профилей
+            const fw = WIN_W - 0.05, fh = winH, fThick = 0.10, pSize = 0.06;
+            const topF = new THREE.Mesh(new THREE.BoxGeometry(fThick, pSize, fw), whiteTrimMat);
+            topF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh - pSize / 2, zCenter);
+            topF.castShadow = true;
+            grp.add(topF);
 
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH - 0.12, WIN_W - 0.14), glassMat);
-            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            const btmF = new THREE.Mesh(new THREE.BoxGeometry(fThick, pSize, fw), whiteTrimMat);
+            btmF.position.set(V_X1 - 0.125, SOCLE + parapetH + pSize / 2, zCenter);
+            btmF.castShadow = true;
+            grp.add(btmF);
+
+            const leftF = new THREE.Mesh(new THREE.BoxGeometry(fThick, fh - 2 * pSize, pSize), whiteTrimMat);
+            leftF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter - (fw - pSize) / 2);
+            leftF.castShadow = true;
+            grp.add(leftF);
+
+            const rightF = new THREE.Mesh(new THREE.BoxGeometry(fThick, fh - 2 * pSize, pSize), whiteTrimMat);
+            rightF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter + (fw - pSize) / 2);
+            rightF.castShadow = true;
+            grp.add(rightF);
+
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.015, fh - 2 * pSize, fw - 2 * pSize), glassMat);
+            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter);
             grp.add(glass);
 
             const sill = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, WIN_W + 0.1), whiteTrimMat);
@@ -3976,17 +4172,35 @@
             topWall.castShadow = true;
             grp.add(topWall);
 
-            const frame = new THREE.Mesh(new THREE.BoxGeometry(0.12, winH, w - 0.05), whiteTrimMat);
-            frame.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
-            grp.add(frame);
+            // Полая рама ПВХ из 4 профилей
+            const fw = w - 0.05, fh = winH, fThick = 0.10, pSize = 0.06;
+            const topF = new THREE.Mesh(new THREE.BoxGeometry(fThick, pSize, fw), whiteTrimMat);
+            topF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh - pSize / 2, zCenter);
+            topF.castShadow = true;
+            grp.add(topF);
 
-            // 1 центральный вертикальный импост (деление на 2 гармоничные створки)
-            const mullion = new THREE.Mesh(new THREE.BoxGeometry(0.13, winH - 0.06, 0.06), whiteTrimMat);
-            mullion.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            const btmF = new THREE.Mesh(new THREE.BoxGeometry(fThick, pSize, fw), whiteTrimMat);
+            btmF.position.set(V_X1 - 0.125, SOCLE + parapetH + pSize / 2, zCenter);
+            btmF.castShadow = true;
+            grp.add(btmF);
+
+            const leftF = new THREE.Mesh(new THREE.BoxGeometry(fThick, fh - 2 * pSize, pSize), whiteTrimMat);
+            leftF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter - (fw - pSize) / 2);
+            leftF.castShadow = true;
+            grp.add(leftF);
+
+            const rightF = new THREE.Mesh(new THREE.BoxGeometry(fThick, fh - 2 * pSize, pSize), whiteTrimMat);
+            rightF.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter + (fw - pSize) / 2);
+            rightF.castShadow = true;
+            grp.add(rightF);
+
+            // 1 центральный вертикальный импост (деление на 2 створки)
+            const mullion = new THREE.Mesh(new THREE.BoxGeometry(fThick + 0.01, fh - 2 * pSize, 0.05), whiteTrimMat);
+            mullion.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter);
             grp.add(mullion);
 
-            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.04, winH - 0.12, w - 0.14), glassMat);
-            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + winH/2, zCenter);
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(0.015, fh - 2 * pSize, fw - 2 * pSize), glassMat);
+            glass.position.set(V_X1 - 0.125, SOCLE + parapetH + fh / 2, zCenter);
             grp.add(glass);
 
             const sill = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, w + 0.12), whiteTrimMat);
