@@ -1520,38 +1520,14 @@
 
         // --- 3. ВОСТОЧНЫЙ ФАСАД ВО ДВОР (X = 3.50, длина 4.80 м) ---
         // Стойки по фасаду: угловые Z = 2.40 и Z = -2.40, центральная Z = 0.00
-        // А. СЕВЕРНЫЙ ПРОЛЁТ ФАСАДА (Z = 0.00 ... 2.40, глухое лаунж-остекление)
-        // Промежуточная стойка жесткости 100×100 мм при Z = 1.20
-        const postFrontMidN = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
-        postFrontMidN.position.set(3.50, 0.20 + 1.05, 1.20);
-        postFrontMidN.castShadow = true;
-        bathGroup.add(postFrontMidN);
-
-        // Сплошная зашивка имитацией бруса (высота 1.10 м от пола)
-        const sidingFrontN = createTimberSiding(2.36, 1.08, true, 3.50, 0.74, 1.20);
-        bathGroup.add(sidingFrontN);
-
-        // Подоконный брус (Y = 1.40 м)
-        const sillFrontN = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 2.38), handrailMat);
-        sillFrontN.position.set(3.50, bathSillY, 1.20);
-        sillFrontN.castShadow = true;
-        bathGroup.add(sillFrontN);
-
-        // Два мягких окна фасада ТОГО ЖЕ ЕДИНОГО РАЗМЕРА (высота 0.82 м)
-        const winFN1 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, 0.60);
-        bathGroup.add(winFN1);
-        const winFN2 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, 1.80);
-        bathGroup.add(winFN2);
-
-
-        // Б. ЮЖНЫЙ ПРОЛЁТ ФАСАДА (Z = -2.40 ... 0.00, ВХОДНАЯ ЗОНА С МЯГКОЙ ДВЕРЬЮ)
-        // Дверная промежуточная стойка 100×100 мм при Z = -1.15
+        // А. СЕВЕРНЫЙ ПРОЛЁТ ФАСАДА (Z = 0.00 ... 2.40, ВХОДНАЯ ЗОНА С МЯГКОЙ ДВЕРЬЮ)
+        // Дверная промежуточная стойка 100×100 мм при Z = 1.15
         const postDoor = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
-        postDoor.position.set(3.50, 0.20 + 1.05, -1.15);
+        postDoor.position.set(3.50, 0.20 + 1.05, 1.15);
         postDoor.castShadow = true;
         bathGroup.add(postDoor);
 
-        // 1. Полноростовая мягкая дверь ПВХ со скручиванием (Z = 0.00 ... -1.15, ширина 1.10 м, высота 2.06 м)
+        // 1. Полноростовая мягкая дверь ПВХ со скручиванием (Z = 0.00 ... 1.15, ширина 1.10 м, высота 2.06 м)
         const softDoorGroup = new THREE.Group();
         const doorPane = new THREE.Mesh(new THREE.BoxGeometry(0.006, 2.05, 1.06), softPvcMat);
         softDoorGroup.add(doorPane);
@@ -1584,28 +1560,52 @@
         doorBottomBorder.position.y = -1.00;
         softDoorGroup.add(doorBottomBorder);
 
-        softDoorGroup.position.set(3.50, 0.20 + 1.03, -0.575);
+        softDoorGroup.position.set(3.50, 0.20 + 1.03, 0.575);
         bathGroup.add(softDoorGroup);
 
-        // 2. Смежная глухая часть в южном пролёте (Z = -1.15 ... -2.40, ширина 1.20 м)
-        const sidingFrontS = createTimberSiding(1.20, 1.08, true, 3.50, 0.74, -1.775);
-        bathGroup.add(sidingFrontS);
+        // 2. Смежная глухая часть в северном пролёте (Z = 1.15 ... 2.40, ширина 1.20 м)
+        const sidingFrontN = createTimberSiding(1.20, 1.08, true, 3.50, 0.74, 1.775);
+        bathGroup.add(sidingFrontN);
 
-        const sillFrontS = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 1.22), handrailMat);
-        sillFrontS.position.set(3.50, bathSillY, -1.775);
-        sillFrontS.castShadow = true;
-        bathGroup.add(sillFrontS);
+        const sillFrontN = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 1.22), handrailMat);
+        sillFrontN.position.set(3.50, bathSillY, 1.775);
+        sillFrontN.castShadow = true;
+        bathGroup.add(sillFrontN);
 
-        const winFS = createSoftWindow(1.15, bathWinH, true, 3.50, bathWinCenterY, -1.775);
-        bathGroup.add(winFS);
+        const winFN = createSoftWindow(1.15, bathWinH, true, 3.50, bathWinCenterY, 1.775);
+        bathGroup.add(winFN);
 
         // 3. Монолитные ступени входа прямо перед мягкой дверью
         const stepMatBath = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 });
         const terraceStep = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.10, 1.40), stepMatBath);
-        terraceStep.position.set(3.70, 0.05, -0.575);
+        terraceStep.position.set(3.70, 0.05, 0.575);
         terraceStep.castShadow = true;
         terraceStep.receiveShadow = true;
         bathGroup.add(terraceStep);
+
+
+        // Б. ЮЖНЫЙ ПРОЛЁТ ФАСАДА (Z = -2.40 ... 0.00, глухое лаунж-остекление)
+        // Промежуточная стойка жесткости 100×100 мм при Z = -1.20
+        const postFrontMidS = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
+        postFrontMidS.position.set(3.50, 0.20 + 1.05, -1.20);
+        postFrontMidS.castShadow = true;
+        bathGroup.add(postFrontMidS);
+
+        // Сплошная зашивка имитацией бруса (высота 1.10 м от пола)
+        const sidingFrontS = createTimberSiding(2.36, 1.08, true, 3.50, 0.74, -1.20);
+        bathGroup.add(sidingFrontS);
+
+        // Подоконный брус (Y = 1.40 м)
+        const sillFrontS = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 2.38), handrailMat);
+        sillFrontS.position.set(3.50, bathSillY, -1.20);
+        sillFrontS.castShadow = true;
+        bathGroup.add(sillFrontS);
+
+        // Два мягких окна фасада ТОГО ЖЕ ЕДИНОГО РАЗМЕРА (высота 0.82 м)
+        const winFS1 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, -0.60);
+        bathGroup.add(winFS1);
+        const winFS2 = createSoftWindow(1.05, bathWinH, true, 3.50, bathWinCenterY, -1.80);
+        bathGroup.add(winFS2);
 
         // Е. НАВЕС (ВТОРОЙ СКАТ) НАД ТЕРРАСОЙ
         // Опорные деревянные столбы 120×120 мм по внешнему краю плиты
@@ -1726,8 +1726,8 @@
         // 3. ВАЛУН №1: Главный монументальный камень (Ø ~1.05 м, высота над грунтом 0.72 м, заглублен на 24 см)
         const b1Geo = createBoulderGeometry(0.53, 0.48, 0.50, 2.4);
         const boulder1 = new THREE.Mesh(b1Geo, graniteMat);
-        boulder1.position.set(4.35, 0.24, 1.95);
-        boulder1.rotation.set(0.12, 0.45, -0.10);
+        boulder1.position.set(4.35, 0.24, -1.95);
+        boulder1.rotation.set(0.12, -0.45, -0.10);
         boulder1.castShadow = true;
         boulder1.receiveShadow = true;
         rockeryGroup.add(boulder1);
@@ -1735,8 +1735,8 @@
         // 4. ВАЛУН №2: Спутник (Ø ~1.15 м, более пологий и вытянутый, заглублен на 28 см, высота над грунтом 0.50 м)
         const b2Geo = createBoulderGeometry(0.58, 0.39, 0.46, 5.7);
         const boulder2 = new THREE.Mesh(b2Geo, graniteMat);
-        boulder2.position.set(4.60, 0.12, 1.05);
-        boulder2.rotation.set(-0.15, -0.70, 0.12);
+        boulder2.position.set(4.60, 0.12, -1.05);
+        boulder2.rotation.set(-0.15, 0.70, 0.12);
         boulder2.castShadow = true;
         boulder2.receiveShadow = true;
         rockeryGroup.add(boulder2);
@@ -1758,7 +1758,7 @@
             sphere.castShadow = true;
             pineGroup.add(sphere);
         });
-        pineGroup.position.set(3.95, 0.0, 2.40);
+        pineGroup.position.set(3.95, 0.0, -2.40);
         rockeryGroup.add(pineGroup);
 
         // Б. Стелющийся можжевельник (Juniperus horizontalis) - низкая сизо-зеленая хвоя у валуна 2
@@ -1776,31 +1776,31 @@
             jMesh.castShadow = true;
             junGroup.add(jMesh);
         });
-        junGroup.position.set(4.90, 0.0, 1.45);
+        junGroup.position.set(4.90, 0.0, -1.45);
         rockeryGroup.add(junGroup);
 
         // В. Спирея японская / декоративный акцентный кустик
         const spireaMat = new THREE.MeshStandardMaterial({ color: 0x7fa336, roughness: 0.85 });
         const spireaMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 1), spireaMat);
         spireaMesh.scale.set(1.1, 0.7, 1.0);
-        spireaMesh.position.set(4.15, 0.12, 0.65);
+        spireaMesh.position.set(4.15, 0.12, -0.65);
         spireaMesh.castShadow = true;
         rockeryGroup.add(spireaMesh);
 
         // 6. Ландшафтный грунтовый спот-светильник с вечерней теплой подсветкой фактуры гранита
         const spotBody = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.14, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 }));
-        spotBody.position.set(5.12, 0.08, 1.15);
-        spotBody.rotation.set(0.35, -0.65, 0);
+        spotBody.position.set(5.12, 0.08, -1.15);
+        spotBody.rotation.set(-0.35, 0.65, 0);
         spotBody.castShadow = true;
         rockeryGroup.add(spotBody);
 
         const spotLens = new THREE.Mesh(new THREE.CircleGeometry(0.038, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
-        spotLens.position.set(5.10, 0.14, 1.18);
-        spotLens.rotation.set(-Math.PI / 3, -0.65, 0);
+        spotLens.position.set(5.10, 0.14, -1.18);
+        spotLens.rotation.set(-Math.PI / 3, 0.65, 0);
         rockeryGroup.add(spotLens);
 
         const rockeryLight = new THREE.SpotLight(0xffe8ba, 2.2, 7.0, Math.PI / 4, 0.6, 1.2);
-        rockeryLight.position.set(5.15, 0.20, 1.15);
+        rockeryLight.position.set(5.15, 0.20, -1.15);
         rockeryLight.target = boulder1;
         rockeryLight.castShadow = true;
         rockeryGroup.add(rockeryLight);
