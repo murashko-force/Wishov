@@ -3049,13 +3049,15 @@
 
         // 1. Передний левый угол дома (X = 0, Z = 0)
         cornerRustsGroup.add(createCornerRusts(0, 0, +1, -1, -1, +1));
-        // 2. Задний левый угол дома (X = 0, Z = -HL)
+        // 2. Передний правый угол дома у навеса и террасы (X = HW, Z = 0)
+        cornerRustsGroup.add(createCornerRusts(HW, 0, -1, -1, +1, +1));
+        // 3. Задний левый угол дома (X = 0, Z = -HL)
         cornerRustsGroup.add(createCornerRusts(0, -HL, +1, +1, -1, -1));
-        // 3. Задний правый угол дома у сада (X = HW, Z = -HL)
+        // 4. Задний правый угол дома у сада (X = HW, Z = -HL)
         cornerRustsGroup.add(createCornerRusts(HW, -HL, -1, +1, +1, -1));
-        // 4. Задний правый угол веранды у сада (X = HW + VW, Z = -HL)
+        // 5. Задний правый угол веранды у сада (X = HW + VW, Z = -HL)
         cornerRustsGroup.add(createCornerRusts(HW + VW, -HL, -1, +1, +1, -1));
-        // 5. Передний наружный угол стены прихожей (X = HW + VW, Z = -L_OPEN)
+        // 6. Передний наружный угол стены прихожей (X = HW + VW, Z = -L_OPEN)
         cornerRustsGroup.add(createCornerRusts(HW + VW, -L_OPEN, -1, -1, +1, +1));
 
 
