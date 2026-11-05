@@ -1175,7 +1175,14 @@
         const bathStylobateMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.85 }); // Единый тёмно-графитовый стилобат RAL 7016
         const bathRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
         const metalChimneyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.85 });
-        const glassMatBath = new THREE.MeshStandardMaterial({ color: 0x93c5fd, roughness: 0.1, transparent: true, opacity: 0.65 });
+        const glassMatBath = new THREE.MeshStandardMaterial({
+            color: 0xbae6fd,
+            roughness: 0.10,
+            metalness: 0.08,
+            transparent: true,
+            opacity: 0.42,
+            depthWrite: false
+        });
 
         // Материалы мягких окон и дверей ПВХ (полный герметичный контур 700 мкм)
         const softPvcMat = new THREE.MeshStandardMaterial({
@@ -1519,8 +1526,11 @@
 
 
         // --- 3. ВОСТОЧНЫЙ ФАСАД ВО ДВОР (X = 3.50, длина 4.80 м) ---
-        // Стойки по фасаду: угловые Z = 2.40 и Z = -2.40, центральная Z = 0.00
-        // А. СЕВЕРНЫЙ ПРОЛЁТ ФАСАДА (Z = 0.00 ... 2.40, ВХОДНАЯ ЗОНА С МЯГКОЙ ДВЕРЬЮ)
+        // Стойки по фасаду: угловая слева Z = 2.40 (к дому), промежуточная Z = 1.15, центральная Z = 0.00, промежуточная Z = -1.20, угловая справа Z = -2.40 (к саду)
+        // 4 пролёта слева направо (со стороны дома к саду):
+        // 1-й пролёт слева (Z = 1.15 ... 2.40): глухой парапет 1.10 м + мягкое окно
+        // 2-й пролёт слева (Z = 0.00 ... 1.15): ВХОДНАЯ ДВЕРЬ ПВХ И МОНОЛИТНЫЕ СТУПЕНИ
+        // 3-й и 4-й пролёты справа (Z = -2.40 ... 0.00): лаунж-остекление, перед которым разбит рокарий с валунами
         // Дверная промежуточная стойка 100×100 мм при Z = 1.15
         const postDoor = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.10, 0.10), postMatBath);
         postDoor.position.set(3.50, 0.20 + 1.05, 1.15);
@@ -1830,7 +1840,7 @@
         shedGroup.rotation.y = -rightAngle;
 
         // Материалы гаража (белые газосиликатные блоки со швами раствора, как на фото)
-        const shedBlockMat = new THREE.MeshStandardMaterial({ color: 0xdde3ea, roughness: 0.90 });
+        const shedBlockMat = new THREE.MeshStandardMaterial({ color: 0xdde3ea, roughness: 0.90, side: THREE.DoubleSide });
         const shedSocleMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
         const shedRoofMat = new THREE.MeshStandardMaterial({ color: 0x272c35, roughness: 0.55 });
         const shedGateMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.65 });
@@ -1874,19 +1884,26 @@
         shedRidgeMesh.position.set(0, H_SHED_RIDGE + 0.08, 0);
         shedGroup.add(shedRidgeMesh);
 
-        // Треугольные фронтоны спереди (Z = +3.75) и сзади (Z = -3.75)
-        for (let fz of [3.75, -3.75]) {
-            const fgGeo = new THREE.BufferGeometry();
-            const fgVerts = new Float32Array([
-                -2.50, H_SHED_EAVE, fz,
-                 2.50, H_SHED_EAVE, fz,
-                 0.00, H_SHED_RIDGE, fz
-            ]);
-            fgGeo.setAttribute('position', new THREE.BufferAttribute(fgVerts, 3));
-            fgGeo.computeVertexNormals();
-            const fgMesh = new THREE.Mesh(fgGeo, shedBlockMat);
-            shedGroup.add(fgMesh);
-        }
+        // Треугольные фронтоны спереди (Z = +3.75) и сзади (Z = -3.75) с правильными наружными нормалями
+        const fgFrontGeo = new THREE.BufferGeometry();
+        fgFrontGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+            -2.50, H_SHED_EAVE, 3.75,
+             2.50, H_SHED_EAVE, 3.75,
+             0.00, H_SHED_RIDGE, 3.75
+        ]), 3));
+        fgFrontGeo.computeVertexNormals();
+        const fgFrontMesh = new THREE.Mesh(fgFrontGeo, shedBlockMat);
+        shedGroup.add(fgFrontMesh);
+
+        const fgRearGeo = new THREE.BufferGeometry();
+        fgRearGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+             2.50, H_SHED_EAVE, -3.75,
+            -2.50, H_SHED_EAVE, -3.75,
+             0.00, H_SHED_RIDGE, -3.75
+        ]), 3));
+        fgRearGeo.computeVertexNormals();
+        const fgRearMesh = new THREE.Mesh(fgRearGeo, shedBlockMat);
+        shedGroup.add(fgRearMesh);
 
         // А. ПЕРЕДНИЙ ТОРЦЕВОЙ ФАСАД (Z = +3.75, ЛИЦОМ К ДОМУ/ДОРОГЕ, СТРОГО ПО ФОТО С КАМЕРЫ)
         // На торцевом фасаде под фронтоном РОВНО 2 ОКНА (квадратные окна с бетонными перемычками):
@@ -3225,7 +3242,14 @@
             map: woodTex,
             roughness: 0.75
         });
-        const glassMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35, roughness: 0.1 });
+        const glassMat = new THREE.MeshStandardMaterial({
+            color: 0xbae6fd,
+            roughness: 0.10,
+            metalness: 0.08,
+            transparent: true,
+            opacity: 0.42,
+            depthWrite: false
+        });
         const whiteTrimMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 }); // Чистый белый цвет окон (ПВХ)
         const doorMat = new THREE.MeshStandardMaterial({ color: 0x3b1c0b, roughness: 0.5 });
         const valleyMat = new THREE.MeshStandardMaterial({ color: 0x242831, roughness: 0.4, metalness: 0.5 }); // Dark graphite valley flashing matching roof
