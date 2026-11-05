@@ -139,7 +139,7 @@
                 ✕ Скрыть
             </button>
         </div>
-        <p>Интерактивная 3D-модель: Участок 25 соток (2500 м²), кадастр 720480501101000392, дом (8,5 × 9,5 м), веранда (2,7 × 9,5 м), навес 6×4 м.</p>
+        <p>Интерактивная 3D-модель: Участок 25 соток (2500 м²), кадастр 720480501101000392, дом (8,5 × 9,5 м), веранда (2,85 × 9,5 м), навес 6×4,5 м.</p>
 
         <!-- Master Plan 25 Ares Controls Box -->
         <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 12px;">
@@ -173,12 +173,12 @@
             <div class="spec-box"><span>Теплица арочная</span><strong>6,0 × 3,0 м (поликарбонат)</strong></div>
             <div class="spec-box"><span>Плодовый сад</span><strong>8 деревьев + шпалеры</strong></div>
             <div class="spec-box"><span>Грядки эко-огорода</span><strong>6 приподнятых коробов</strong></div>
-            <div class="spec-box"><span>Дом + Веранда</span><strong>11,2 × 9,5 м (90,8 м²)</strong></div>
-            <div class="spec-box"><span>Навес (1 авто)</span><strong>6,0 × 4,0 м (24 м²)</strong></div>
-            <div class="spec-box"><span>Открытая терраса</span><strong>4,20 × 2,7 м (11,3 м²)</strong></div>
-            <div class="spec-box"><span>Прихожая (тамбур)</span><strong>2,20 × 2,7 м (5,9 м²)</strong></div>
-            <div class="spec-box"><span>Зона отдыха (диван)</span><strong>3,10 × 2,7 м (8,4 м²)</strong></div>
-            <div class="spec-box"><span>Задняя терраса (сад)</span><strong>2,20 × 2,7 м (открытая)</strong></div>
+            <div class="spec-box"><span>Дом + Веранда</span><strong>11,35 × 9,5 м (107,8 м²)</strong></div>
+            <div class="spec-box"><span>Навес (1 авто)</span><strong>6,0 × 4,5 м (27 м²)</strong></div>
+            <div class="spec-box"><span>Открытая терраса</span><strong>4,20 × 2,85 м (12,0 м²)</strong></div>
+            <div class="spec-box"><span>Прихожая (тамбур)</span><strong>2,20 × 2,85 м (6,3 м²)</strong></div>
+            <div class="spec-box"><span>Зона отдыха (диван)</span><strong>3,10 × 2,85 м (8,8 м²)</strong></div>
+            <div class="spec-box"><span>Задняя терраса (сад)</span><strong>2,20 × 2,85 м (открытая)</strong></div>
             <div class="spec-box"><span>Высота конька</span><strong>5,80 м (Вровень)</strong></div>
             <div class="spec-box"><span>Рельеф участка</span><strong>Перепад всего 38 см</strong></div>
         </div>
@@ -200,7 +200,7 @@
             <button class="secondary" id="tile-accent-toggle" onclick="cycleTileAccent()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; font-weight: 600; color: #38bdf8;">Плитка: Графит (В цвет кровли) ⇄</button>
             <button class="secondary" id="wall-finish-toggle" onclick="cycleWallFinish()">Стены: Светло-серые блоки ⇄</button>
             <button class="secondary" id="win-color-toggle" onclick="cycleWindowColor()">Окна: Белые (Классика)</button>
-            <button class="secondary" id="carport-toggle" onclick="toggleCarport()">Навес (1 авто 6×4м): Вкл</button>
+            <button class="secondary" id="carport-toggle" onclick="toggleCarport()">Навес (1 авто 6×4,5м): Вкл</button>
             <button class="secondary" id="roof-toggle" onclick="toggleRoofTransparency()">Прозрачность крыши</button>
             <button class="secondary" id="ridge-toggle" onclick="cycleRidgeHeight()">Конёк: 5,8 м (Вровень с домом!)</button>
             <button class="secondary" id="rear-roof-toggle" onclick="toggleRearCanopy()">Крыша сзади: Навес (Вкл)</button>
@@ -246,7 +246,7 @@
         const H_WALL = 2.9;   // Wall height to eaves
         const H_RIDGE = 5.8; // Высота конька при ширине 8,5 м  // Ridge height
         const SOCLE = 0.4;    // Foundation height
-        const VW = 2.7;       // Veranda width
+        const VW = 2.85;      // Veranda width (фактический замер монолитной плиты: 2,85 м)
         const L_OPEN = 4.2;   // Open terrace length
         const L_CLOSED = HL - L_OPEN; // 5.3m
         const YE = 2.85;      // Eaves height at front and rear
@@ -280,16 +280,18 @@
         scene.add(hemiLight);
 
         const dirLight = new THREE.DirectionalLight(0xfffaed, 0.95);
-        dirLight.position.set(25, 45, 20);
+        dirLight.position.set(20, 45, -35); // Солнце со стороны сада (Юг)
+        dirLight.target.position.set(10, 0, -15);
+        scene.add(dirLight.target);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 160;
-        dirLight.shadow.camera.left = -30;
-        dirLight.shadow.camera.right = 30;
-        dirLight.shadow.camera.top = 35;
-        dirLight.shadow.camera.bottom = -45;
+        dirLight.shadow.camera.far = 180;
+        dirLight.shadow.camera.left = -40;
+        dirLight.shadow.camera.right = 40;
+        dirLight.shadow.camera.top = 55;
+        dirLight.shadow.camera.bottom = -55;
         scene.add(dirLight);
 
         // ==========================================
@@ -925,8 +927,8 @@
         drivewayShape.moveTo(-6.80, -9.80);
         drivewayShape.lineTo(-3.20, -9.80);
         drivewayShape.lineTo(-3.20, -7.00);
-        drivewayShape.bezierCurveTo(-2.40, -5.60, -0.60, -4.60, 1.60, -4.00);
-        drivewayShape.lineTo(7.80, -4.00);
+        drivewayShape.bezierCurveTo(-2.40, -5.60, -0.60, -5.00, 1.60, -4.60);
+        drivewayShape.lineTo(7.80, -4.60);
         drivewayShape.lineTo(7.80, 0.00);
         drivewayShape.lineTo(1.60, 0.00);
         drivewayShape.bezierCurveTo(-1.80, -0.40, -4.80, -3.20, -6.80, -7.00);
@@ -1025,15 +1027,15 @@
         siteGroup.add(walkPorch);
 
         // 5a. МОЩЁНАЯ ДОРОЖКА ОТ НАВЕСА К ДИАГОНАЛЬНОЙ КАЛИТКЕ (ПО КРАСНОЙ СТРЕЛКЕ ЗАКАЗЧИКА)
-        // Идёт со стороны навеса от переднего края парковки (X = 6.20 ... 7.75, Z = 4.00)
+        // Идёт со стороны навеса от переднего края парковки (X = 6.20 ... 7.75, Z = 4.60)
         // вдоль разделительного забора прямо к внешнему порогу калитки у столба Б (X = 7.80, Z = 5.95)
         const cpWalkShape = new THREE.Shape();
-        cpWalkShape.moveTo(6.20, -4.00);
-        cpWalkShape.lineTo(7.75, -4.00);
+        cpWalkShape.moveTo(6.20, -4.60);
+        cpWalkShape.lineTo(7.75, -4.60);
         cpWalkShape.lineTo(7.75, -5.95);
         cpWalkShape.lineTo(8.20, -6.40);
         cpWalkShape.lineTo(7.50, -6.60);
-        cpWalkShape.bezierCurveTo(6.60, -5.70, 6.10, -4.80, 6.20, -4.00);
+        cpWalkShape.bezierCurveTo(6.60, -5.70, 6.10, -5.00, 6.20, -4.60);
         cpWalkShape.closePath();
         const cpWalkMesh = new THREE.Mesh(new THREE.ShapeGeometry(cpWalkShape), paveMat);
         cpWalkMesh.rotation.x = -Math.PI / 2;
@@ -2130,13 +2132,13 @@
         landscapeGroup.add(shedDriveMesh);
 
         // 2. ПАРАДНАЯ ПЕШЕХОДНАЯ ДОРОЖКА ВОСТОЧНОГО ДВОРА
-        // Соединяет боковые ступени террасы (X = 11.20, Z = -3.15) с площадкой сарая и патио BBQ
+        // Соединяет боковые ступени террасы (X = 11.35, Z = -3.15) с площадкой сарая и патио BBQ
         const yardWalkShape = new THREE.Shape();
-        yardWalkShape.moveTo(11.20, 2.55);
-        yardWalkShape.lineTo(11.20, 3.75);
+        yardWalkShape.moveTo(11.35, 2.55);
+        yardWalkShape.lineTo(11.35, 3.75);
         yardWalkShape.bezierCurveTo(14.50, 3.75, 17.50, 5.00, 18.00, 7.00);
         yardWalkShape.lineTo(19.20, 7.00);
-        yardWalkShape.bezierCurveTo(18.70, 4.50, 15.00, 2.55, 11.20, 2.55);
+        yardWalkShape.bezierCurveTo(18.70, 4.50, 15.00, 2.55, 11.35, 2.55);
         yardWalkShape.closePath();
         const yardWalkMesh = new THREE.Mesh(new THREE.ShapeGeometry(yardWalkShape), paveMat);
         yardWalkMesh.rotation.x = -Math.PI / 2;
@@ -4127,18 +4129,19 @@
         verandaGroup.add(sideTerraceBeam);
 
         // 1. Парадные бетонные ступени входа с террасы к дорожке (Z > 0)
-        // Отцентрированы по открытому фронту террасы (между стеной дома 8.50 и столбом 10.90, центр X = 9.70)
+        // Отцентрированы по открытому фронту террасы
         const stepWidth = 1.4;
         const stepMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+        const stepFrontX = (V_X0 + terracePillarX) / 2;
         for (let s = 1; s <= 3; s++) {
             const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(stepWidth, 0.13, 0.33), stepMat);
-            stepMesh.position.set(9.70, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
+            stepMesh.position.set(stepFrontX, SOCLE - s * 0.12 + 0.01, 0.16 + s * 0.3);
             stepMesh.castShadow = true;
             stepMesh.receiveShadow = true;
             verandaGroup.add(stepMesh);
         }
 
-        // 2. Дворовые бетонные ступени со стороны террасы в сад/на газон (X > V_X1 = 11.20м)
+        // 2. Дворовые бетонные ступени со стороны террасы в сад/на газон (X > V_X1)
         // Расположены в правом пролёте между столбом 2 (Z = -2.10) и стеной тамбура (Z = -4.20)
         const sideStepZ = -3.15;
         for (let s = 1; s <= 3; s++) {
@@ -4157,8 +4160,9 @@
         partWallL.position.set(V_X0 + 0.4, SOCLE + partWallH/2, -L_OPEN);
         verandaGroup.add(partWallL);
 
-        const partWallR = new THREE.Mesh(new THREE.BoxGeometry(0.9, partWallH, 0.15), blockMat);
-        partWallR.position.set(V_X1 - 0.45, SOCLE + partWallH/2, -L_OPEN);
+        const partWallRWidth = V_X1 - (V_X0 + 1.8);
+        const partWallR = new THREE.Mesh(new THREE.BoxGeometry(partWallRWidth, partWallH, 0.15), blockMat);
+        partWallR.position.set(V_X1 - partWallRWidth / 2, SOCLE + partWallH/2, -L_OPEN);
         verandaGroup.add(partWallR);
 
         const partWallTop = new THREE.Mesh(new THREE.BoxGeometry(1.0, partWallH - 2.1, 0.15), blockMat);
@@ -4576,8 +4580,9 @@
         verandaGroup.add(rWallL);
 
         // Wall right of panoramic portal
-        const rWallR = new THREE.Mesh(new THREE.BoxGeometry(0.5, partWallH, 0.2), blockMat);
-        rWallR.position.set(V_X1 - 0.25, SOCLE + partWallH/2, -HL);
+        const rWallR_W = V_X1 - (V_X0 + 2.2);
+        const rWallR = new THREE.Mesh(new THREE.BoxGeometry(rWallR_W, partWallH, 0.2), blockMat);
+        rWallR.position.set(V_X1 - rWallR_W / 2, SOCLE + partWallH/2, -HL);
         verandaGroup.add(rWallR);
 
         // Lintel above panoramic glass
@@ -5143,9 +5148,9 @@
         roofGroup.add(valleyRear);
 
         // ==========================================
-        // CARPORT FOR 1 CAR (НАВЕС 6,0 × 4,0 М ДЛЯ 1 АВТОМОБИЛЯ)
+        // CARPORT FOR 1 CAR (НАВЕС 6,0 × 4,5 М ДЛЯ 1 АВТОМОБИЛЯ)
         // Lean-to shed roof sloping from house wall toward road
-        // Dimensions: 6.0m wide x 4.0m deep (covers 1 car parallel to road)
+        // Dimensions: 6.0m wide x 4.5m deep (covers 1 car parallel to road, боковой въезд 4,5м)
         // ==========================================
         const carportGroup = new THREE.Group();
         carportGroup.visible = true; // Активен по умолчанию
@@ -5155,12 +5160,12 @@
         const CP_X1 = 7.8;
         const CP_W = CP_X1 - CP_X0; // 6.0m
         const CP_Z0 = 0.1;
-        const CP_Z1 = 4.1;
-        const CP_L = CP_Z1 - CP_Z0; // 4.0m
-        const CP_Y_WALL = 3.10;     // Высота у стены дома (под карниз)
-        const CP_Y_FRONT = 2.20;    // Высота переднего опорного ригеля со стороны улицы (нормативный уклон ~13°)
+        const CP_Z1 = 4.6;
+        const CP_L = CP_Z1 - CP_Z0; // 4.5m
+        const CP_Y_WALL = 3.15;     // Высота у стены дома (под карниз)
+        const CP_Y_FRONT = 2.20;    // Высота переднего опорного ригеля со стороны улицы (нормативный уклон ~12°)
 
-        // 1. Paved concrete parking pad (6.4 x 4.4m)
+        // 1. Paved concrete parking pad (6.4 x 4.9m)
         const padMat = new THREE.MeshLambertMaterial({ color: 0x475569 });
         const padMesh = new THREE.Mesh(new THREE.PlaneGeometry(CP_W + 0.4, CP_L + 0.4), padMat);
         padMesh.rotation.x = -Math.PI / 2;
@@ -5227,7 +5232,7 @@
             carportGroup.add(rafter);
         }
 
-        // 6. Roof Covering (Односкатная кровля 6.0 x 4.0м - металлочерепица RAL 7016)
+        // 6. Roof Covering (Односкатная кровля 6.0 x 4.5м - металлочерепица RAL 7016)
         const cpRoofMesh = createQuadMesh(
             [CP_X0 - 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
             [CP_X1 + 0.15, CP_Y_WALL + 0.08, CP_Z0 - 0.05],
@@ -5658,7 +5663,7 @@
         function toggleCarport() {
             carportVisible = !carportVisible;
             carportGroup.visible = carportVisible;
-            document.getElementById('carport-toggle').textContent = carportVisible ? "Навес (1 авто 6×4м): Вкл" : "Навес (1 авто 6×4м): Выкл";
+            document.getElementById('carport-toggle').textContent = carportVisible ? "Навес (1 авто 6×4,5м): Вкл" : "Навес (1 авто 6×4,5м): Выкл";
         }
 
         let windowModeIndex = 2; // 0: Trio (3 окна), 1: Лаунж (1,4м у сада), 2: Центр фасада (1,1м)
