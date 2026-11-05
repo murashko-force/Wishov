@@ -5157,8 +5157,8 @@
         const CP_Z0 = 0.1;
         const CP_Z1 = 4.1;
         const CP_L = CP_Z1 - CP_Z0; // 4.0m
-        const CP_Y_WALL = 2.85;     // Eaves at house wall
-        const CP_Y_FRONT = 2.25;    // Eaves at front header (road side)
+        const CP_Y_WALL = 3.10;     // Высота у стены дома (под карниз)
+        const CP_Y_FRONT = 2.20;    // Высота переднего опорного ригеля со стороны улицы (нормативный уклон ~13°)
 
         // 1. Paved concrete parking pad (6.4 x 4.4m)
         const padMat = new THREE.MeshLambertMaterial({ color: 0x475569 });
@@ -5169,28 +5169,38 @@
         carportGroup.add(padMesh);
 
         // 2. Timber Ledger Beam on house wall
-        const wallLedger = new THREE.Mesh(new THREE.BoxGeometry(CP_W, 0.15, 0.12), woodMat);
-        wallLedger.position.set((CP_X0 + CP_X1)/2, CP_Y_WALL - 0.075, CP_Z0);
+        const wallLedger = new THREE.Mesh(new THREE.BoxGeometry(CP_W, 0.18, 0.12), woodMat);
+        wallLedger.position.set((CP_X0 + CP_X1)/2, CP_Y_WALL - 0.09, CP_Z0);
         carportGroup.add(wallLedger);
 
-        // 3. Front Timber Support Posts (Стойки 150×150 мм - широкий заезд 5.7 м)
+        // 3. Уличные опорные стойки (3 стойки 150×150 мм с подкосами 45° - пролёты по 2,85 м)
         const cpPostGeo = new THREE.BoxGeometry(0.15, CP_Y_FRONT - 0.15, 0.15);
-        const cpPostX = [CP_X0 + 0.15, CP_X1 - 0.15];
-        cpPostX.forEach(px => {
+        const cpPostX = [CP_X0 + 0.15, (CP_X0 + CP_X1) / 2, CP_X1 - 0.15];
+        cpPostX.forEach((px, idx) => {
             const post = new THREE.Mesh(cpPostGeo, woodMat);
             post.position.set(px, (CP_Y_FRONT - 0.15)/2, CP_Z1 - 0.2);
             post.castShadow = true;
             carportGroup.add(post);
 
             // Diagonal struts (подкосы 45°)
-            const s = (px === cpPostX[0]) ? 0.45 : -0.45;
-            const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.60, 0.08), woodMat);
-            strut.position.set(px + s/2, CP_Y_FRONT - 0.35, CP_Z1 - 0.2);
-            strut.rotation.z = s > 0 ? -Math.PI/4 : Math.PI/4;
-            carportGroup.add(strut);
+            const strutGeo = new THREE.BoxGeometry(0.08, 0.60, 0.08);
+            if (idx === 0 || idx === 1) {
+                // Подкос вправо (+X)
+                const strutR = new THREE.Mesh(strutGeo, woodMat);
+                strutR.position.set(px + 0.22, CP_Y_FRONT - 0.35, CP_Z1 - 0.2);
+                strutR.rotation.z = -Math.PI / 4;
+                carportGroup.add(strutR);
+            }
+            if (idx === 1 || idx === 2) {
+                // Подкос влево (-X)
+                const strutL = new THREE.Mesh(strutGeo, woodMat);
+                strutL.position.set(px - 0.22, CP_Y_FRONT - 0.35, CP_Z1 - 0.2);
+                strutL.rotation.z = Math.PI / 4;
+                carportGroup.add(strutL);
+            }
         });
 
-        // Rear support posts along house wall for freestanding structural stability
+        // Задние опорные стойки у стены дома (боковой въезд X = 1.80 м шириной 4.0 м остаётся 100% свободным)
         [CP_X0 + 0.15, CP_X1 - 0.15].forEach(px => {
             const rPost = new THREE.Mesh(new THREE.BoxGeometry(0.15, CP_Y_WALL - 0.15, 0.15), woodMat);
             rPost.position.set(px, (CP_Y_WALL - 0.15)/2, CP_Z0 + 0.1);
@@ -5198,19 +5208,19 @@
             carportGroup.add(rPost);
         });
 
-        // 4. Front Header Beam (Опорный прогон)
-        const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(CP_W + 0.2, 0.15, 0.15), woodMat);
-        frontBeam.position.set((CP_X0 + CP_X1)/2, CP_Y_FRONT - 0.075, CP_Z1 - 0.2);
+        // 4. Передний силовой ригель (180×150 мм на 3 стойках)
+        const frontBeam = new THREE.Mesh(new THREE.BoxGeometry(CP_W + 0.2, 0.18, 0.15), woodMat);
+        frontBeam.position.set((CP_X0 + CP_X1)/2, CP_Y_FRONT - 0.09, CP_Z1 - 0.2);
         frontBeam.castShadow = true;
         carportGroup.add(frontBeam);
 
-        // 5. Timber Rafters (Стропила 50×180 мм, шаг 1.0 м)
-        const numRafters = 7;
+        // 5. Усиленные стропила (50×200 мм, нормативный шаг 60 см - 11 стропил)
+        const numRafters = 11;
         const rafterLen = Math.sqrt(CP_L * CP_L + (CP_Y_WALL - CP_Y_FRONT) * (CP_Y_WALL - CP_Y_FRONT));
         const rafterPitch = Math.atan2(CP_Y_WALL - CP_Y_FRONT, CP_L);
         for (let i = 0; i < numRafters; i++) {
             const rx = CP_X0 + (i / (numRafters - 1)) * CP_W;
-            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.16, rafterLen + 0.4), woodMat);
+            const rafter = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.20, rafterLen + 0.4), woodMat);
             rafter.position.set(rx, (CP_Y_WALL + CP_Y_FRONT)/2, (CP_Z0 + CP_Z1)/2);
             rafter.rotation.x = rafterPitch;
             rafter.castShadow = true;
