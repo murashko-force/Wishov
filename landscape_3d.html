@@ -4885,19 +4885,145 @@
         rWallTop.position.set(V_X0 + 0.5 + 0.85, H_WALL - (partWallH - rearGlassH)/2, -HL);
         verandaGroup.add(rWallTop);
 
-        // Panoramic Glass Door / Exit to garden terrace
-        const rearDoorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.7, rearGlassH, 0.12), whiteTrimMat);
-        rearDoorFrame.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
-        verandaGroup.add(rearDoorFrame);
+        // Architectural double glazed French portal / sliding glass exit doors
+        const doorPortalGroup = new THREE.Group();
+        verandaGroup.add(doorPortalGroup);
 
-        const rearDoorGlass = new THREE.Mesh(new THREE.BoxGeometry(1.6, rearGlassH - 0.1, 0.04), glassMat);
-        rearDoorGlass.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
-        verandaGroup.add(rearDoorGlass);
+        const doorPortalGlassMat = new THREE.MeshStandardMaterial({
+            color: 0xdbeafe,
+            roughness: 0.05,
+            metalness: 0.12,
+            transparent: true,
+            opacity: 0.30,
+            depthWrite: false
+        });
+        const doorHardwareMat = new THREE.MeshStandardMaterial({
+            color: 0x1e293b,
+            metalness: 0.85,
+            roughness: 0.25
+        });
+        const doorThresholdMat = new THREE.MeshStandardMaterial({
+            color: 0x334155,
+            metalness: 0.80,
+            roughness: 0.35
+        });
 
-        // Door divider mullion (double glazed doors)
-        const rearDoorDiv = new THREE.Mesh(new THREE.BoxGeometry(0.08, rearGlassH, 0.14), whiteTrimMat);
-        rearDoorDiv.position.set(V_X0 + 1.35, SOCLE + rearGlassH/2, -HL);
-        verandaGroup.add(rearDoorDiv);
+        const portalX = V_X0 + 1.35; // 9.85m
+        const portalY0 = SOCLE;       // 0.40m
+        const portalW = 1.70;
+        const portalH = rearGlassH;   // 2.10m
+        const frameD = 0.09;
+        const profileW = 0.065;
+        const threshH = 0.04;
+
+        // 1. Внешняя дверная коробка (Outer Box Frame)
+        // Верхний брус коробки
+        const topJamb = new THREE.Mesh(new THREE.BoxGeometry(portalW, profileW, frameD), whiteTrimMat);
+        topJamb.position.set(portalX, portalY0 + portalH - profileW / 2, -HL);
+        topJamb.castShadow = true;
+        doorPortalGroup.add(topJamb);
+
+        // Нижний порог (тёплый алюминиевый/композитный профиль)
+        const btmThreshold = new THREE.Mesh(new THREE.BoxGeometry(portalW + 0.02, threshH, frameD + 0.03), doorThresholdMat);
+        btmThreshold.position.set(portalX, portalY0 + threshH / 2, -HL - 0.01);
+        btmThreshold.receiveShadow = true;
+        doorPortalGroup.add(btmThreshold);
+
+        // Левая и правая вертикальные стойки коробки
+        const sideJambH = portalH - profileW - threshH;
+        const sideJambY = portalY0 + threshH + sideJambH / 2;
+
+        const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(profileW, sideJambH, frameD), whiteTrimMat);
+        leftJamb.position.set(portalX - portalW / 2 + profileW / 2, sideJambY, -HL);
+        leftJamb.castShadow = true;
+        doorPortalGroup.add(leftJamb);
+
+        const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(profileW, sideJambH, frameD), whiteTrimMat);
+        rightJamb.position.set(portalX + portalW / 2 - profileW / 2, sideJambY, -HL);
+        rightJamb.castShadow = true;
+        doorPortalGroup.add(rightJamb);
+
+        // Центральный притворный штульповый импост
+        const mullionW = 0.06;
+        const centralMullion = new THREE.Mesh(new THREE.BoxGeometry(mullionW, sideJambH, frameD + 0.01), whiteTrimMat);
+        centralMullion.position.set(portalX, sideJambY, -HL);
+        centralMullion.castShadow = true;
+        doorPortalGroup.add(centralMullion);
+
+        // 2. Две остеклённые створки (Left & Right Door Sashes)
+        const leafW = (portalW - 2 * profileW - mullionW) / 2; // ~0.755m
+        const leafH = sideJambH;                               // ~1.995m
+        const sashProfileW = 0.065;
+        const sashKickH = 0.10; // усиленный нижний цокольный профиль створки
+        const sashD = 0.065;
+
+        [-1, 1].forEach(side => {
+            const leafGroup = new THREE.Group();
+            const leafCenterX = portalX + side * (mullionW / 2 + leafW / 2);
+
+            // Профиль створки: верх
+            const sashTop = new THREE.Mesh(new THREE.BoxGeometry(leafW, sashProfileW, sashD), whiteTrimMat);
+            sashTop.position.set(0, leafH / 2 - sashProfileW / 2, 0);
+            sashTop.castShadow = true;
+            leafGroup.add(sashTop);
+
+            // Профиль створки: низ
+            const sashBtm = new THREE.Mesh(new THREE.BoxGeometry(leafW, sashKickH, sashD), whiteTrimMat);
+            sashBtm.position.set(0, -leafH / 2 + sashKickH / 2, 0);
+            sashBtm.castShadow = true;
+            leafGroup.add(sashBtm);
+
+            // Профиль створки: левая и правая вертикали
+            const sashVertH = leafH - sashProfileW - sashKickH;
+            const sashVertY = (-leafH / 2 + sashKickH) + sashVertH / 2;
+
+            const sashL = new THREE.Mesh(new THREE.BoxGeometry(sashProfileW, sashVertH, sashD), whiteTrimMat);
+            sashL.position.set(-leafW / 2 + sashProfileW / 2, sashVertY, 0);
+            sashL.castShadow = true;
+            leafGroup.add(sashL);
+
+            const sashR = new THREE.Mesh(new THREE.BoxGeometry(sashProfileW, sashVertH, sashD), whiteTrimMat);
+            sashR.position.set(leafW / 2 - sashProfileW / 2, sashVertY, 0);
+            sashR.castShadow = true;
+            leafGroup.add(sashR);
+
+            // Большое прозрачное стекло створки
+            const glassW = leafW - 2 * sashProfileW + 0.012;
+            const glassH = sashVertH + 0.012;
+            const glassMesh = new THREE.Mesh(new THREE.BoxGeometry(glassW, glassH, 0.018), doorPortalGlassMat);
+            glassMesh.position.set(0, sashVertY, 0);
+            leafGroup.add(glassMesh);
+
+            // Дверные ручки-рейлинги (вертикальные из нержавеющей стали/графита)
+            // Расположены около центрального притвора со стороны террасы и изнутри
+            const handleSide = -side; // ручка ближе к центру портала
+            const handleX = handleSide * (leafW / 2 - sashProfileW / 2);
+            const handleH = 0.42;
+
+            [-1, 1].forEach(sideZ => {
+                // sideZ: -1 = со стороны террасы (сад), +1 = со стороны лаунжа (интерьер)
+                const hBar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, handleH, 12), doorHardwareMat);
+                hBar.position.set(handleX, 0, sideZ * (sashD / 2 + 0.035));
+                leafGroup.add(hBar);
+
+                // Кронштейны крепления ручки
+                for (let hy of [-handleH / 2 + 0.04, handleH / 2 - 0.04]) {
+                    const hPost = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.035), doorHardwareMat);
+                    hPost.position.set(handleX, hy, sideZ * (sashD / 2 + 0.0175));
+                    leafGroup.add(hPost);
+                }
+            });
+
+            // Накладка цилиндрового замка
+            for (let sideZ of [-1, 1]) {
+                const escutcheon = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.06, 0.005), doorHardwareMat);
+                escutcheon.position.set(handleX, -handleH / 2 - 0.06, sideZ * (sashD / 2 + 0.003));
+                leafGroup.add(escutcheon);
+            }
+
+            leafGroup.position.set(leafCenterX, sideJambY, -HL);
+            doorPortalGroup.add(leafGroup);
+        });
 
         // 6. REAR GARDEN TERRACE (Задняя терраса 2,7 × 2,2 м)
         const REAR_TERR_LEN = 2.2;
@@ -6181,8 +6307,8 @@
                 targetLook = { x: 5.0, y: 2.0, z: 1.0 };
                 if (!carportVisible) toggleCarport();
             } else if (view === 'garden') {
-                targetPos = { x: 14.5, y: 5.5, z: -18.5 };
-                targetLook = { x: HW/2 + 2.0, y: 2.2, z: -9.5 };
+                targetPos = { x: 13.5, y: 3.8, z: -16.5 };
+                targetLook = { x: 9.85, y: 1.8, z: -9.5 };
             } else if (view === 'houseSide') {
                 targetPos = { x: -14.0, y: 7.0, z: -16.0 };
                 targetLook = { x: 3.5, y: 2.5, z: -7.0 };
