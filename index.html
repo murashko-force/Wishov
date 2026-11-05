@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Архитектурная галерея: Пристройка к дому в Вишове</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        .header-title h1 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .header-title p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+        .nav-btn {
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .main-stage {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px 24px;
+            background: #020617;
+            overflow: hidden;
+        }
+        .image-container {
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .main-image {
+            max-width: 100%;
+            max-height: calc(100vh - 220px);
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            object-fit: contain;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .caption-bar {
+            margin-top: 14px;
+            text-align: center;
+            max-width: 900px;
+        }
+        .caption-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 4px;
+        }
+        .caption-desc {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .arrow-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f8fafc;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 5;
+        }
+        .arrow-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+            border-color: #38bdf8;
+            transform: translateY(-50%) scale(1.1);
+        }
+        .arrow-left { left: 24px; }
+        .arrow-right { right: 24px; }
+
+        .thumbnail-strip {
+            height: 100px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 12px;
+            padding: 10px 24px;
+            overflow-x: auto;
+            align-items: center;
+            scrollbar-width: thin;
+        }
+        .thumb {
+            height: 76px;
+            aspect-ratio: 16 / 9;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .thumb.active {
+            opacity: 1;
+            border-color: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+            transform: scale(1.05);
+        }
+        .thumb:hover {
+            opacity: 0.85;
+        }
+        .thumb-tag {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #e2e8f0;
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-title">
+            <h1>Финальная визуализация пристройки в Вишове (8,5 × 9,5 м + 2,7 × 9,5 м)</h1>
+            <p>Прямой фотореалистичный просмотр экстерьера с исправленной ровной кровлей и отделкой</p>
+        </div>
+        <div class="nav-links">
+            <a href="main_3d.html" class="nav-btn">
+                <span>🏛</span> 3D Модель дома (main_3d.html) ↗
+            </a>
+        </div>
+    </header>
+
+    <div class="main-stage">
+        <button class="arrow-btn arrow-left" onclick="prevSlide()">&#10094;</button>
+        
+        <div class="image-container">
+            <img id="main-display" class="main-image" src="cursor_perspective_carport_1car.jpg" alt="Архитектурный рендер">
+            <div class="caption-bar">
+                <div id="caption-title" class="caption-title">1. Перспектива с дороги: Навес 6×4 м на 1 авто (Машина параллельно дороге)</div>
+                <div id="caption-desc" class="caption-desc">Честная Т-образная врезка кровли: перпендикулярные объёмы дома (8,5 м) и веранды (2,7 м) с ровной ендовой, аккуратный навес 6,0 × 4,0 м вдоль фасада, 1 автомобиль припаркован параллельно дороге, открытое крыльцо с дорожкой, белые окна и рустовка углов.</div>
+            </div>
+        </div>
+
+        <button class="arrow-btn arrow-right" onclick="nextSlide()">&#10095;</button>
+    </div>
+
+    <div class="thumbnail-strip" id="thumb-strip"></div>
+
+    <script>
+        const galleryItems = [
+            {
+                src: "cursor_perspective_carport_1car.jpg",
+                title: "1. Перспектива с дороги: Навес 6×4 м на 1 авто (Машина параллельно дороге)",
+                desc: "Честная Т-образная врезка кровли: перпендикулярные объёмы дома (8,5 м) и веранды (2,7 м) с ровной ендовой, аккуратный навес 6,0 × 4,0 м вдоль фасада, 1 современный автомобиль припаркован параллельно дороге, открытое крыльцо с дорожкой, белые окна и рустовка углов.",
+                tag: "Фото: Навес 1 авто"
+            },
+            {
+                src: "cursor_perspective_white_render.jpg",
+                title: "2. Перспектива с дороги — дом и веранда без навеса (Фотореализм)",
+                desc: "Чистый фасад без пристроек: ровная Т-образная кровля без паразитных изломов, клинкерная рустовка на углах дома, деревянные реечные баффели со светильником-бра на глухой стене прихожей, белые оконные рамы (ПВХ).",
+                tag: "Фото: Без навеса"
+            },
+            {
+                src: "cursor_yard_facade_true_v4.jpg",
+                title: "3. Фасад со двора — Графитовый клинкер (1:1 по 3D CAD)",
+                desc: "Честная 3D-перспектива строго по модели: открытое крыльцо 4,2 м со ступенями к дороге слева, реечное панно со светильником Up&Down, окно 1,10 м в графитовом клинкере, крытая терраса выхода в сад справа и видимые скаты крыши основного дома сзади.",
+                tag: "Фото: Двор v4"
+            },
+            {
+                src: "cursor_yard_facade_warm_clinker_render.jpg",
+                title: "4. Фасад со двора — Тёплый клинкер под кирпич (Фотореализм)",
+                desc: "Альтернативный вариант отделки: тёплый обожжённый клинкерный кирпич вокруг центрального окна, гармонирующий с натуральным деревом стоек террасы.",
+                tag: "Фото: Кирпич"
+            },
+            {
+                src: "cursor_garden_white_render.jpg",
+                title: "5. Вид со стороны сада (Фотореализм)",
+                desc: "4 больших окна 150×150 см в белых рамах с клинкерными отливами, клинкерные русты на углах, гладкая задняя ендова без ступеней и крытая терраса в сад.",
+                tag: "Фото: Сад"
+            },
+            {
+                src: "mode_c_carport_1car_cad.png",
+                title: "6. Навес 6×4 м на 1 авто (3D CAD точная геометрия)",
+                desc: "Инженерная 3D-модель навеса 6,0 × 4,0 м для 1 автомобиля (отступ от дороги 7 м, машина параллельно дороге), соединённого мощёной дорожкой с крыльцом веранды.",
+                tag: "CAD: Навес 1 авто"
+            },
+            {
+                src: "mode_c_fixed_roof_check.png",
+                title: "7. Контроль геометрии Т-врезки кровли (3D CAD, вид сверху)",
+                desc: "Вид сверху на сопряжение кровли: скаты веранды с обеих сторон абсолютно ровные и плоские, никаких паразитных изломов и пересечений полотен.",
+                tag: "CAD: Кровля"
+            },
+            {
+                src: "mode_c_true_yard_cad.png",
+                title: "8. Фасад со двора (3D CAD точная геометрия)",
+                desc: "Точная CAD-проекция со двора: открытое крыльцо 4,2 м и навес слева, центральное окно 1,10 м с рейками, крытая терраса выхода в сад справа и крыша дома на заднем плане.",
+                tag: "CAD: Фасад"
+            },
+            {
+                src: "mode_c_fixed_perspective.png",
+                title: "9. Перспектива с дороги без навеса (3D CAD точная геометрия)",
+                desc: "Пропорции конька 5,8 м, идеальная врезка ендов, открытая терраса 4,2 м и русты на внешних углах здания.",
+                tag: "CAD: 3D"
+            },
+            {
+                src: "mode_c_fixed_garden.png",
+                title: "10. Угол сада (3D CAD точная геометрия)",
+                desc: "Все 4 окна 150×150 см с белыми рамами и подоконниками, русты на задних углах и крытая терраса.",
+                tag: "CAD: Сад"
+            },
+            {
+                src: "mode_c_top_plan.png",
+                title: "11. Планировка в разрезе сверху (3D CAD)",
+                desc: "Тамбур со сканди-гардеробом 1,4 м + уютная зона отдыха со сплошной 2-метровой стеной под диван.",
+                tag: "CAD: План"
+            }
+        ];
+
+        let currentIndex = 0;
+        const mainDisplay = document.getElementById('main-display');
+        const captionTitle = document.getElementById('caption-title');
+        const captionDesc = document.getElementById('caption-desc');
+        const thumbStrip = document.getElementById('thumb-strip');
+
+        function renderThumbnails() {
+            thumbStrip.innerHTML = '';
+            galleryItems.forEach((item, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'thumb' + (idx === currentIndex ? ' active' : '');
+                thumb.onclick = () => selectSlide(idx);
+                
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.alt = item.title;
+                thumb.appendChild(img);
+
+                const tag = document.createElement('div');
+                tag.className = 'thumb-tag';
+                tag.textContent = item.tag;
+                thumb.appendChild(tag);
+
+                thumbStrip.appendChild(thumb);
+            });
+        }
+
+        function selectSlide(idx) {
+            currentIndex = idx;
+            const item = galleryItems[currentIndex];
+            mainDisplay.style.opacity = '0.3';
+            setTimeout(() => {
+                mainDisplay.src = item.src;
+                mainDisplay.alt = item.title;
+                captionTitle.textContent = item.title;
+                captionDesc.textContent = item.desc;
+                mainDisplay.style.opacity = '1';
+            }, 100);
+
+            const thumbs = document.querySelectorAll('.thumb');
+            thumbs.forEach((t, i) => {
+                t.className = 'thumb' + (i === currentIndex ? ' active' : '');
+            });
+            thumbs[currentIndex].scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+
+        function nextSlide() {
+            selectSlide((currentIndex + 1) % galleryItems.length);
+        }
+
+        function prevSlide() {
+            selectSlide((currentIndex - 1 + galleryItems.length) % galleryItems.length);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        renderThumbnails();
+    </script>
+</body>
+</html>
